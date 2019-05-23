@@ -809,6 +809,8 @@ PHP_MINFO_FUNCTION(ibase)
 		"static");
 #endif
 
+	php_info_print_table_row(2, "Interbase extension version", PHP_INTERBASE_VERSION);
+
 #ifdef FB_API_VER
 	snprintf( (s = tmp), sizeof(tmp), "Firebird API version %d", FB_API_VER);
 #elif (SQLDA_CURRENT_VERSION > 1)
