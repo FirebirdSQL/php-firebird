@@ -12,7 +12,7 @@ $ zypper in php7-devel
 
 Now make sure you provide the fbclient.so and the header files (ibase.h). These are needed to compile. You can specify the include path for the ibase.h file with CPPFLAGS as you can see in the following listing.
 ```
-$ git clone https://github.com/MartinKoeditz/php_firebird.git php-firebird
+$ git clone https://github.com/MartinKoeditz/php-firebird.git
 $ cd php-firebird
 $ phpize
 $ CPPFLAGS=-I/usr/include/firebird ./configure
