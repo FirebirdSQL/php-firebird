@@ -11,6 +11,11 @@ For OpenSuse 15.1 use
 $ zypper in php7-devel libfbclient2 libfbclient-devel
 ```
 
+The command in Linux Mint 20 is
+```
+sudo apt-get install php-dev firebird-dev firebird3.0 firebird3.0-common firebird3.0-server
+```
+
 Now make sure you provide the fbclient.so and the header files (ibase.h). These are needed to compile. You can specify the include path for the ibase.h file with CPPFLAGS as you can see in the following listing.
 ```
 $ git clone https://github.com/FirebirdSQL/php-firebird.git
