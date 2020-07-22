@@ -16,6 +16,8 @@
    +----------------------------------------------------------------------+
  */
 
+ #include <stdbool.h>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -80,6 +82,7 @@ typedef struct {
  */
 typedef struct {
 	union {
+	    bool bval;
 		short sval;
 		float fval;
 		ISC_LONG lval;
@@ -239,6 +242,10 @@ static int _php_ibase_alloc_array(ibase_array **ib_arrayp, XSQLDA *sqlda, /* {{{
 					a->el_type = SQL_TEXT;
 					a->el_size = ar_desc->array_desc_length;
 					break;
+                case blr_bool:
+                    a->el_type = SQL_BOOLEAN;
+                    a->el_size = sizeof(bool);
+                    break;
 				case blr_short:
 					a->el_type = SQL_SHORT;
 					a->el_size = sizeof(short);
@@ -574,6 +581,10 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					convert_to_double(val);
 					*(float*) buf = (float) Z_DVAL_P(val);
 					break;
+                case SQL_BOOLEAN:
+                    //convert_to_bool(val);
+                    *(bool*) buf = Z_DVAL_P(val);
+                    break;
 				case SQL_DOUBLE:
 					convert_to_double(val);
 					*(double*) buf = Z_DVAL_P(val);
@@ -660,6 +671,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 
 				/* for these types, an empty string can be handled like a NULL value */
 				switch (var->sqltype & ~1) {
+                    case SQL_BOOLEAN:
 					case SQL_SHORT:
 					case SQL_LONG:
 					case SQL_INT64:
@@ -823,6 +835,9 @@ static void _php_ibase_alloc_xsqlda(XSQLDA *sqlda) /* {{{ */
 			case SQL_VARYING:
 				var->sqldata = safe_emalloc(sizeof(char), var->sqllen + sizeof(short), 0);
 				break;
+            case SQL_BOOLEAN:
+                var->sqldata = emalloc(sizeof(bool));
+                break;
 			case SQL_SHORT:
 				var->sqldata = emalloc(sizeof(short));
 				break;
@@ -1323,6 +1338,12 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 		case SQL_TEXT:
 			ZVAL_STRINGL(val, (char*)data, len);
 			break;
+        case SQL_BOOLEAN:
+            if(val)
+                ZVAL_BOOL(val,1);
+            else
+                ZVAL_BOOL(val,0);
+            break;
 		case SQL_SHORT:
 			n = *(short *) data;
 			goto _sql_long;
@@ -1915,6 +1936,9 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 
 		switch (var->sqltype & ~1) {
 
+            case SQL_BOOLEAN:
+                precision = 1;
+                break;
 			case SQL_SHORT:
 				precision = 4;
 				break;
@@ -1939,6 +1963,9 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 			case SQL_SHORT:
 				s = "SMALLINT";
 				break;
+            case SQL_BOOLEAN:
+                s = "BOOLEAN";
+                break;
 			case SQL_LONG:
 				s = "INTEGER";
 				break;
