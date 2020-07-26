@@ -1271,6 +1271,9 @@ PHP_FUNCTION(ibase_trans)
 
 int _php_ibase_def_trans(ibase_db_link *ib_link, ibase_trans **trans) /* {{{ */
 {
+	unsigned short tpb_len = 0;
+	char last_tpb[TPB_MAX_SIZE];
+
 	if (ib_link == NULL) {
 		php_error_docref(NULL, E_WARNING, "Invalid database link");
 		return FAILURE;
@@ -1295,7 +1298,14 @@ int _php_ibase_def_trans(ibase_db_link *ib_link, ibase_trans **trans) /* {{{ */
 			ib_link->tr_list->trans = tr;
 		}
 		if (tr->handle == 0) {
-			if (isc_start_transaction(IB_STATUS, &tr->handle, 1, &ib_link->handle, 0, NULL)) {
+			tpb_len = 0;
+			last_tpb[tpb_len++] = isc_tpb_version3;
+			last_tpb[tpb_len++] = isc_tpb_write;
+			last_tpb[tpb_len++] = isc_tpb_read_committed;
+			last_tpb[tpb_len++] = isc_tpb_rec_version;
+			last_tpb[tpb_len++] = isc_tpb_nowait;
+
+			if (isc_start_transaction(IB_STATUS, &tr->handle, 1, &ib_link->handle, tpb_len, last_tpb)) {
 				_php_ibase_error();
 				return FAILURE;
 			}
