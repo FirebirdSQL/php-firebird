@@ -583,7 +583,8 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					break;
                 case SQL_BOOLEAN:
                     convert_to_boolean(val);
-                    *(zend_bool*) buf = Z_BVAL_P(val);
+					// On Windows error unresolved symbol Z_BVAL_P is thrown, so we use Z_LVAL_P
+                    *(zend_bool*) buf = Z_LVAL_P(val);
                     break;
 				case SQL_DOUBLE:
 					convert_to_double(val);
