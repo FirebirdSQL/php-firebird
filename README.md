@@ -4,9 +4,9 @@
 
 ### Build the driver on Linux
 First of all, we have to meet some requirements. This means we need to install the `phpize` command. The `phpize` command is used to prepare the build environment for a PHP extension.
-Install the `phpize` command. This is usually done by installing the `php7-devel` package using the system's package manager. Also install the fbclient library and developer packages.
+Install the `phpize` command. This is usually done by installing the `php7-devel` or `php8-devel` package using the system's package manager. Also install the fbclient library and developer packages.
 
-For OpenSuse 15.1 use
+For OpenSuse 15.1 and PHP 7 use
 ```
 $ zypper in php7-devel libfbclient2 libfbclient-devel
 ```
