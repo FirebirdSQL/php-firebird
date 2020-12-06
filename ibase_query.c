@@ -16,6 +16,8 @@
    +----------------------------------------------------------------------+
  */
 
+ #include <stdbool.h>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -80,6 +82,7 @@ typedef struct {
  */
 typedef struct {
 	union {
+	    zend_bool bval;
 		short sval;
 		float fval;
 		ISC_LONG lval;
@@ -239,6 +242,10 @@ static int _php_ibase_alloc_array(ibase_array **ib_arrayp, XSQLDA *sqlda, /* {{{
 					a->el_type = SQL_TEXT;
 					a->el_size = ar_desc->array_desc_length;
 					break;
+                case blr_bool:
+                    a->el_type = SQL_BOOLEAN;
+                    a->el_size = sizeof(zend_bool);
+                    break;
 				case blr_short:
 					a->el_type = SQL_SHORT;
 					a->el_size = sizeof(short);
@@ -574,6 +581,11 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					convert_to_double(val);
 					*(float*) buf = (float) Z_DVAL_P(val);
 					break;
+                case SQL_BOOLEAN:
+                    convert_to_boolean(val);
+					// On Windows error unresolved symbol Z_BVAL_P is thrown, so we use Z_LVAL_P
+                    *(zend_bool*) buf = Z_LVAL_P(val);
+                    break;
 				case SQL_DOUBLE:
 					convert_to_double(val);
 					*(double*) buf = Z_DVAL_P(val);
@@ -761,6 +773,37 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 				}
 				continue;
 
+            case SQL_BOOLEAN:
+
+                convert_to_string(b_var);
+                var->sqldata = Z_STRVAL_P(b_var);
+                var->sqllen	 = Z_STRLEN_P(b_var);
+                var->sqltype = SQL_BOOLEAN;
+                continue;
+
+				if (Z_STRLEN_P(b_var) != BLOB_ID_LEN ||
+					!_php_ibase_string_to_quad(Z_STRVAL_P(b_var), &buf[i].val.qval)) {
+
+					ibase_blob ib_blob = { 0, BLOB_INPUT };
+
+					if (isc_create_blob(IB_STATUS, &ib_query->link->handle,
+							&ib_query->trans->handle, &ib_blob.bl_handle, &ib_blob.bl_qd)) {
+						_php_ibase_error();
+						return FAILURE;
+					}
+
+					if (_php_ibase_blob_add(b_var, &ib_blob) != SUCCESS) {
+						return FAILURE;
+					}
+
+					if (isc_close_blob(IB_STATUS, &ib_blob.bl_handle)) {
+						_php_ibase_error();
+						return FAILURE;
+					}
+					buf[i].val.qval = ib_blob.bl_qd;
+				}
+				continue;
+
 			case SQL_ARRAY:
 
 				if (Z_TYPE_P(b_var) != IS_ARRAY) {
@@ -823,6 +866,9 @@ static void _php_ibase_alloc_xsqlda(XSQLDA *sqlda) /* {{{ */
 			case SQL_VARYING:
 				var->sqldata = safe_emalloc(sizeof(char), var->sqllen + sizeof(short), 0);
 				break;
+            case SQL_BOOLEAN:
+                var->sqldata = emalloc(sizeof(zend_bool));
+                break;
 			case SQL_SHORT:
 				var->sqldata = emalloc(sizeof(short));
 				break;
@@ -1323,6 +1369,10 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 		case SQL_TEXT:
 			ZVAL_STRINGL(val, (char*)data, len);
 			break;
+		// The query's field value is boolean
+        case SQL_BOOLEAN:
+            ZVAL_BOOL(val, *(bool *) data);
+            break;
 		case SQL_SHORT:
 			n = *(short *) data;
 			goto _sql_long;
@@ -1910,11 +1960,18 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 	add_index_stringl(return_value, 3, buf, len);
 	add_assoc_stringl(return_value, "length", buf, len);
 
+	/*
+	* SQL_ consts are part of Firebird-API.
+	*/
+
 	if (var->sqlscale < 0) {
 		unsigned short precision = 0;
 
 		switch (var->sqltype & ~1) {
 
+            case SQL_BOOLEAN:
+                precision = 1;
+                break;
 			case SQL_SHORT:
 				precision = 4;
 				break;
@@ -1939,6 +1996,9 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 			case SQL_SHORT:
 				s = "SMALLINT";
 				break;
+            case SQL_BOOLEAN:
+                s = "BOOLEAN";
+                break;
 			case SQL_LONG:
 				s = "INTEGER";
 				break;
