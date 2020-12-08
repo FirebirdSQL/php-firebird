@@ -1,6 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 7                                                        |
+   | PHP Version 7, 8                                                     |
    +----------------------------------------------------------------------+
    | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
@@ -13,6 +13,7 @@
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
    | Authors: Ard Biesheuvel <a.k.biesheuvel@its.tudelft.nl>              |
+   |          Martin Köditz <martin.koeditz@it-syn.de>                    |
    +----------------------------------------------------------------------+
  */
 
@@ -21,6 +22,18 @@
 #endif
 
 #include "php.h"
+
+/*
+* Since PHP 8 we have troubles building sources on Windows,
+* because of missing TSRMLS_FETCH_FROM_CTX and TSRMLS_SET_CTX symbols.
+*/
+#if PHP_VERSION_ID >= 80000
+# define FBIRD_TSRMLS_FETCH_FROM_CTX(user_data)
+# define FBIRD_TSRMLS_SET_CTX(user_data)
+#else
+# define FBIRD_TSRMLS_FETCH_FROM_CTX(user_data) TSRMLS_FETCH_FROM_CTX(user_data)
+# define FBIRD_TSRMLS_SET_CTX(user_data) TSRMLS_SET_CTX(user_data)
+#endif
 
 #if HAVE_IBASE
 
@@ -201,7 +214,7 @@ static isc_callback  _php_ibase_callback(ibase_event *event, /* {{{ */
 #endif
 {
 	/* this function is called asynchronously by the Interbase client library. */
-	TSRMLS_FETCH_FROM_CTX(event->thread_ctx);
+	FBIRD_TSRMLS_FETCH_FROM_CTX(event->thread_ctx);
 
 	/**
 	 * The callback function is called when the event is first registered and when the event
@@ -326,7 +339,7 @@ PHP_FUNCTION(ibase_set_event_handler)
 
 	/* allocate the event resource */
 	event = (ibase_event *) safe_emalloc(sizeof(ibase_event), 1, 0);
-	TSRMLS_SET_CTX(event->thread_ctx);
+	FBIRD_TSRMLS_SET_CTX(event->thread_ctx);
 	event->link_res = link_res;
 	GC_ADDREF(link_res);
 	event->link = ib_link;
