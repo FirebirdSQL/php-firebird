@@ -11,7 +11,7 @@ For OpenSuse 15.1 and PHP 7 use
 $ zypper in php7-devel libfbclient2 libfbclient-devel
 ```
 
-The command in Linux Mint 20 is
+The command in Linux Mint 20 / Ubuntu is
 ```
 sudo apt-get install php-dev firebird-dev firebird3.0 firebird3.0-common firebird3.0-server
 ```
