@@ -1854,6 +1854,10 @@ PHP_FUNCTION(ibase_execute)
 				_php_ibase_error();
 				break;
 			}
+			if (ib_query->result_res->gc.refcount > 1) {
+				php_printf("ERROR: Query result of '%s' was not released before executing the same query again!\n", ib_query->query);
+				php_error_docref(NULL, E_ERROR, "Query result of '%s' was not released before executing the same query again!", ib_query->query); /* throw exception*/
+			}
 			zend_list_delete(ib_query->result_res);
 			ib_query->result_res = NULL;
 		}
