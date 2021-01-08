@@ -146,7 +146,10 @@ static void _php_ibase_free_result(zend_resource *rsrc) /* {{{ */
 		_php_ibase_free_xsqlda(ib_result->out_sqlda);
 		if (ib_result->query != NULL) {
 			IBDEBUG("query still valid; don't drop statement handle");
-			ib_result->query->result = NULL;	/* Indicate to query, that result is released */
+			if (ib_result->query->result == ib_result) {
+				/* If we are the last execution result on the query */
+				ib_result->query->result = NULL;	/* Indicate to query, that result is released */
+			}
 		} else {
 			_php_ibase_free_stmt_handle(ib_result->link, ib_result->stmt);
 		}
@@ -167,7 +170,9 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 	}
 	if (ib_query->result != NULL) {
 		IBDEBUG("result still valid; don't drop statement handle");
-		ib_query->result->query = NULL;	/* Indicate to result, that query is released */
+		if (ib_query->result->query == ib_query) {
+			ib_query->result->query = NULL;	/* Indicate to result, that query is released */
+		}
 	} else {
 		_php_ibase_free_stmt_handle(ib_query->link, ib_query->stmt);
 	}
