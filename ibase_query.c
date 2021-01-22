@@ -47,10 +47,15 @@ typedef struct {
 } ibase_array;
 
 typedef struct {
+	ibase_db_link* link;
+	isc_stmt_handle stmt;
+} ibase_statement;
+
+typedef struct {
 	ibase_db_link *link;
 	ibase_trans *trans;
-	struct _ib_query *query;
 	isc_stmt_handle stmt;
+	zend_resource* stmt_res;
 	unsigned short type;
 	unsigned char has_more_rows, statement_type;
 	XSQLDA *out_sqlda;
@@ -60,9 +65,9 @@ typedef struct {
 typedef struct _ib_query {
 	ibase_db_link *link;
 	ibase_trans *trans;
-	ibase_result *result;
 	zend_resource *result_res;
 	isc_stmt_handle stmt;
+	zend_resource *stmt_res;
 	XSQLDA *in_sqlda, *out_sqlda;
 	ibase_array *in_array, *out_array;
 	unsigned short in_array_cnt, out_array_cnt;
@@ -94,7 +99,7 @@ typedef struct {
 	short sqlind;
 } BIND_BUF;
 
-static int le_result, le_query;
+static int le_statement, le_result, le_query;
 
 #define LE_RESULT "Firebird/InterBase result"
 #define LE_QUERY "Firebird/InterBase query"
@@ -119,20 +124,25 @@ static void _php_ibase_free_xsqlda(XSQLDA *sqlda) /* {{{ */
 }
 /* }}} */
 
-static void _php_ibase_free_stmt_handle(ibase_db_link *link, isc_stmt_handle stmt) /* {{{ */
+static void _php_ibase_free_statement(zend_resource* rsrc) /* {{{ */
 {
-	static char info[] = { isc_info_base_level, isc_info_end };
+	ibase_statement* ib_stmt = (ibase_statement*)rsrc->ptr;
 
-	if (stmt) {
-		char res_buf[8];
-		IBDEBUG("Dropping statement handle (free_stmt_handle)...");
-		/* Only free statement if db-connection is still open */
-		if (SUCCESS == isc_database_info(IB_STATUS, &link->handle,
-							sizeof(info), info, sizeof(res_buf), res_buf)) {
-			if (isc_dsql_free_statement(IB_STATUS, &stmt, DSQL_drop)) {
-				_php_ibase_error();
+	IBDEBUG("Freeing statement by dtor...");
+	if (ib_stmt) {
+		if (ib_stmt->stmt) {
+			static char info[] = { isc_info_base_level, isc_info_end };
+			char res_buf[8];
+			IBDEBUG("Dropping statement handle (free_stmt_handle)...");
+			/* Only free statement if db-connection is still open */
+			if (SUCCESS == isc_database_info(IB_STATUS, &ib_stmt->link->handle,
+				sizeof(info), info, sizeof(res_buf), res_buf)) {
+				if (isc_dsql_free_statement(IB_STATUS, &ib_stmt->stmt, DSQL_drop)) {
+					_php_ibase_error();
+				}
 			}
 		}
+		efree(ib_stmt);
 	}
 }
 /* }}} */
@@ -144,14 +154,8 @@ static void _php_ibase_free_result(zend_resource *rsrc) /* {{{ */
 	IBDEBUG("Freeing result by dtor...");
 	if (ib_result) {
 		_php_ibase_free_xsqlda(ib_result->out_sqlda);
-		if (ib_result->query != NULL) {
-			IBDEBUG("query still valid; don't drop statement handle");
-			if (ib_result->query->result == ib_result) {
-				/* If we are the last execution result on the query */
-				ib_result->query->result = NULL;	/* Indicate to query, that result is released */
-			}
-		} else {
-			_php_ibase_free_stmt_handle(ib_result->link, ib_result->stmt);
+		if (ib_result->stmt_res != NULL) {
+			zend_list_delete(ib_result->stmt_res);
 		}
 		efree(ib_result);
 	}
@@ -168,13 +172,8 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 	if (ib_query->out_sqlda) {
 		efree(ib_query->out_sqlda);
 	}
-	if (ib_query->result != NULL) {
-		IBDEBUG("result still valid; don't drop statement handle");
-		if (ib_query->result->query == ib_query) {
-			ib_query->result->query = NULL;	/* Indicate to result, that query is released */
-		}
-	} else {
-		_php_ibase_free_stmt_handle(ib_query->link, ib_query->stmt);
+	if (ib_query->stmt_res != NULL) {
+		zend_list_delete(ib_query->stmt_res);
 	}
 	if (ib_query->in_array) {
 		efree(ib_query->in_array);
@@ -202,6 +201,8 @@ static void php_ibase_free_query_rsrc(zend_resource *rsrc) /* {{{ */
 
 void php_ibase_query_minit(INIT_FUNC_ARGS) /* {{{ */
 {
+	le_statement = zend_register_list_destructors_ex(_php_ibase_free_statement, NULL,
+		"interbase statement", module_number);
 	le_result = zend_register_list_destructors_ex(_php_ibase_free_result, NULL,
 	    "interbase result", module_number);
 	le_query = zend_register_list_destructors_ex(php_ibase_free_query_rsrc, NULL,
@@ -341,6 +342,7 @@ static int _php_ibase_alloc_query(ibase_query *ib_query, ibase_db_link *link, /*
 	ib_query->result_res = NULL;
 	ib_query->result = NULL;
 	ib_query->stmt = 0;
+	ib_query->stmt_res = NULL;
 	ib_query->in_array = NULL;
 	ib_query->out_array = NULL;
 	ib_query->dialect = dialect;
@@ -352,6 +354,12 @@ static int _php_ibase_alloc_query(ibase_query *ib_query, ibase_db_link *link, /*
 	if (isc_dsql_allocate_statement(IB_STATUS, &link->handle, &ib_query->stmt)) {
 		_php_ibase_error();
 		goto _php_ibase_alloc_query_error;
+	}
+	{	/* allocate zend resource for statement*/
+		ibase_statement* ib_stmt = emalloc(sizeof(ibase_statement));
+		ib_stmt->link = link;
+		ib_stmt->stmt = ib_query->stmt;
+		ib_query->stmt_res = zend_register_resource(ib_stmt, le_statement);
 	}
 
 	ib_query->out_sqlda = (XSQLDA *) emalloc(XSQLDA_LENGTH(1));
@@ -1002,8 +1010,9 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_result **ib_resul
 		res->link = ib_query->link;
 		res->trans = ib_query->trans;
 		res->stmt = ib_query->stmt;
-		/* ib_result and ib_query point at each other to handle release of statement handle properly */
-		res->query = ib_query;
+		res->stmt_res = ib_query->stmt_res;
+		++GC_REFCOUNT(res->stmt_res); // Addref the resource for the result
+
 		ib_query->result = res;
 		res->statement_type = ib_query->statement_type;
 		res->has_more_rows = 1;
