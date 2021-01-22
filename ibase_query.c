@@ -156,6 +156,7 @@ static void _php_ibase_free_result(zend_resource *rsrc) /* {{{ */
 		_php_ibase_free_xsqlda(ib_result->out_sqlda);
 		if (ib_result->stmt_res != NULL) {
 			zend_list_delete(ib_result->stmt_res);
+			ib_result->stmt_res == NULL;
 		}
 		efree(ib_result);
 	}
@@ -174,6 +175,7 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 	}
 	if (ib_query->stmt_res != NULL) {
 		zend_list_delete(ib_query->stmt_res);
+		ib_query->stmt_res == NULL;
 	}
 	if (ib_query->in_array) {
 		efree(ib_query->in_array);
@@ -340,7 +342,6 @@ static int _php_ibase_alloc_query(ibase_query *ib_query, ibase_db_link *link, /*
 	ib_query->link = link;
 	ib_query->trans = trans;
 	ib_query->result_res = NULL;
-	ib_query->result = NULL;
 	ib_query->stmt = 0;
 	ib_query->stmt_res = NULL;
 	ib_query->in_array = NULL;
@@ -1010,10 +1011,8 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_result **ib_resul
 		res->link = ib_query->link;
 		res->trans = ib_query->trans;
 		res->stmt = ib_query->stmt;
-		res->stmt_res = ib_query->stmt_res;
-		++GC_REFCOUNT(res->stmt_res); // Addref the resource for the result
-
-		ib_query->result = res;
+		GC_ADDREF(res->stmt_res = ib_query->stmt_res);
+		
 		res->statement_type = ib_query->statement_type;
 		res->has_more_rows = 1;
 
