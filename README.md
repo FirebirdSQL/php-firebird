@@ -24,6 +24,16 @@ $ phpize
 $ CPPFLAGS=-I/usr/include/firebird ./configure
 $ make
 ```
+
+Note: If you use different PHP versions in parallel don't forget to make the correct settings. Linux Mint 20 / Ubuntu uses this syntax:
+```
+$ git clone https://github.com/FirebirdSQL/php-firebird.git
+$ cd php-firebird
+$ phpize7.4
+$ CPPFLAGS=-I/usr/include/firebird ./configure --with-php-config=/usr/bin/php-config7.4
+$ make
+```
+
 If the configure process passes you will get following message:
 ```
 $ Build complete.
