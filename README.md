@@ -46,7 +46,7 @@ After you've created the binary data, many temporary files will be created in yo
 
 ### Build the driver on Windows
 First of all, we have to meet some requirements. This means we need to install the Git for Windows and Visual Studio 2017 with following components:
-Visual C++ 2017 (vc15) or Visual C++ 2019 (vc16) must be installed prior SDK usage. Required components
+Visual C++ 2017 (vc15) or Visual C++ 2019 (vs16) must be installed prior SDK usage. Required components
 - C++ dev
 - Windows SDK
 - .NET dev
@@ -71,7 +71,7 @@ Use following command for Win64:
 ```
 phpsdk-vc15-x64.bat
 ```
-If you use VS 2019, replace vc15 by vc16.
+If you use VS 2019, replace vc15 by vs16.
 
 Now let's create the build structure, download the PHP sources and checkout the desired development branch:
 ```
