@@ -139,8 +139,14 @@ ZEND_TSRMLS_CACHE_EXTERN()
 #define BLOB_INPUT		1
 #define BLOB_OUTPUT		2
 
+
 #ifdef PHP_WIN32
-#define LL_MASK "I64"
+// Case switch, because of troubles on Windows and PHP 8.0
+#if PHP_VERSION_ID < 80000
+   #define LL_MASK "I64"
+#else
+   #define LL_MASK "ll"
+#endif
 #define LL_LIT(lit) lit ## I64
 typedef void (__stdcall *info_func_t)(char*);
 #else
