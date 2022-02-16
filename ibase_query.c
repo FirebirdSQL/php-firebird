@@ -797,6 +797,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 						*(bool *)var->sqldata = zend_is_true(b_var) ? 1 : 0;
 						break;
 					case IS_STRING:
+					{
 						zend_long lval;
 						double dval;
 
@@ -824,6 +825,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 								}
 						}
 						break;
+					}
 					case IS_NULL:
 						buf[i].sqlind = -1;
 						break;
