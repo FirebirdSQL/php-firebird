@@ -825,7 +825,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 						}
 						break;
 					case IS_NULL:
-						*var->sqlind = -1;
+						buf[i].sqlind = -1;
 						break;
 					default:
 						_php_ibase_module_error("Parameter %d: must be boolean", i+1);
