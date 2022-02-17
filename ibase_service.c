@@ -1,6 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 7                                                        |
+   | PHP Version 7, 8                                                     |
    +----------------------------------------------------------------------+
    | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
@@ -12,7 +12,14 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Ard Biesheuvel <a.k.biesheuvel@its.tudelft.nl>              |
+   | Authors: Jouni Ahto <jouni.ahto@exdec.fi>                            |
+   |          Andrew Avdeev <andy@simgts.mv.ru>                           |
+   |          Ard Biesheuvel <a.k.biesheuvel@its.tudelft.nl>              |
+   |          Martin Koeditz <martin.koeditz@it-syn.de>                   |
+   |          others                                                      |
+   +----------------------------------------------------------------------+
+   | You'll find history on Github                                        |
+   | https://github.com/FirebirdSQL/php-firebird/commits/master           |
    +----------------------------------------------------------------------+
  */
 

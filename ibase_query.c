@@ -1,6 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 7                                                        |
+   | PHP Version 7, 8                                                     |
    +----------------------------------------------------------------------+
    | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
@@ -12,7 +12,14 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Ard Biesheuvel <a.k.biesheuvel@its.tudelft.nl>              |
+   | Authors: Jouni Ahto <jouni.ahto@exdec.fi>                            |
+   |          Andrew Avdeev <andy@simgts.mv.ru>                           |
+   |          Ard Biesheuvel <a.k.biesheuvel@its.tudelft.nl>              |
+   |          Martin Koeditz <martin.koeditz@it-syn.de>                   |
+   |          others                                                      |
+   +----------------------------------------------------------------------+
+   | You'll find history on Github                                        |
+   | https://github.com/FirebirdSQL/php-firebird/commits/master           |
    +----------------------------------------------------------------------+
  */
 
@@ -87,7 +94,10 @@ typedef struct {
  */
 typedef struct {
 	union {
-	    zend_bool bval;
+// Boolean data type exists since FB 3.0
+#ifdef SQL_BOOLEAN
+                FB_BOOLEAN bval;
+#endif
 		short sval;
 		float fval;
 		ISC_LONG lval;
@@ -250,10 +260,13 @@ static int _php_ibase_alloc_array(ibase_array **ib_arrayp, XSQLDA *sqlda, /* {{{
 					a->el_type = SQL_TEXT;
 					a->el_size = ar_desc->array_desc_length;
 					break;
-                case blr_bool:
-                    a->el_type = SQL_BOOLEAN;
-                    a->el_size = sizeof(zend_bool);
-                    break;
+// Boolean data type exists since FB 3.0
+#ifdef SQL_BOOLEAN
+                                case blr_bool:
+                                        a->el_type = SQL_BOOLEAN;
+                                        a->el_size = sizeof(FB_BOOLEAN);
+                                        break;
+#endif
 				case blr_short:
 					a->el_type = SQL_SHORT;
 					a->el_size = sizeof(short);
@@ -595,11 +608,14 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					convert_to_double(val);
 					*(float*) buf = (float) Z_DVAL_P(val);
 					break;
-                case SQL_BOOLEAN:
-                    convert_to_boolean(val);
-					// On Windows error unresolved symbol Z_BVAL_P is thrown, so we use Z_LVAL_P
-                    *(zend_bool*) buf = Z_LVAL_P(val);
-                    break;
+// Boolean data type exists since FB 3.0
+#ifdef SQL_BOOLEAN
+                                case SQL_BOOLEAN:
+                                        convert_to_boolean(val);
+                                        // On Windows error unresolved symbol Z_BVAL_P is thrown, so we use Z_LVAL_P
+                                        *(FB_BOOLEAN*) buf = Z_LVAL_P(val);
+                                        break;
+#endif
 				case SQL_DOUBLE:
 					convert_to_double(val);
 					*(double*) buf = Z_DVAL_P(val);
@@ -786,7 +802,8 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 					buf[i].val.qval = ib_blob.bl_qd;
 				}
 				continue;
-
+// Boolean data type exists since FB 3.0
+#ifdef SQL_BOOLEAN
 			case SQL_BOOLEAN:
 
 				switch (Z_TYPE_P(b_var)) {
@@ -794,7 +811,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 					case IS_DOUBLE:
 					case IS_TRUE:
 					case IS_FALSE:
-						*(bool *)var->sqldata = zend_is_true(b_var) ? 1 : 0;
+						*(FB_BOOLEAN *)var->sqldata = zend_is_true(b_var) ? FB_TRUE : FB_FALSE;
 						break;
 					case IS_STRING:
 					{
@@ -802,22 +819,22 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 						double dval;
 
 						if ((Z_STRLEN_P(b_var) == 0)) {
-							*(bool *)var->sqldata = 0;
+							*(FB_BOOLEAN *)var->sqldata = FB_FALSE;
 							break;
 						}
 
 						switch (is_numeric_string(Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), &lval, &dval, 0)) {
 							case IS_LONG:
-								*(bool *)var->sqldata = (lval != 0) ? 1 : 0;
+								*(FB_BOOLEAN *)var->sqldata = (lval != 0) ? FB_TRUE : FB_FALSE;
 								break;
 							case IS_DOUBLE:
-								*(bool *)var->sqldata = (dval != 0) ? 1 : 0;
+								*(FB_BOOLEAN *)var->sqldata = (dval != 0) ? FB_TRUE : FB_FALSE;
 								break;
 							default:
 								if (!zend_binary_strncasecmp(Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), "true", 4, 4)) {
-									*(bool *)var->sqldata = 1;
+									*(FB_BOOLEAN *)var->sqldata = FB_TRUE;
 								} else if (!zend_binary_strncasecmp(Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), "false", 5, 5)) {
-									*(bool *)var->sqldata = 1;
+									*(FB_BOOLEAN *)var->sqldata = FB_FALSE;
 								} else {
 									_php_ibase_module_error("Parameter %d: cannot convert string to boolean", i+1);
 									rv = FAILURE;
@@ -836,7 +853,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 				}
 				var->sqltype = SQL_BOOLEAN;
 				continue;
-
+#endif
 			case SQL_ARRAY:
 
 				if (Z_TYPE_P(b_var) != IS_ARRAY) {
@@ -899,9 +916,12 @@ static void _php_ibase_alloc_xsqlda(XSQLDA *sqlda) /* {{{ */
 			case SQL_VARYING:
 				var->sqldata = safe_emalloc(sizeof(char), var->sqllen + sizeof(short), 0);
 				break;
-            case SQL_BOOLEAN:
-                var->sqldata = emalloc(sizeof(zend_bool));
-                break;
+// Boolean data type exists since FB 3.0
+#ifdef SQL_BOOLEAN
+                        case SQL_BOOLEAN:
+                                var->sqldata = emalloc(sizeof(FB_BOOLEAN));
+                                break;
+#endif
 			case SQL_SHORT:
 				var->sqldata = emalloc(sizeof(short));
 				break;
@@ -1401,10 +1421,12 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 		case SQL_TEXT:
 			ZVAL_STRINGL(val, (char*)data, len);
 			break;
-		// The query's field value is boolean
-        case SQL_BOOLEAN:
-            ZVAL_BOOL(val, *(bool *) data);
-            break;
+// Boolean data type exists since FB 3.0
+#ifdef SQL_BOOLEAN
+                case SQL_BOOLEAN:
+                        ZVAL_BOOL(val, *(FB_BOOLEAN *) data);
+                        break;
+#endif
 		case SQL_SHORT:
 			n = *(short *) data;
 			goto _sql_long;
@@ -2000,10 +2022,12 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 		unsigned short precision = 0;
 
 		switch (var->sqltype & ~1) {
-
-            case SQL_BOOLEAN:
-                precision = 1;
-                break;
+// Boolean data type exists since FB 3.0
+#ifdef SQL_BOOLEAN
+                        case SQL_BOOLEAN:
+                                precision = 1;
+                                break;
+#endif
 			case SQL_SHORT:
 				precision = 4;
 				break;
@@ -2028,9 +2052,12 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 			case SQL_SHORT:
 				s = "SMALLINT";
 				break;
-            case SQL_BOOLEAN:
-                s = "BOOLEAN";
-                break;
+// Boolean data type exists since FB 3.0
+#ifdef SQL_BOOLEAN
+                        case SQL_BOOLEAN:
+                                s = "BOOLEAN";
+                                break;
+#endif
 			case SQL_LONG:
 				s = "INTEGER";
 				break;
