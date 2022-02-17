@@ -787,35 +787,54 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 				}
 				continue;
 
-            case SQL_BOOLEAN:
+			case SQL_BOOLEAN:
 
-                convert_to_string(b_var);
-                var->sqldata = Z_STRVAL_P(b_var);
-                var->sqllen	 = Z_STRLEN_P(b_var);
-                var->sqltype = SQL_BOOLEAN;
-                continue;
+				switch (Z_TYPE_P(b_var)) {
+					case IS_LONG:
+					case IS_DOUBLE:
+					case IS_TRUE:
+					case IS_FALSE:
+						*(bool *)var->sqldata = zend_is_true(b_var) ? 1 : 0;
+						break;
+					case IS_STRING:
+					{
+						zend_long lval;
+						double dval;
 
-				if (Z_STRLEN_P(b_var) != BLOB_ID_LEN ||
-					!_php_ibase_string_to_quad(Z_STRVAL_P(b_var), &buf[i].val.qval)) {
+						if ((Z_STRLEN_P(b_var) == 0)) {
+							*(bool *)var->sqldata = 0;
+							break;
+						}
 
-					ibase_blob ib_blob = { 0, BLOB_INPUT };
-
-					if (isc_create_blob(IB_STATUS, &ib_query->link->handle,
-							&ib_query->trans->handle, &ib_blob.bl_handle, &ib_blob.bl_qd)) {
-						_php_ibase_error();
-						return FAILURE;
+						switch (is_numeric_string(Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), &lval, &dval, 0)) {
+							case IS_LONG:
+								*(bool *)var->sqldata = (lval != 0) ? 1 : 0;
+								break;
+							case IS_DOUBLE:
+								*(bool *)var->sqldata = (dval != 0) ? 1 : 0;
+								break;
+							default:
+								if (!zend_binary_strncasecmp(Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), "true", 4, 4)) {
+									*(bool *)var->sqldata = 1;
+								} else if (!zend_binary_strncasecmp(Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), "false", 5, 5)) {
+									*(bool *)var->sqldata = 1;
+								} else {
+									_php_ibase_module_error("Parameter %d: cannot convert string to boolean", i+1);
+									rv = FAILURE;
+									continue;
+								}
+						}
+						break;
 					}
-
-					if (_php_ibase_blob_add(b_var, &ib_blob) != SUCCESS) {
-						return FAILURE;
-					}
-
-					if (isc_close_blob(IB_STATUS, &ib_blob.bl_handle)) {
-						_php_ibase_error();
-						return FAILURE;
-					}
-					buf[i].val.qval = ib_blob.bl_qd;
+					case IS_NULL:
+						buf[i].sqlind = -1;
+						break;
+					default:
+						_php_ibase_module_error("Parameter %d: must be boolean", i+1);
+						rv = FAILURE;
+						continue;
 				}
+				var->sqltype = SQL_BOOLEAN;
 				continue;
 
 			case SQL_ARRAY:
