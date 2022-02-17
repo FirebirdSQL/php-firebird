@@ -105,11 +105,11 @@ For Win32 thread safe (TS) do:
 ```
 buildconf --force && configure --disable-all --enable-cli --with-firebird="shared,C:\Program Files (x86)\Firebird\3_0" && nmake
 ```
-For Win64thread safe (TS) do:
+For Win64 thread safe (TS) do:
 ```
-buildconf --force && configure --disable-all --enable-cli --with-firebird="shared,C:\Program Files\Firebird\3_0\lib" && nmake
+buildconf --force && configure --disable-all --enable-cli --with-firebird="shared,C:\Program Files\Firebird\3_0" && nmake
 ```
-After the compilation you can find your extension called `php_firebird.dll` e.g. in `C:\php-sdk\phpmaster\vc15\x64\php-src\x64\Release_TS\php_interbase.dll`
+After the compilation you can find your extension called `php_firebird.dll` e.g. in `C:\php-sdk\phpmaster\vc15\x64\php-src\x64\Release_TS\php_firebird.dll`
 Replace x64 with x86 for Win32.
 
 #### Build NTS extension
@@ -119,7 +119,7 @@ buildconf --force && configure --disable-zts --disable-all --enable-cli --with-f
 ```
 For Win64 non-thread safe (NTS) run:
 ```
-buildconf --force && configure --disable-zts --disable-all --enable-cli --with-firebird="shared,C:\Program Files\Firebird\3_0\lib" && nmake
+buildconf --force && configure --disable-zts --disable-all --enable-cli --with-firebird="shared,C:\Program Files\Firebird\3_0" && nmake
 ```
 After the compilation you can find your extension called `php_firebird.dll` e.g. in `C:\php-sdk\phpmaster\vc15\x86\php-src\Release`
 Replace x86 with x64 for Win64.
