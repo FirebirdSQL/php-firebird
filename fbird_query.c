@@ -32,11 +32,11 @@
 #include "php.h"
 #include "php_ini.h"
 
-#if HAVE_IBASE
+#if HAVE_FBIRD
 
 #include "ext/standard/php_standard.h"
-#include "php_interbase.h"
-#include "php_ibase_includes.h"
+#include "php_firebird.h"
+#include "php_fbird_includes.h"
 
 #define ISC_LONG_MIN 	INT_MIN
 #define ISC_LONG_MAX 	INT_MAX
@@ -2188,4 +2188,4 @@ PHP_FUNCTION(ibase_param_info)
 }
 /* }}} */
 
-#endif /* HAVE_IBASE */
+#endif /* HAVE_FBIRD */

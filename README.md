@@ -1,5 +1,12 @@
 # PHP Firebird extension
 
+# Important change (Switching from Interbase to Firebird)
+
+Since version 3.0.0 the extension is no longer listed as Interbase but as Firebird. With this step we want to make it clear that this extension is primarily developed for Firebird. We don't care about any Interbase development anymore.
+
+Although the extension is now listed as firebird, you can still use the ibase functions.
+Be careful not to use the Interbase extension in parallel.
+
 ## Building the driver
 
 ### Build the driver on Linux
@@ -30,7 +37,7 @@ Note: If you use different PHP versions in parallel don't forget to make the cor
 $ git clone https://github.com/FirebirdSQL/php-firebird.git
 $ cd php-firebird
 $ phpize7.4
-$ CPPFLAGS=-I/usr/include/firebird ./configure --with-php-config=/usr/bin/php-config7.4
+$ CPPFLAGS=-I/opt/firebird/include LDFLAGS=-L/opt/firebird/lib ./configure --with-php-config=/usr/bin/php-config7.4
 $ make
 ```
 
@@ -39,7 +46,7 @@ If the configure process passes you will get following message:
 $ Build complete.
 $ Don't forget to run 'make test'.
 ```
-You can find the `interbase.so` file in directory `php-firebird/modules`. Copy the file to your php extension dir and restart your webserver.
+You can find the `firebird.so` file in directory `php-firebird/modules`. Copy the file to your php extension dir and restart your webserver.
 
 #### Clean up your working directory
 After you've created the binary data, many temporary files will be created in your working directory. These can be removed with the command `phpize --clean`. Then you have a tidy directory again.
@@ -87,7 +94,7 @@ phpsdk_deps --update --branch 7.4
 In the next step we will download our Firebird extension sources.
 ```
 mkdir ..\pecl
-git clone https://github.com/FirebirdSQL/php-firebird.git ..\pecl\interbase
+git clone https://github.com/FirebirdSQL/php-firebird.git ..\pecl\firebird
 ```
 
 If everything is ok, we can now compile our PHP extension. Please specify the the correct path to your Firebird installation.
@@ -96,25 +103,25 @@ If everything is ok, we can now compile our PHP extension. Please specify the th
 Usually you will build thread safe extensions.
 For Win32 thread safe (TS) do:
 ```
-buildconf --force && configure --disable-all --enable-cli --with-interbase="shared,C:\Program Files (x86)\Firebird\3_0" && nmake
+buildconf --force && configure --disable-all --enable-cli --with-firebird="shared,C:\Program Files (x86)\Firebird\3_0" && nmake
 ```
 For Win64thread safe (TS) do:
 ```
-buildconf --force && configure --disable-all --enable-cli --with-interbase="shared,C:\Program Files\Firebird\3_0\lib" && nmake
+buildconf --force && configure --disable-all --enable-cli --with-firebird="shared,C:\Program Files\Firebird\3_0\lib" && nmake
 ```
-After the compilation you can find your extension called `php_interbase.dll` e.g. in `C:\php-sdk\phpmaster\vc15\x64\php-src\x64\Release_TS\php_interbase.dll`
+After the compilation you can find your extension called `php_firebird.dll` e.g. in `C:\php-sdk\phpmaster\vc15\x64\php-src\x64\Release_TS\php_interbase.dll`
 Replace x64 with x86 for Win32.
 
 #### Build NTS extension
 For Win32 non-thread safe (NTS) run:
 ```
-buildconf --force && configure --disable-zts --disable-all --enable-cli --with-interbase="shared,C:\Program Files (x86)\Firebird\3_0" && nmake
+buildconf --force && configure --disable-zts --disable-all --enable-cli --with-firebird="shared,C:\Program Files (x86)\Firebird\3_0" && nmake
 ```
 For Win64 non-thread safe (NTS) run:
 ```
-buildconf --force && configure --disable-zts --disable-all --enable-cli --with-interbase="shared,C:\Program Files\Firebird\3_0\lib" && nmake
+buildconf --force && configure --disable-zts --disable-all --enable-cli --with-firebird="shared,C:\Program Files\Firebird\3_0\lib" && nmake
 ```
-After the compilation you can find your extension called `php_interbase.dll` e.g. in `C:\php-sdk\phpmaster\vc15\x86\php-src\Release`
+After the compilation you can find your extension called `php_firebird.dll` e.g. in `C:\php-sdk\phpmaster\vc15\x86\php-src\Release`
 Replace x86 with x64 for Win64.
 
 #### Clean up your working directory

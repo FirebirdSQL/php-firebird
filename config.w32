@@ -1,17 +1,17 @@
 // vim:ft=javascript
 
-ARG_WITH("interbase", "InterBase support", "no");
+ARG_WITH("firebird", "Firebird support", "no");
 
-if (PHP_INTERBASE != "no") {
+if (PHP_FIREBIRD != "no") {
 
-	if (CHECK_HEADER_ADD_INCLUDE("ibase.h", "CFLAGS_INTERBASE",
-				PHP_PHP_BUILD + "\\include\\interbase;" + PHP_PHP_BUILD + "\\interbase\\include;" + PHP_INTERBASE) &&
-			(CHECK_LIB("fbclient_ms.lib", "interbase", PHP_PHP_BUILD + "\\interbase\\lib_ms;" + PHP_INTERBASE) ||
-			 CHECK_LIB("gds32_ms.lib", "interbase", PHP_PHP_BUILD + "\\interbase\\lib_ms;" + PHP_INTERBASE))) {
+	if (CHECK_HEADER_ADD_INCLUDE("ibase.h", "CFLAGS_FIREBIRD",
+				PHP_PHP_BUILD + "\\include\\interbase;" + PHP_PHP_BUILD + "\\interbase\\include;" + PHP_FIREBIRD) &&
+			(CHECK_LIB("fbclient_ms.lib", "interbase", PHP_PHP_BUILD + "\\interbase\\lib_ms;" + PHP_FIREBIRD) ||
+			 CHECK_LIB("gds32_ms.lib", "interbase", PHP_PHP_BUILD + "\\interbase\\lib_ms;" + PHP_FIREBIRD))) {
 
-		EXTENSION("interbase", "interbase.c ibase_query.c ibase_service.c ibase_events.c ibase_blobs.c", PHP_INTERBASE_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
-		AC_DEFINE('HAVE_IBASE', 1, 'Have interbase library');
+		EXTENSION("firebird", "firebird.c fbird_query.c fbird_service.c fbird_events.c fbird_blobs.c", PHP_FIREBIRD_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
+		AC_DEFINE('HAVE_FBIRD', 1, 'Have firebird library');
 	} else {
-		WARNING("interbase not enabled; libraries and headers not found");
+		WARNING("Firebird not enabled; libraries and headers not found");
 	}
 }

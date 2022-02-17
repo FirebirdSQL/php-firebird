@@ -35,10 +35,10 @@
 # define FBIRD_TSRMLS_SET_CTX(user_data) TSRMLS_SET_CTX(user_data)
 #endif
 
-#if HAVE_IBASE
+#if HAVE_FBIRD
 
-#include "php_interbase.h"
-#include "php_ibase_includes.h"
+#include "php_firebird.h"
+#include "php_fbird_includes.h"
 
 static int le_event;
 
@@ -402,4 +402,4 @@ PHP_FUNCTION(ibase_free_event_handler)
 }
 /* }}} */
 
-#endif /* HAVE_IBASE */
+#endif /* HAVE_FBIRD */

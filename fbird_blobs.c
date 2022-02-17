@@ -29,10 +29,10 @@
 
 #include "php.h"
 
-#if HAVE_IBASE
+#if HAVE_FBIRD
 
-#include "php_interbase.h"
-#include "php_ibase_includes.h"
+#include "php_firebird.h"
+#include "php_fbird_includes.h"
 
 #define BLOB_CLOSE		1
 #define BLOB_CANCEL		2
@@ -559,4 +559,4 @@ PHP_FUNCTION(ibase_blob_import)
 }
 /* }}} */
 
-#endif /* HAVE_IBASE */
+#endif /* HAVE_FBIRD */

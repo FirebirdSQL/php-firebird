@@ -29,10 +29,10 @@
 
 #include "php.h"
 
-#if HAVE_IBASE
+#if HAVE_FBIRD
 
-#include "php_interbase.h"
-#include "php_ibase_includes.h"
+#include "php_firebird.h"
+#include "php_fbird_includes.h"
 
 typedef struct {
 	isc_svc_handle handle;
@@ -624,4 +624,4 @@ PHP_FUNCTION(ibase_server_info)
 
 void php_ibase_register_service_constants(INIT_FUNC_ARGS) { /* nop */ }
 
-#endif /* HAVE_IBASE */
+#endif /* HAVE_FBIRD */

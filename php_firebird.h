@@ -23,15 +23,15 @@
    +----------------------------------------------------------------------+
  */
 
-#ifndef PHP_INTERBASE_H
-#define PHP_INTERBASE_H
+#ifndef PHP_FIREBIRD_H
+#define PHP_FIREBIRD_H
 
-extern zend_module_entry ibase_module_entry;
-#define phpext_interbase_ptr &ibase_module_entry
+extern zend_module_entry fbird_module_entry;
+#define phpext_firebird_ptr &fbird_module_entry
 
 #include "php_version.h"
 // Keep version in track with Firebird
-#define PHP_INTERBASE_VERSION "3.0.0"
+#define PHP_FIREBIRD_VERSION "3.0.0"
 
 PHP_MINIT_FUNCTION(ibase);
 PHP_RINIT_FUNCTION(ibase);
@@ -102,6 +102,6 @@ PHP_FUNCTION(ibase_free_event_handler);
 
 #else
 
-#define phpext_interbase_ptr NULL
+#define phpext_firebird_ptr NULL
 
-#endif /* PHP_INTERBASE_H */
+#endif /* PHP_FIREBIRD_H */
