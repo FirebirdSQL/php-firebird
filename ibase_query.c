@@ -156,7 +156,7 @@ static void _php_ibase_free_result(zend_resource *rsrc) /* {{{ */
 		_php_ibase_free_xsqlda(ib_result->out_sqlda);
 		if (ib_result->stmt_res != NULL) {
 			zend_list_delete(ib_result->stmt_res);
-			ib_result->stmt_res == NULL;
+			ib_result->stmt_res = NULL;
 		}
 		efree(ib_result);
 	}
@@ -175,7 +175,7 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 	}
 	if (ib_query->stmt_res != NULL) {
 		zend_list_delete(ib_query->stmt_res);
-		ib_query->stmt_res == NULL;
+		ib_query->stmt_res = NULL;
 	}
 	if (ib_query->in_array) {
 		efree(ib_query->in_array);
