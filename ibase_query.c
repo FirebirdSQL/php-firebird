@@ -187,6 +187,10 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 		zend_list_delete(ib_query->stmt_res);
 		ib_query->stmt_res = NULL;
 	}
+	if (ib_query->result_res != NULL) {
+		zend_list_delete(ib_query->result_res);
+		ib_query->result_res = NULL;
+	}
 	if (ib_query->in_array) {
 		efree(ib_query->in_array);
 	}
@@ -1895,13 +1899,14 @@ PHP_FUNCTION(ibase_execute)
 		}
 
 		/* Have we used this cursor before and it's still open (exec proc has no cursor) ? */
-		if (ib_query->result_res != NULL
-				&& ib_query->statement_type != isc_info_sql_stmt_exec_procedure) {
-			IBDEBUG("Implicitly closing a cursor");
+		if (ib_query->result_res != NULL) {
+			if (ib_query->statement_type != isc_info_sql_stmt_exec_procedure) {
+				IBDEBUG("Implicitly closing a cursor");
 
-			if (isc_dsql_free_statement(IB_STATUS, &ib_query->stmt, DSQL_close)) {
-				_php_ibase_error();
-				break;
+				if (isc_dsql_free_statement(IB_STATUS, &ib_query->stmt, DSQL_close)) {
+					_php_ibase_error();
+					break;
+				}
 			}
 			zend_list_delete(ib_query->result_res);
 			ib_query->result_res = NULL;
