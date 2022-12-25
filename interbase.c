@@ -105,7 +105,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_commit_ret, 0, 0, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_rollback_ret, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_rollback_ret, 0, 0, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 ZEND_END_ARG_INFO()
 
