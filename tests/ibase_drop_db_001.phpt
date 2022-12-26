@@ -5,7 +5,7 @@ ibase_drop_db(): Basic test
 --FILE--
 <?php
 
-require("interbase.inc");
+require("config.inc");
 
 unlink($file = tempnam('/tmp',"php_ibase_test"));
 
