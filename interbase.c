@@ -759,6 +759,11 @@ PHP_MINIT_FUNCTION(ibase)
 	php_ibase_events_minit(INIT_FUNC_ARGS_PASSTHRU);
 	php_ibase_service_minit(INIT_FUNC_ARGS_PASSTHRU);
 
+#ifdef ZEND_SIGNALS
+	// firebird replaces some signals at runtime, suppress warnings.
+	SIGG(check) = 0;
+#endif
+
 	return SUCCESS;
 }
 
