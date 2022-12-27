@@ -1,6 +1,6 @@
 <?php
 
-srand((double)microtime()*1000000);
+srand(((int)(double)microtime()*1000000));
 
 function out_table($table_name)
 {

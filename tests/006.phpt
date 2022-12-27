@@ -45,7 +45,7 @@ InterBase: binding (may take a while)
 		$v_float   = rand_number(7);
 		$v_integer = rand_number(9,0);
 		$v_numeric = rand_number(4,2);
-		$v_smallint = rand_number(5) % 32767;
+		$v_smallint = ((int)rand_number(5)) % 32767;
 		$v_varchar = rand_str(10000);
 
 		ibase_query("insert into test6
@@ -115,7 +115,7 @@ InterBase: binding (may take a while)
 		$v_float   = rand_number(7);
 		$v_integer = rand_number(9,0);
 		$v_numeric = rand_number(4,2);
-		$v_smallint = rand_number(5) % 32767;
+		$v_smallint = ((int)rand_number(5)) % 32767;
 		$v_varchar = rand_str(10000);
 
 		/* clear table*/
