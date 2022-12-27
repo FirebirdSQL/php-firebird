@@ -202,7 +202,7 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_execute, 0, 0, 1)
 	ZEND_ARG_INFO(0, query)
-	ZEND_ARG_INFO(0, bind_arg)
+	ZEND_ARG_VARIADIC_INFO(0, bind_arg)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_free_query, 0, 0, 1)
