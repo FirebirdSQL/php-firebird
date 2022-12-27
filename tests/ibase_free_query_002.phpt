@@ -3,7 +3,7 @@ ibase_free_query(): Basic test
 --SKIPIF--
 <?php
 include("skipif.inc");
-include("skipif-php8-or-newer.inc");
+include("skipif-php7-or-older.inc");
 ?>
 --FILE--
 <?php
@@ -24,8 +24,4 @@ var_dump(ibase_free_query($x));
 --EXPECTF--
 bool(true)
 
-Warning: ibase_free_query(): supplied resource is not a valid Firebird/InterBase query resource in %s on line %d
-bool(false)
-
-Warning: ibase_free_query(): supplied resource is not a valid Firebird/InterBase query resource in %s on line %d
-bool(false)
+Fatal error: Uncaught TypeError: ibase_free_query(): supplied resource is not a valid Firebird/InterBase query resource in %a
