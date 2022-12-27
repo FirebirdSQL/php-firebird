@@ -16,11 +16,6 @@ print "---\n";
 
 var_dump(ibase_param_info($rs, 100));
 
-print "---\n";
-
-var_dump(ibase_param_info(100));
-
-
 ?>
 --EXPECTF--
 array(10) {
@@ -47,7 +42,3 @@ array(10) {
 }
 ---
 bool(false)
----
-
-Warning: ibase_param_info() expects exactly 2 parameters, 1 given in %s on line %d
-NULL
