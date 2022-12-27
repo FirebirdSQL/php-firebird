@@ -1,7 +1,12 @@
 --TEST--
 Bug #45373 (php crash on query with errors in params)
 --SKIPIF--
-<?php include("skipif.inc"); ?>
+<?php
+include("skipif.inc");
+// See GitHub issue 44
+// https://github.com/FirebirdSQL/php-firebird/issues/44
+include("skipif-php8-or-newer.inc");
+?>
 --FILE--
 <?php
 
