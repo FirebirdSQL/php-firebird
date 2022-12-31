@@ -16,6 +16,7 @@
    |          Andrew Avdeev <andy@simgts.mv.ru>                           |
    |          Ard Biesheuvel <a.k.biesheuvel@its.tudelft.nl>              |
    |          Martin Koeditz <martin.koeditz@it-syn.de>                   |
+   |          Jonatan Klemets <jonatan.r.klemets@gmail.com>               |
    |          others                                                      |
    +----------------------------------------------------------------------+
    | You'll find history on Github                                        |
@@ -31,7 +32,7 @@ extern zend_module_entry ibase_module_entry;
 
 #include "php_version.h"
 // Keep version in track with Firebird
-#define PHP_INTERBASE_VERSION "3.0.0"
+#define PHP_INTERBASE_VERSION "3.0.1"
 
 PHP_MINIT_FUNCTION(ibase);
 PHP_RINIT_FUNCTION(ibase);
