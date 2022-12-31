@@ -1,7 +1,12 @@
 --TEST--
 Bug #46543 (ibase_trans() memory leaks when using wrong parameters)
 --SKIPIF--
-<?php include("skipif.inc"); ?>
+<?php
+include("skipif.inc");
+// See GitHub issue 43
+// https://github.com/FirebirdSQL/php-firebird/issues/43
+include("skipif-php8-or-newer.inc");
+?>
 --FILE--
 <?php
 

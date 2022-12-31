@@ -1,0 +1,13 @@
+name: Install
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        export DEBIAN_FRONTEND="noninteractive"
+        sudo apt-get update
+        sudo apt-get -y -q install firebird-dev firebird3.0 firebird3.0-common firebird3.0-server
+        FB_ORIGINAL_PASS=`sudo cat /etc/firebird/3.0/SYSDBA.password | grep ISC_PASSWORD | sed -e 's/ISC_PASSWORD="\([^"]*\)".*/\1/'`
+        gsec -user SYSDBA -password ${FB_ORIGINAL_PASS} -modify sysdba -pw masterkey
+        sudo service firebird3.0 restart
+        sudo apt-get -y install pkg-config build-essential autoconf bison re2c libxml2-dev libsqlite3-dev

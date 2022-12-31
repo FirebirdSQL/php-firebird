@@ -87,25 +87,23 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_drop_db, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_trans, 0, 0, 0)
-	ZEND_ARG_INFO(0, trans_args)
 	ZEND_ARG_INFO(0, link_identifier)
 	ZEND_ARG_INFO(0, trans_args)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_commit, 0, 0, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_commit, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_rollback, 0, 0, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_rollback, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_commit_ret, 0, 0, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_commit_ret, 0, 0, 1)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_rollback_ret, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_rollback_ret, 0, 0, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 ZEND_END_ARG_INFO()
 
@@ -159,10 +157,8 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_query, 0, 0, 0)
 	ZEND_ARG_INFO(0, link_identifier)
-	ZEND_ARG_INFO(0, link_identifier)
 	ZEND_ARG_INFO(0, query)
-	ZEND_ARG_INFO(0, bind_arg)
-	ZEND_ARG_INFO(0, bind_arg)
+	ZEND_ARG_VARIADIC_INFO(0, bind_arg)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_affected_rows, 0, 0, 0)
@@ -206,8 +202,7 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_execute, 0, 0, 1)
 	ZEND_ARG_INFO(0, query)
-	ZEND_ARG_INFO(0, bind_arg)
-	ZEND_ARG_INFO(0, bind_arg)
+	ZEND_ARG_VARIADIC_INFO(0, bind_arg)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_free_query, 0, 0, 1)
@@ -763,6 +758,11 @@ PHP_MINIT_FUNCTION(ibase)
 	php_ibase_blobs_minit(INIT_FUNC_ARGS_PASSTHRU);
 	php_ibase_events_minit(INIT_FUNC_ARGS_PASSTHRU);
 	php_ibase_service_minit(INIT_FUNC_ARGS_PASSTHRU);
+
+#ifdef ZEND_SIGNALS
+	// firebird replaces some signals at runtime, suppress warnings.
+	SIGG(check) = 0;
+#endif
 
 	return SUCCESS;
 }

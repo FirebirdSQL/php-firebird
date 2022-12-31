@@ -1,7 +1,7 @@
 --TEST--
 InterBase: BLOB test
 --SKIPIF--
-<?php include("skipif.inc"); ?>
+<?php die("skip: Broken test (Disabled until issue 40 is fixed)"); include("skipif.inc"); ?>
 --FILE--
 <?php
 

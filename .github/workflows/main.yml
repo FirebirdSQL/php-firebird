@@ -1,0 +1,60 @@
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2']
+    steps:
+      - name: Checkout php-src
+        uses: actions/checkout@v3
+        with:
+          repository: 'php/php-src'
+          ref: 'PHP-${{ matrix.php }}'
+      - name: Checkout php-firebird
+        uses: actions/checkout@v3
+        with:
+          path: 'ext/php-firebird'
+      - name: Install dependencies
+        uses: ./ext/php-firebird/.github/actions/install-linux
+      - name: Build
+        run: |
+          ./buildconf --force
+          ./configure --disable-all --with-interbase
+          make -j$(/usr/bin/nproc)
+      - name: Test
+        run: sudo make test TESTS='ext/php-firebird --show-diff'
+  linux-debug:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2']
+    steps:
+      - name: Checkout php-src
+        uses: actions/checkout@v3
+        with:
+          repository: 'php/php-src'
+          ref: 'PHP-${{ matrix.php }}'
+      - name: Checkout php-firebird
+        uses: actions/checkout@v3
+        with:
+          path: 'ext/php-firebird'
+      - name: Install dependencies
+        uses: ./ext/php-firebird/.github/actions/install-linux
+      - name: Build
+        run: |
+          ./buildconf --force
+          ./configure --disable-all --with-interbase --enable-debug
+          make -j$(/usr/bin/nproc)
+      - name: Test
+        run: sudo make test TESTS='ext/php-firebird --show-diff'
+
