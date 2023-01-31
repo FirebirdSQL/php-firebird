@@ -1811,6 +1811,13 @@ PHP_FUNCTION(ibase_free_result)
 
 	ib_result = (ibase_result *)zend_fetch_resource_ex(result_arg, LE_RESULT, le_result);
 	zend_list_delete(Z_RES_P(result_arg));
+        
+        /*
+        * Bugfix of issue #40
+        * Reset pointer after freeing to NULL
+        */
+        Z_RES_P(result_arg)->ptr = NULL;
+
 	RETURN_TRUE;
 }
 /* }}} */
