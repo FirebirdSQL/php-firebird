@@ -1,7 +1,7 @@
 --TEST--
 InterBase: array handling
 --SKIPIF--
-<?php die("skip: Broken test (Disabled until issue 42 is fixed)"); include("skipif.inc"); ?>
+<?php include("skipif.inc"); ?>
 --FILE--
 <?php
 
@@ -27,7 +27,17 @@ InterBase: array handling
 
 	/* if timefmt not supported, hide error */
 	ini_set('ibase.timestampformat',"%m/%d/%Y %H:%M:%S");
-
+        
+        /* To prevent unwanted roundings set PHP precision to 18 */
+        ini_set('precision',"18");
+        
+        /* Check if PHP precision is set correctly */
+        if(ini_get('precision') < 18) {
+            echo "PHP precision check fail\n";
+            echo "Precision set in php.ini: " . ini_get('precision') . "\n";
+            echo "Precision required: 18\n";
+        } 
+        
 	echo "insert\n";
 
 	for ($i = 1; $i <= 10; ++$i) {
@@ -59,7 +69,7 @@ InterBase: array handling
 			$v_float[$i]   = rand_number(7);
 			$v_integer[$i] = rand_number(9,0);
 			$v_numeric[$i] = rand_number(9,2);
-			$v_smallint[$i] = rand_number(5) % 32767;
+			$v_smallint[$i] = ((int)rand_number(5) % 32767);
 			$v_varchar[$i] = rand_str(1000);
 		}
 
@@ -72,7 +82,7 @@ InterBase: array handling
 		$sel = ibase_query("select * from test7 where iter = $iter");
 
 		$row = ibase_fetch_object($sel,IBASE_FETCH_ARRAYS);
-		for ($i = 1; $i <= 10; ++$i) {
+                for ($i = 1; $i <= 10; ++$i) {
 
 			if(strncmp($row->V_CHAR[$i],$v_char[$i],strlen($v_char[$i])) != 0) {
 				echo " CHAR[$i] fail:\n";

@@ -8,6 +8,16 @@ InterBase: misc sql types (may take a while)
     require("interbase.inc");
     ibase_connect($test_base);
 
+    /* To prevent unwanted roundings set PHP precision to 18 */
+    ini_set('precision',"18");
+
+    /* Check if PHP precision is set correctly */
+    if(ini_get('precision') < 18) {
+        echo "PHP precision check fail\n";
+        echo "Precision set in php.ini: " . ini_get('precision') . "\n";
+        echo "Precision required: 18\n";
+    } 
+    
     ibase_query(
     	"create table test3 (
             iter		integer not null,
@@ -18,6 +28,7 @@ InterBase: misc sql types (may take a while)
    	 		v_decimal7_2  		decimal(7,2),
    	 		v_decimal7_0  		decimal(7,0),
    	 		v_numeric15_15  	numeric(15,15),
+                        v_decimal18_3           decimal(18,3),
    	 		v_numeric15_0  	numeric(15,0),
             v_double  	double precision,
             v_float     float,
@@ -42,6 +53,7 @@ InterBase: misc sql types (may take a while)
     	$v_decimal7_2 = rand_number(7,2);
     	$v_decimal7_0 = rand_number(7,0);
     	$v_numeric15_15 = rand_number(15,15);
+        $v_decimal18_3 = $iter ? rand_number(18,3) : 0;
     	$v_numeric15_0 = $iter ? rand_number(15,0) : 0;
     	$v_double  = rand_number(18);
     	$v_float   = rand_number(7);
@@ -50,8 +62,8 @@ InterBase: misc sql types (may take a while)
     	$v_varchar = rand_str(10000);
 
     	ibase_query(
-    	"insert into test3 (iter, v_char,v_date,v_decimal4_2, v_decimal4_0, v_decimal7_2, v_decimal7_0,v_numeric15_15, v_numeric15_0,v_double,v_float,v_integer,v_smallint,v_varchar)
-    	values ($iter, '$v_char','$v_date',$v_decimal4_2, $v_decimal4_0, $v_decimal7_2, $v_decimal7_0,$v_numeric15_15, $v_numeric15_0,$v_double,$v_float,$v_integer,$v_smallint,'$v_varchar')");
+    	"insert into test3 (iter, v_char,v_date,v_decimal4_2, v_decimal4_0, v_decimal7_2, v_decimal7_0,v_numeric15_15, v_decimal18_3, v_numeric15_0,v_double,v_float,v_integer,v_smallint,v_varchar)
+    	values ($iter, '$v_char','$v_date',$v_decimal4_2, $v_decimal4_0, $v_decimal7_2, $v_decimal7_0,$v_numeric15_15, $v_decimal18_3, $v_numeric15_0,$v_double,$v_float,$v_integer,$v_smallint,'$v_varchar')");
     	$sel = ibase_query("select * from test3 where iter = $iter");
     	$row = ibase_fetch_object($sel);
     	if(substr($row->V_CHAR,0,strlen($v_char)) != $v_char){
@@ -88,6 +100,11 @@ InterBase: misc sql types (may take a while)
             echo " NUMERIC15_15 fail\n";
             echo " in:  $v_numeric15_15\n";
             echo " out: $row->V_NUMERIC15_15\n";
+        }
+        if($row->V_DECIMAL18_3 != $v_decimal18_3){
+            echo " DECIMAL18_3 fail\n";
+            echo " in:  $v_decimal18_3\n";
+            echo " out: $row->V_DECIMAL18_3\n";
         }
         if($row->V_NUMERIC15_0 != (string)$v_numeric15_0){
             echo " NUMERIC15_0 fail\n";
