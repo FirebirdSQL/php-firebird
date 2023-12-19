@@ -129,7 +129,8 @@ enum php_interbase_option {
 	PHP_IBASE_CONSISTENCY 		= 16,
 	/* transaction lock resolution */
 	PHP_IBASE_WAIT 				= 128,
-	PHP_IBASE_NOWAIT 			= 256
+	PHP_IBASE_NOWAIT 			= 256,
+	  PHP_IBASE_LOCK_TIMEOUT	= 512,
 };
 
 #define IBG(v) ZEND_MODULE_GLOBALS_ACCESSOR(ibase, v)
