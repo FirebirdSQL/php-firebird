@@ -753,6 +753,7 @@ PHP_MINIT_FUNCTION(ibase)
 	REGISTER_LONG_CONSTANT("IBASE_REC_NO_VERSION", PHP_IBASE_REC_NO_VERSION, CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("IBASE_NOWAIT", PHP_IBASE_NOWAIT, CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("IBASE_WAIT", PHP_IBASE_WAIT, CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("IBASE_LOCK_TIMEOUT", PHP_IBASE_LOCK_TIMEOUT, CONST_PERSISTENT);
 
 	php_ibase_query_minit(INIT_FUNC_ARGS_PASSTHRU);
 	php_ibase_blobs_minit(INIT_FUNC_ARGS_PASSTHRU);
@@ -1146,6 +1147,7 @@ PHP_FUNCTION(ibase_trans)
 
 	if (argn > 0) {
 		zend_long trans_argl = 0;
+		zend_long trans_timeout = 0;
 		char *tpb;
 		ISC_TEB *teb;
 		zval *args = NULL;
@@ -1217,6 +1219,24 @@ PHP_FUNCTION(ibase_trans)
 						last_tpb[tpb_len++] = isc_tpb_nowait;
 					} else if (PHP_IBASE_WAIT == (trans_argl & PHP_IBASE_WAIT)) {
 						last_tpb[tpb_len++] = isc_tpb_wait;
+						if (PHP_IBASE_LOCK_TIMEOUT == (trans_argl & PHP_IBASE_LOCK_TIMEOUT)) {
+							if((i + 1 < argn) && (Z_TYPE(args[i + 1]) == IS_LONG)){
+								i++;
+								convert_to_long_ex(&args[i]);
+								trans_timeout = Z_LVAL(args[i]);
+
+								if (trans_timeout <= 0 || trans_timeout > 0x7FFF) {
+									php_error_docref(NULL, E_WARNING, "Invalid timeout parameter");
+								} else {
+									last_tpb[tpb_len++] = isc_tpb_lock_timeout;
+									last_tpb[tpb_len++] = sizeof(ISC_SHORT);
+									last_tpb[tpb_len] = (ISC_SHORT)trans_timeout;
+									tpb_len += sizeof(ISC_SHORT);
+								}
+							} else {
+								php_error_docref(NULL, E_WARNING, "IBASE_LOCK_TIMEOUT expects next argument to be timeout value");
+							}
+						}
 					}
 				}
 			}
