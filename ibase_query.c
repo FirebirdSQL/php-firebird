@@ -1966,6 +1966,7 @@ PHP_FUNCTION(ibase_free_query)
 	}
 
 	zend_list_close(Z_RES_P(query_arg));
+	zend_list_delete(Z_RES_P(query_arg));
 	RETURN_TRUE;
 }
 /* }}} */
