@@ -104,7 +104,7 @@ typedef struct event {
 	ISC_LONG event_id;
 	unsigned short event_count;
 	char **events;
-	char *event_buffer, *result_buffer;
+    unsigned char *event_buffer, *result_buffer;
 	zval callback;
 	void *thread_ctx;
 	struct event *event_next;

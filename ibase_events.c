@@ -42,7 +42,7 @@
 
 static int le_event;
 
-static void _php_ibase_event_free(char *event_buf, char *result_buf) /* {{{ */
+static void _php_ibase_event_free(unsigned char *event_buf, unsigned char *result_buf) /* {{{ */
 {
 	isc_free(event_buf);
 	isc_free(result_buf);
@@ -90,7 +90,6 @@ static void _php_ibase_free_event_rsrc(zend_resource *rsrc) /* {{{ */
 	ibase_event *e = (ibase_event *) rsrc->ptr;
 
 	_php_ibase_free_event(e);
-
 	efree(e);
 }
 /* }}} */
@@ -102,13 +101,13 @@ void php_ibase_events_minit(INIT_FUNC_ARGS) /* {{{ */
 }
 /* }}} */
 
-static void _php_ibase_event_block(ibase_db_link *ib_link, unsigned short count, /* {{{ */
-	char **events, unsigned short *l, char **event_buf, char **result_buf)
+static void _php_ibase_event_block(ibase_db_link *ib_link, unsigned short count,
+    char **events, unsigned short *l, unsigned char **event_buf, unsigned char **result_buf)
 {
-	ISC_STATUS dummy_result[20];
-	ISC_ULONG dummy_count[15];
+    ISC_STATUS dummy_result[20];
+    ISC_ULONG dummy_count[15];
 
-	/**
+    /**
 	 * Unfortunately, there's no clean and portable way in C to pass arguments to
 	 * a variadic function if you don't know the number of arguments at compile time.
 	 * (And even if there were a way, the Interbase API doesn't provide a version of
@@ -118,11 +117,11 @@ static void _php_ibase_event_block(ibase_db_link *ib_link, unsigned short count,
 	 * so we can work around it.
 	 */
 
-	*l = (unsigned short) isc_event_block(event_buf, result_buf, count, events[0],
-		events[1], events[2], events[3], events[4], events[5], events[6], events[7],
-		events[8], events[9], events[10], events[11], events[12], events[13], events[14]);
+    *l = (unsigned short) isc_event_block(event_buf, result_buf, count, events[0],
+        events[1], events[2], events[3], events[4], events[5], events[6], events[7],
+        events[8], events[9], events[10], events[11], events[12], events[13], events[14]);
 
-	/**
+    /**
 	 * Currently, this is the only way to correctly initialize an event buffer.
 	 * This is clearly something that should be fixed, cause the semantics of
 	 * isc_wait_for_event() indicate that it blocks until an event occurs.
@@ -130,8 +129,8 @@ static void _php_ibase_event_block(ibase_db_link *ib_link, unsigned short count,
 	 * otherwise, events will have to fire twice before ibase_wait_event() returns.
 	 */
 
-	isc_wait_for_event(dummy_result, &ib_link->handle, *l, *event_buf, *result_buf);
-	isc_event_counts(dummy_count, *l, *event_buf, *result_buf);
+    isc_wait_for_event(dummy_result, &ib_link->handle, *l, *event_buf, *result_buf);
+    isc_event_counts(dummy_count, *l, *event_buf, *result_buf);
 }
 /* }}} */
 
@@ -142,7 +141,8 @@ PHP_FUNCTION(ibase_wait_event)
 	zval *args;
 	ibase_db_link *ib_link;
 	int num_args;
-	char *event_buffer, *result_buffer, *events[15];
+	unsigned char *event_buffer, *result_buffer;
+	char *events[15];
 	unsigned short i = 0, event_count = 0, buffer_size;
 	ISC_ULONG occurred_event[15];
 
@@ -210,7 +210,7 @@ static ISC_EVENT_CALLBACK _php_ibase_callback(ibase_event *event, /* {{{ */
 #else
 #define PHP_ISC_CALLBACK isc_callback
 static isc_callback  _php_ibase_callback(ibase_event *event, /* {{{ */
-	unsigned short buffer_size, char *result_buf)
+	unsigned short buffer_size, unsigned char *result_buf)
 #endif
 {
 	/* this function is called asynchronously by the Interbase client library. */

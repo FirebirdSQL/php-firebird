@@ -27,9 +27,12 @@
 #include "config.h"
 #endif
 
-#define _GNU_SOURCE
-
 #include "php.h"
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 
 #if HAVE_IBASE
 
