@@ -58,6 +58,7 @@ yaml.loT
 .FBCIndex
 .FBCLockFolder
 core
+*.dep
 
 # Test specific Ignores
 tests/*.diff
