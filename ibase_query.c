@@ -922,9 +922,9 @@ static void _php_ibase_alloc_xsqlda(XSQLDA *sqlda) /* {{{ */
 				break;
 // Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
-                        case SQL_BOOLEAN:
-                                var->sqldata = emalloc(sizeof(FB_BOOLEAN));
-                                break;
+			case SQL_BOOLEAN:
+					var->sqldata = emalloc(sizeof(FB_BOOLEAN));
+					break;
 #endif
 			case SQL_SHORT:
 				var->sqldata = emalloc(sizeof(short));
@@ -953,6 +953,9 @@ static void _php_ibase_alloc_xsqlda(XSQLDA *sqlda) /* {{{ */
 			case SQL_BLOB:
 			case SQL_ARRAY:
 				var->sqldata = emalloc(sizeof(ISC_QUAD));
+				break;
+			default:
+				php_error(E_WARNING, "Unhandled sqltype: %d for sqlname %s %s:%d. This is most likely due to this PHP driver has been not kept up with newer server version", var->sqltype, var->sqlname, __FILE__, __LINE__);
 				break;
 		} /* switch */
 
@@ -1055,7 +1058,7 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_result **ib_resul
 		res->trans = ib_query->trans;
 		res->stmt = ib_query->stmt;
 		GC_ADDREF(res->stmt_res = ib_query->stmt_res);
-		
+
 		res->statement_type = ib_query->statement_type;
 		res->has_more_rows = 1;
 
@@ -1811,7 +1814,7 @@ PHP_FUNCTION(ibase_free_result)
 
 	ib_result = (ibase_result *)zend_fetch_resource_ex(result_arg, LE_RESULT, le_result);
 	zend_list_delete(Z_RES_P(result_arg));
-        
+
         /*
         * Bugfix of issue #40
         * Reset pointer after freeing to NULL
