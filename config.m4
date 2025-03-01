@@ -54,6 +54,22 @@ if test "$PHP_INTERBASE" != "no"; then
   fi
 
   AC_DEFINE(HAVE_IBASE,1,[ ])
-  PHP_NEW_EXTENSION(interbase, interbase.c ibase_query.c ibase_service.c ibase_events.c ibase_blobs.c, $ext_shared,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
+  PHP_NEW_EXTENSION(interbase, interbase.c ibase_query.c ibase_service.c ibase_events.c ibase_blobs.c, $ext_shared,, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1,[cxx])
   PHP_SUBST(INTERBASE_SHARED_LIBADD)
+
+  PHP_REQUIRE_CXX()
+  PHP_CXX_COMPILE_STDCXX([11], [mandatory], [PHP_INTERBASE_STDCXX])
+
+  PHP_INTERBASE_CXX_SOURCES="pdo_firebird_utils.cpp"
+
+  AS_VAR_IF([ext_shared], [no],
+    [PHP_ADD_SOURCES([$ext_dir],
+      [$PHP_INTERBASE_CXX_SOURCES],
+      [$PHP_INTERBASE_STDCXX])],
+    [PHP_ADD_SOURCES_X([$ext_dir],
+      [$PHP_INTERBASE_CXX_SOURCES],
+      [$PHP_INTERBASE_STDCXX],
+      [shared_objects_interbase],
+      [yes])])
+
 fi
