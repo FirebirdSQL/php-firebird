@@ -884,6 +884,13 @@ int _php_ibase_attach_db(char **args, size_t *len, zend_long *largs, isc_db_hand
 		dpb += dpb_len;
 		buf_len -= dpb_len;
 	}
+
+	// Do not handle directly INT128 or DECFLOAT, convert to VARCHAR at server instead
+	const char *compat = "int128 to varchar;decfloat to varchar";
+	dpb_len = slprintf(dpb, buf_len, "%c%c%s", isc_dpb_set_bind, strlen(compat), compat);
+	dpb += dpb_len;
+	buf_len -= dpb_len;
+
 	if (isc_attach_database(IB_STATUS, (short)len[DB], args[DB], db, (short)(dpb-dpb_buffer), dpb_buffer)) {
 		_php_ibase_error();
 		return FAILURE;
