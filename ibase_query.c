@@ -37,6 +37,7 @@
 #include "ext/standard/php_standard.h"
 #include "php_interbase.h"
 #include "php_ibase_includes.h"
+#include "pdo_firebird_utils.h"
 
 #define ISC_LONG_MIN 	INT_MIN
 #define ISC_LONG_MAX 	INT_MAX
@@ -266,10 +267,10 @@ static int _php_ibase_alloc_array(ibase_array **ib_arrayp, XSQLDA *sqlda, /* {{{
 					break;
 // Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
-                                case blr_bool:
-                                        a->el_type = SQL_BOOLEAN;
-                                        a->el_size = sizeof(FB_BOOLEAN);
-                                        break;
+				case blr_bool:
+					a->el_type = SQL_BOOLEAN;
+					a->el_size = sizeof(FB_BOOLEAN);
+					break;
 #endif
 				case blr_short:
 					a->el_type = SQL_SHORT;
@@ -303,6 +304,20 @@ static int _php_ibase_alloc_array(ibase_array **ib_arrayp, XSQLDA *sqlda, /* {{{
 					a->el_type = SQL_TYPE_TIME;
 					a->el_size = sizeof(ISC_TIME);
 					break;
+#if FB_API_VER >= 40
+				// These are converted to VARCHAR via isc_dpb_set_bind tag at connect
+				// blr_dec64
+				// blr_dec128
+				// blr_int128
+				case blr_sql_time_tz:
+					a->el_type = SQL_TIME_TZ;
+					a->el_size = sizeof(ISC_TIME_TZ);
+					break;
+				case blr_timestamp_tz:
+					a->el_type = SQL_TIMESTAMP_TZ;
+					a->el_size = sizeof(ISC_TIMESTAMP_TZ);
+					break;
+#endif
 				case blr_varying:
 				case blr_varying2:
 					/**
@@ -614,17 +629,19 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					break;
 // Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
-                                case SQL_BOOLEAN:
-                                        convert_to_boolean(val);
-                                        // On Windows error unresolved symbol Z_BVAL_P is thrown, so we use Z_LVAL_P
-                                        *(FB_BOOLEAN*) buf = Z_LVAL_P(val);
-                                        break;
+				case SQL_BOOLEAN:
+					convert_to_boolean(val);
+					// On Windows error unresolved symbol Z_BVAL_P is thrown, so we use Z_LVAL_P
+					*(FB_BOOLEAN*) buf = Z_LVAL_P(val);
+					break;
 #endif
 				case SQL_DOUBLE:
 					convert_to_double(val);
 					*(double*) buf = Z_DVAL_P(val);
 					break;
 				case SQL_TIMESTAMP:
+				// TODO:
+				// case SQL_TIMESTAMP_TZ:
 					convert_to_string(val);
 #ifdef HAVE_STRPTIME
 					strptime(Z_STRVAL_P(val), INI_STR("ibase.timestampformat"), &t);
@@ -660,6 +677,8 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					isc_encode_sql_date(&t, (ISC_DATE *) buf);
 					break;
 				case SQL_TYPE_TIME:
+				// TODO:
+				// case SQL_TIME_TZ:
 					convert_to_string(val);
 #ifdef HAVE_STRPTIME
 					strptime(Z_STRVAL_P(val), INI_STR("ibase.timeformat"), &t);
@@ -714,6 +733,13 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 					case SQL_TIMESTAMP:
 					case SQL_TYPE_DATE:
 					case SQL_TYPE_TIME:
+#if FB_API_VER >= 40
+					case SQL_INT128:
+					case SQL_DEC16:
+					case SQL_DEC34:
+					case SQL_TIMESTAMP_TZ:
+					case SQL_TIME_TZ:
+#endif
 						force_null = (Z_STRLEN_P(b_var) == 0);
 				}
 
@@ -737,6 +763,9 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 			struct tm t;
 
 			case SQL_TIMESTAMP:
+			// TODO:
+			// case SQL_TIMESTAMP_TZ:
+			// case SQL_TIME_TZ:
 			case SQL_TYPE_DATE:
 			case SQL_TYPE_TIME:
 				if (Z_TYPE_P(b_var) == IS_LONG) {
@@ -756,6 +785,8 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 							format = INI_STR("ibase.dateformat");
 							break;
 						case SQL_TYPE_TIME:
+						// TODO:
+						// case SQL_TIME_TZ:
 							format = INI_STR("ibase.timeformat");
 					}
 					if (!strptime(Z_STRVAL_P(b_var), format, &t)) {
@@ -775,6 +806,8 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 						isc_encode_sql_date(&t, &buf[i].val.dtval);
 						break;
 					case SQL_TYPE_TIME:
+					// TODO:
+					// case SQL_TIME_TZ:
 						isc_encode_sql_time(&t, &buf[i].val.tmval);
 						break;
 				}
@@ -954,8 +987,20 @@ static void _php_ibase_alloc_xsqlda(XSQLDA *sqlda) /* {{{ */
 			case SQL_ARRAY:
 				var->sqldata = emalloc(sizeof(ISC_QUAD));
 				break;
+#if FB_API_VER >= 40
+			// These are converted to VARCHAR via isc_dpb_set_bind tag at connect
+			// case SQL_DEC16:
+			// case SQL_DEC34:
+			// case SQL_INT128:
+			case SQL_TIMESTAMP_TZ:
+				var->sqldata = emalloc(sizeof(ISC_TIMESTAMP_TZ));
+				break;
+			case SQL_TIME_TZ:
+				var->sqldata = emalloc(sizeof(ISC_TIME_TZ));
+				break;
+#endif
 			default:
-				php_error(E_WARNING, "Unhandled sqltype: %d for sqlname %s %s:%d. This is most likely due to this PHP driver has been not kept up with newer server version", var->sqltype, var->sqlname, __FILE__, __LINE__);
+				php_error(E_WARNING, "Unhandled sqltype: %d for sqlname %s %s:%d", var->sqltype, var->sqlname, __FILE__, __LINE__);
 				break;
 		} /* switch */
 
@@ -1430,9 +1475,9 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 			break;
 // Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
-                case SQL_BOOLEAN:
-                        ZVAL_BOOL(val, *(FB_BOOLEAN *) data);
-                        break;
+		case SQL_BOOLEAN:
+			ZVAL_BOOL(val, *(FB_BOOLEAN *) data);
+			break;
 #endif
 		case SQL_SHORT:
 			n = *(short *) data;
@@ -1483,6 +1528,44 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 		case SQL_DOUBLE:
 			ZVAL_DOUBLE(val, *(double *) data);
 			break;
+#if FB_API_VER >= 40
+		// These are converted to VARCHAR via isc_dpb_set_bind tag at connect
+		// case SQL_DEC16:
+		// case SQL_DEC34:
+		// case SQL_INT128:
+		case SQL_TIME_TZ:
+		case SQL_TIMESTAMP_TZ:
+			char timeZoneBuffer[40] = {0};
+			unsigned year, month, day, hours, minutes, seconds, fractions;
+
+			if((type & ~1) == SQL_TIME_TZ){
+				format = INI_STR("ibase.timeformat");
+				fb_decode_time_tz((ISC_TIME_TZ *) data, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
+				ISC_TIME time = fb_encode_time(hours, minutes, seconds, fractions);
+				isc_decode_sql_time(&time, &t);
+			} else {
+				format = INI_STR("ibase.timestampformat");
+				fb_decode_timestamp_tz((ISC_TIMESTAMP_TZ *) data, &year, &month, &day, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
+				ISC_TIMESTAMP ts;
+				ts.timestamp_date = fb_encode_date(year, month, day);
+				ts.timestamp_time = fb_encode_time(hours, minutes, seconds, fractions);
+				isc_decode_timestamp(&ts, &t);
+			}
+
+			if (flag & PHP_IBASE_UNIXTIME) {
+				ZVAL_LONG(val, mktime(&t));
+			} else {
+				char timeBuf[80] = {0};
+				l = strftime(timeBuf, sizeof(timeBuf), format, &t);
+				if (l == 0) {
+					return FAILURE;
+				}
+
+				size_t l = sprintf(string_data, "%s %s", timeBuf, timeZoneBuffer);
+				ZVAL_STRINGL(val, string_data, l);
+			}
+			break;
+#endif
 		case SQL_DATE: /* == case SQL_TIMESTAMP: */
 			format = INI_STR("ibase.timestampformat");
 			isc_decode_timestamp((ISC_TIMESTAMP *) data, &t);
@@ -2040,9 +2123,9 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 		switch (var->sqltype & ~1) {
 // Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
-                        case SQL_BOOLEAN:
-                                precision = 1;
-                                break;
+			case SQL_BOOLEAN:
+				precision = 1;
+				break;
 #endif
 			case SQL_SHORT:
 				precision = 4;
@@ -2070,9 +2153,9 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 				break;
 // Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
-                        case SQL_BOOLEAN:
-                                s = "BOOLEAN";
-                                break;
+			case SQL_BOOLEAN:
+				s = "BOOLEAN";
+				break;
 #endif
 			case SQL_LONG:
 				s = "INTEGER";
@@ -2105,6 +2188,18 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 			case SQL_QUAD:
 				s = "QUAD";
 				break;
+#if FB_API_VER >= 40
+			// These are converted to VARCHAR via isc_dpb_set_bind tag at connect and will appear to clients as VARCHAR
+			// case SQL_DEC16:
+			// case SQL_DEC34:
+			// case SQL_INT128:
+			case SQL_TIMESTAMP_TZ:
+				s = "TIMESTAMP_TZ";
+				break;
+			case SQL_TIME_TZ:
+				s = "TIME_TZ";
+				break;
+#endif
 		}
 		add_index_string(return_value, 4, s);
 		add_assoc_string(return_value, "type", s);
