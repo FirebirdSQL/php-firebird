@@ -97,7 +97,7 @@ typedef struct {
 	union {
 // Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
-                FB_BOOLEAN bval;
+		FB_BOOLEAN bval;
 #endif
 		short sval;
 		float fval;
@@ -221,9 +221,9 @@ void php_ibase_query_minit(INIT_FUNC_ARGS) /* {{{ */
 	le_statement = zend_register_list_destructors_ex(_php_ibase_free_statement, NULL,
 		"interbase statement", module_number);
 	le_result = zend_register_list_destructors_ex(_php_ibase_free_result, NULL,
-	    "interbase result", module_number);
+		"interbase result", module_number);
 	le_query = zend_register_list_destructors_ex(php_ibase_free_query_rsrc, NULL,
-	    "interbase query", module_number);
+		"interbase query", module_number);
 }
 /* }}} */
 
@@ -1231,7 +1231,7 @@ PHP_FUNCTION(ibase_query)
 		zend_long l;
 
 		default:
-		    if (SUCCESS == zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, 3, "rrs",
+			if (SUCCESS == zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, 3, "rrs",
 					&zlink, &ztrans, &query, &query_len)) {
 
 				ib_link = (ibase_db_link*)zend_fetch_resource2_ex(zlink, LE_LINK, le_link, le_plink);
@@ -1240,7 +1240,7 @@ PHP_FUNCTION(ibase_query)
 				trans_res = Z_RES_P(ztrans);
 				bind_i = 3;
 				break;
-		    }
+			}
 		case 2:
 			if (SUCCESS == zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, 2, "rs",
 					&zlink, &query, &query_len)) {
@@ -1308,7 +1308,7 @@ PHP_FUNCTION(ibase_query)
 
 	do {
 		int bind_n = ZEND_NUM_ARGS() - bind_i,
-		    expected_n = ib_query.in_sqlda ? ib_query.in_sqlda->sqld : 0;
+			expected_n = ib_query.in_sqlda ? ib_query.in_sqlda->sqld : 0;
 
 		if (bind_n != expected_n) {
 			php_error_docref(NULL, (bind_n < expected_n) ? E_WARNING : E_NOTICE,
@@ -1898,11 +1898,11 @@ PHP_FUNCTION(ibase_free_result)
 	ib_result = (ibase_result *)zend_fetch_resource_ex(result_arg, LE_RESULT, le_result);
 	zend_list_delete(Z_RES_P(result_arg));
 
-        /*
-        * Bugfix of issue #40
-        * Reset pointer after freeing to NULL
-        */
-        Z_RES_P(result_arg)->ptr = NULL;
+	/*
+	* Bugfix of issue #40
+	* Reset pointer after freeing to NULL
+	*/
+	Z_RES_P(result_arg)->ptr = NULL;
 
 	RETURN_TRUE;
 }
@@ -2005,9 +2005,8 @@ PHP_FUNCTION(ibase_execute)
 			ib_query->result_res = NULL;
 		}
 
-		if (FAILURE == _php_ibase_exec(INTERNAL_FUNCTION_PARAM_PASSTHRU, &result, ib_query,
-				args)) {
-		    break;
+		if (FAILURE == _php_ibase_exec(INTERNAL_FUNCTION_PARAM_PASSTHRU, &result, ib_query, args)) {
+			break;
 		}
 
 		/* free the query if trans handle was released */
