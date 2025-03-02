@@ -41,10 +41,10 @@ exit /B
     )
 
     if "%pfb_x86%" gtr "0"  (
-        set with_interbase="shared,%PFB_FB32_DIR%lib;%PFB_FB32_DIR%include"
+        set with_interbase="shared,%PFB_FB32_DIR%"
         set build_msg=%build_msg% x86
     ) else (
-        set with_interbase="shared,%PFB_FB64_DIR%lib;%PFB_FB64_DIR%include"
+        set with_interbase="shared,%PFB_FB64_DIR%"
         set build_msg=%build_msg% x86_64
     )
 
