@@ -45,9 +45,9 @@
 
 #include <time.h>
 
-#define ROLLBACK		0
-#define COMMIT			1
-#define RETAIN			2
+#define ROLLBACK    0
+#define COMMIT      1
+#define RETAIN      2
 
 #define CHECK_LINK(link) { if (link==NULL) { php_error_docref(NULL, E_WARNING, "A link to the server could not be established"); RETURN_FALSE; } }
 

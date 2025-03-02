@@ -39,14 +39,14 @@
 #include "php_ibase_includes.h"
 #include "pdo_firebird_utils.h"
 
-#define ISC_LONG_MIN 	INT_MIN
-#define ISC_LONG_MAX 	INT_MAX
+#define ISC_LONG_MIN    INT_MIN
+#define ISC_LONG_MAX    INT_MAX
 
-#define QUERY_RESULT	1
-#define EXECUTE_RESULT	2
+#define QUERY_RESULT    1
+#define EXECUTE_RESULT  2
 
-#define FETCH_ROW		1
-#define FETCH_ARRAY		2
+#define FETCH_ROW       1
+#define FETCH_ARRAY     2
 
 typedef struct {
 	ISC_ARRAY_DESC ar_desc;
