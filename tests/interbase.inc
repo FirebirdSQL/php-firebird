@@ -5,6 +5,7 @@ require('functions.inc');
 
 /* we need just the generated name, not the file itself */
 unlink($test_base = tempnam(sys_get_temp_dir(),"php_ibase_test"));
+if(!empty($host))$test_base = "$host:$test_base";
 
 function init_db()
 {
@@ -31,5 +32,3 @@ function cleanup_db()
 
 register_shutdown_function('cleanup_db');
 init_db();
-
-?>
