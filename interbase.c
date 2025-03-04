@@ -1407,7 +1407,20 @@ int _php_ibase_def_trans(ibase_db_link *ib_link, ibase_trans **trans) /* {{{ */
 			ib_link->tr_list->trans = tr;
 		}
 		if (tr->handle == 0) {
-			if (isc_start_transaction(IB_STATUS, &tr->handle, 1, &ib_link->handle, 0, NULL)) {
+			ISC_STATUS result;
+			zend_long trans_argl = IBG(default_trans_params);
+
+			if(trans_argl == PHP_IBASE_DEFAULT){
+				result = isc_start_transaction(IB_STATUS, &tr->handle, 1, &ib_link->handle, 0, NULL);
+			} else {
+				zend_long trans_timeout = IBG(default_lock_timeout);
+				char last_tpb[TPB_MAX_SIZE];
+				unsigned short tpb_len = 0;
+				_php_ibase_populate_trans(trans_argl, trans_timeout, last_tpb, &tpb_len);
+				result = isc_start_transaction(IB_STATUS, &tr->handle, 1, &ib_link->handle, tpb_len, last_tpb);
+			}
+
+			if (result) {
 				_php_ibase_error();
 				return FAILURE;
 			}
