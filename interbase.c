@@ -706,6 +706,67 @@ static PHP_INI_DISP(php_ibase_password_displayer_cb)
 	}
 }
 
+#define PUTS_TP(str) do {       \
+	if(has_puts) {              \
+		PUTS(" | ");            \
+	}                           \
+	PUTS(str);                  \
+	has_puts = true;            \
+} while (0)
+
+static PHP_INI_DISP(php_ibase_trans_displayer)
+{
+	bool has_puts = false;
+	char *value;
+
+	if (type == ZEND_INI_DISPLAY_ORIG && ini_entry->modified) {
+		value = ZSTR_VAL(ini_entry->orig_value);
+	} else if (ini_entry->value) {
+		value = ZSTR_VAL(ini_entry->value);
+	} else {
+		value = NULL;
+	}
+
+	if (value) {
+		zend_long trans_argl = atol(value);
+
+		if (trans_argl != PHP_IBASE_DEFAULT) {
+			/* access mode */
+			if (PHP_IBASE_READ == (trans_argl & PHP_IBASE_READ)) {
+				PUTS_TP("IBASE_READ");
+			} else if (PHP_IBASE_WRITE == (trans_argl & PHP_IBASE_WRITE)) {
+				PUTS_TP("IBASE_WRITE");
+			}
+
+			/* isolation level */
+			if (PHP_IBASE_COMMITTED == (trans_argl & PHP_IBASE_COMMITTED)) {
+				PUTS_TP("IBASE_COMMITTED");
+				if (PHP_IBASE_REC_VERSION == (trans_argl & PHP_IBASE_REC_VERSION)) {
+					PUTS_TP("IBASE_REC_VERSION");
+				} else if (PHP_IBASE_REC_NO_VERSION == (trans_argl & PHP_IBASE_REC_NO_VERSION)) {
+					PUTS_TP("IBASE_REC_NO_VERSION");
+				}
+			} else if (PHP_IBASE_CONSISTENCY == (trans_argl & PHP_IBASE_CONSISTENCY)) {
+				PUTS_TP("IBASE_CONSISTENCY");
+			} else if (PHP_IBASE_CONCURRENCY == (trans_argl & PHP_IBASE_CONCURRENCY)) {
+				PUTS_TP("IBASE_CONCURRENCY");
+			}
+
+			/* lock resolution */
+			if (PHP_IBASE_NOWAIT == (trans_argl & PHP_IBASE_NOWAIT)) {
+				PUTS_TP("IBASE_NOWAIT");
+			} else if (PHP_IBASE_WAIT == (trans_argl & PHP_IBASE_WAIT)) {
+				PUTS_TP("IBASE_WAIT");
+				if (PHP_IBASE_LOCK_TIMEOUT == (trans_argl & PHP_IBASE_LOCK_TIMEOUT)) {
+					PUTS_TP("IBASE_LOCK_TIMEOUT");
+				}
+			}
+		} else {
+			PUTS_TP("IBASE_DEFAULT");
+		}
+	}
+}
+
 /* {{{ startup, shutdown and info functions */
 PHP_INI_BEGIN()
 	PHP_INI_ENTRY_EX("ibase.allow_persistent", "1", PHP_INI_SYSTEM, NULL, zend_ini_boolean_displayer_cb)
@@ -718,6 +779,7 @@ PHP_INI_BEGIN()
 	PHP_INI_ENTRY("ibase.timestampformat", IB_DEF_DATE_FMT " " IB_DEF_TIME_FMT, PHP_INI_ALL, NULL)
 	PHP_INI_ENTRY("ibase.dateformat", IB_DEF_DATE_FMT, PHP_INI_ALL, NULL)
 	PHP_INI_ENTRY("ibase.timeformat", IB_DEF_TIME_FMT, PHP_INI_ALL, NULL)
+	STD_PHP_INI_ENTRY_EX("ibase.default_trans_params", "0", PHP_INI_ALL, OnUpdateLongGEZero, default_trans_params, zend_ibase_globals, ibase_globals, php_ibase_trans_displayer)
 PHP_INI_END()
 
 static PHP_GINIT_FUNCTION(ibase)

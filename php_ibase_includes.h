@@ -69,6 +69,7 @@ ZEND_BEGIN_MODULE_GLOBALS(ibase)
 	zend_long num_links, num_persistent;
 	char errmsg[MAX_ERRMSG];
 	zend_long sql_code;
+	zend_long default_trans_params;
 ZEND_END_MODULE_GLOBALS(ibase)
 
 ZEND_EXTERN_MODULE_GLOBALS(ibase)
