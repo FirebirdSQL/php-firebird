@@ -8,7 +8,7 @@ ibase_drop_db(): Basic test
 require("config.inc");
 
 unlink($file = tempnam('/tmp',"php_ibase_test"));
-
+if(!empty($host))$file = "$host:$file";
 
 $db = ibase_query(IBASE_CREATE,
 		sprintf("CREATE SCHEMA '%s' USER '%s' PASSWORD '%s' DEFAULT CHARACTER SET %s",$file,

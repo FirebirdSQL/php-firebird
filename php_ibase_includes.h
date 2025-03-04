@@ -41,7 +41,7 @@
 #define IB_STATUS (IBG(status))
 
 #ifdef IBASE_DEBUG
-#define IBDEBUG(a) php_printf("::: %s (%d)\n", a, __LINE__);
+#define IBDEBUG(a) php_printf("::: %s (%s:%d)\n", a, __FILE__, __LINE__);
 #endif
 
 #ifndef IBDEBUG
@@ -69,6 +69,8 @@ ZEND_BEGIN_MODULE_GLOBALS(ibase)
 	zend_long num_links, num_persistent;
 	char errmsg[MAX_ERRMSG];
 	zend_long sql_code;
+	zend_long default_trans_params;
+	zend_long default_lock_timeout; // only used togetger with trans_param IBASE_LOCK_TIMEOUT
 ZEND_END_MODULE_GLOBALS(ibase)
 
 ZEND_EXTERN_MODULE_GLOBALS(ibase)
@@ -112,25 +114,25 @@ typedef struct event {
 } ibase_event;
 
 enum php_interbase_option {
-	PHP_IBASE_DEFAULT 			= 0,
-	PHP_IBASE_CREATE            = 0,
+	PHP_IBASE_DEFAULT            = 0,
+	PHP_IBASE_CREATE             = 0,
 	/* fetch flags */
-	PHP_IBASE_FETCH_BLOBS		= 1,
-	PHP_IBASE_FETCH_ARRAYS      = 2,
-	PHP_IBASE_UNIXTIME 			= 4,
+	PHP_IBASE_FETCH_BLOBS        = 1,
+	PHP_IBASE_FETCH_ARRAYS       = 2,
+	PHP_IBASE_UNIXTIME           = 4,
 	/* transaction access mode */
-	PHP_IBASE_WRITE 			= 1,
-	PHP_IBASE_READ 				= 2,
+	PHP_IBASE_WRITE              = 1,
+	PHP_IBASE_READ               = 2,
 	/* transaction isolation level */
-	PHP_IBASE_CONCURRENCY 		= 4,
-	PHP_IBASE_COMMITTED 		= 8,
-	  PHP_IBASE_REC_NO_VERSION 	= 32,
-	  PHP_IBASE_REC_VERSION 	= 64,
-	PHP_IBASE_CONSISTENCY 		= 16,
+	PHP_IBASE_CONCURRENCY        = 4,
+	PHP_IBASE_COMMITTED          = 8,
+		PHP_IBASE_REC_NO_VERSION = 32,
+		PHP_IBASE_REC_VERSION    = 64,
+	PHP_IBASE_CONSISTENCY        = 16,
 	/* transaction lock resolution */
-	PHP_IBASE_WAIT 				= 128,
-	PHP_IBASE_NOWAIT 			= 256,
-	  PHP_IBASE_LOCK_TIMEOUT	= 512,
+	PHP_IBASE_WAIT               = 128,
+	PHP_IBASE_NOWAIT             = 256,
+		PHP_IBASE_LOCK_TIMEOUT   = 512,
 };
 
 #define IBG(v) ZEND_MODULE_GLOBALS_ACCESSOR(ibase, v)
@@ -139,12 +141,11 @@ enum php_interbase_option {
 ZEND_TSRMLS_CACHE_EXTERN()
 #endif
 
-#define BLOB_ID_LEN		18
-#define BLOB_ID_MASK	"0x%" LL_MASK "x"
+#define BLOB_ID_LEN     18
+#define BLOB_ID_MASK    "0x%" LL_MASK "x"
 
-#define BLOB_INPUT		1
-#define BLOB_OUTPUT		2
-
+#define BLOB_INPUT      1
+#define BLOB_OUTPUT     2
 
 #ifdef PHP_WIN32
 // Case switch, because of troubles on Windows and PHP 8.0
@@ -166,11 +167,11 @@ void _php_ibase_module_error(char *, ...)
 	PHP_ATTRIBUTE_FORMAT(printf,1,2);
 
 /* determine if a resource is a link or transaction handle */
-#define PHP_IBASE_LINK_TRANS(zv, lh, th)													\
+#define PHP_IBASE_LINK_TRANS(zv, lh, th)                                                    \
 		do {                                                                                \
 			if (!zv) {                                                                      \
 				lh = (ibase_db_link *)zend_fetch_resource2(                                 \
-						IBG(default_link), "InterBase link", le_link, le_plink);            \
+					IBG(default_link), "InterBase link", le_link, le_plink);                \
 			} else {                                                                        \
 				_php_ibase_get_link_trans(INTERNAL_FUNCTION_PARAM_PASSTHRU, zv, &lh, &th);  \
 			}                                                                               \

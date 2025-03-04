@@ -12,7 +12,7 @@ Make sure you got ~20GB free disk space to build for all PHP versions.
 
 Make sure ``git`` is in you PATH
 
-1. Set up Microsoft Visual Studio vc15 and vs16.
+1. Set up Microsoft Visual Studio vc15, vs16 and vs17 (for PHP8.4+).
 2. Set up Firebird 32-bit and 64-bit installations or libraries.
 3. Set up PHP-SDK according to https://wiki.php.net/internals/windows/stepbystepbuild_sdk_2
 4. Clone php-firebird extension source somewhere.

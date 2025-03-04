@@ -24,4 +24,4 @@ int(2)
 
 Warning: ibase_prepare(): Dynamic SQL Error SQL error code = -%d Column unknown X At line %d, column %d %s
 
-Fatal error: Uncaught TypeError: ibase_num_params(): Argument #1 ($query) must be of type resource, bool given in %a
+Fatal error: Uncaught TypeError: ibase_num_params(): Argument #1 ($query) must be of type resource, %a
