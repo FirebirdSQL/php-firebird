@@ -956,8 +956,8 @@ static void _php_ibase_alloc_xsqlda(XSQLDA *sqlda) /* {{{ */
 // Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
 			case SQL_BOOLEAN:
-					var->sqldata = emalloc(sizeof(FB_BOOLEAN));
-					break;
+				var->sqldata = emalloc(sizeof(FB_BOOLEAN));
+				break;
 #endif
 			case SQL_SHORT:
 				var->sqldata = emalloc(sizeof(short));
