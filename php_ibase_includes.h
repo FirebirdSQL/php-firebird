@@ -41,7 +41,7 @@
 #define IB_STATUS (IBG(status))
 
 #ifdef IBASE_DEBUG
-#define IBDEBUG(a) php_printf("::: %s (%d)\n", a, __LINE__);
+#define IBDEBUG(a) php_printf("::: %s (%s:%d)\n", a, __FILE__, __LINE__);
 #endif
 
 #ifndef IBDEBUG
