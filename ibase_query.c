@@ -747,6 +747,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 
 			case IS_NULL:
 					buf[i].sqlind = -1;
+					sqlda->sqlvar->sqldata = NULL;
 
 				if (var->sqltype & SQL_ARRAY) ++array_cnt;
 
