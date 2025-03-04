@@ -711,12 +711,12 @@ static PHP_INI_DISP(php_ibase_password_displayer_cb)
 		PUTS(" | ");            \
 	}                           \
 	PUTS(str);                  \
-	has_puts = true;            \
+	has_puts = 1;               \
 } while (0)
 
 static PHP_INI_DISP(php_ibase_trans_displayer)
 {
-	bool has_puts = false;
+	int has_puts = 0;
 	char *value;
 
 	if (type == ZEND_INI_DISPLAY_ORIG && ini_entry->modified) {
