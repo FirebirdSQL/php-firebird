@@ -1141,6 +1141,54 @@ PHP_FUNCTION(ibase_drop_db)
 
 #define TPB_MAX_SIZE (8*sizeof(char))
 
+void _php_ibase_populate_trans(zend_long trans_argl, zend_long trans_timeout, char *last_tpb, unsigned short *len) /* {{{ */
+{
+	unsigned short tpb_len = 0;
+	if (trans_argl != PHP_IBASE_DEFAULT) {
+		last_tpb[tpb_len++] = isc_tpb_version3;
+
+		/* access mode */
+		if (PHP_IBASE_READ == (trans_argl & PHP_IBASE_READ)) {
+			last_tpb[tpb_len++] = isc_tpb_read;
+		} else if (PHP_IBASE_WRITE == (trans_argl & PHP_IBASE_WRITE)) {
+			last_tpb[tpb_len++] = isc_tpb_write;
+		}
+
+		/* isolation level */
+		if (PHP_IBASE_COMMITTED == (trans_argl & PHP_IBASE_COMMITTED)) {
+			last_tpb[tpb_len++] = isc_tpb_read_committed;
+			if (PHP_IBASE_REC_VERSION == (trans_argl & PHP_IBASE_REC_VERSION)) {
+				last_tpb[tpb_len++] = isc_tpb_rec_version;
+			} else if (PHP_IBASE_REC_NO_VERSION == (trans_argl & PHP_IBASE_REC_NO_VERSION)) {
+				last_tpb[tpb_len++] = isc_tpb_no_rec_version;
+			}
+		} else if (PHP_IBASE_CONSISTENCY == (trans_argl & PHP_IBASE_CONSISTENCY)) {
+			last_tpb[tpb_len++] = isc_tpb_consistency;
+		} else if (PHP_IBASE_CONCURRENCY == (trans_argl & PHP_IBASE_CONCURRENCY)) {
+			last_tpb[tpb_len++] = isc_tpb_concurrency;
+		}
+
+		/* lock resolution */
+		if (PHP_IBASE_NOWAIT == (trans_argl & PHP_IBASE_NOWAIT)) {
+			last_tpb[tpb_len++] = isc_tpb_nowait;
+		} else if (PHP_IBASE_WAIT == (trans_argl & PHP_IBASE_WAIT)) {
+			last_tpb[tpb_len++] = isc_tpb_wait;
+			if (PHP_IBASE_LOCK_TIMEOUT == (trans_argl & PHP_IBASE_LOCK_TIMEOUT)) {
+				if (trans_timeout <= 0 || trans_timeout > 0x7FFF) {
+					php_error_docref(NULL, E_WARNING, "Invalid timeout parameter");
+				} else {
+					last_tpb[tpb_len++] = isc_tpb_lock_timeout;
+					last_tpb[tpb_len++] = sizeof(ISC_SHORT);
+					last_tpb[tpb_len] = (ISC_SHORT)trans_timeout;
+					tpb_len += sizeof(ISC_SHORT);
+				}
+			}
+		}
+	}
+	*len = tpb_len;
+}
+/* }}} */
+
 PHP_FUNCTION(ibase_trans)
 {
 	unsigned short i, link_cnt = 0, tpb_len = 0;
@@ -1200,55 +1248,20 @@ PHP_FUNCTION(ibase_trans)
 
 				convert_to_long_ex(&args[i]);
 				trans_argl = Z_LVAL(args[i]);
-
 				if (trans_argl != PHP_IBASE_DEFAULT) {
-					last_tpb[tpb_len++] = isc_tpb_version3;
-
-					/* access mode */
-					if (PHP_IBASE_READ == (trans_argl & PHP_IBASE_READ)) {
-						last_tpb[tpb_len++] = isc_tpb_read;
-					} else if (PHP_IBASE_WRITE == (trans_argl & PHP_IBASE_WRITE)) {
-						last_tpb[tpb_len++] = isc_tpb_write;
-					}
-
-					/* isolation level */
-					if (PHP_IBASE_COMMITTED == (trans_argl & PHP_IBASE_COMMITTED)) {
-						last_tpb[tpb_len++] = isc_tpb_read_committed;
-						if (PHP_IBASE_REC_VERSION == (trans_argl & PHP_IBASE_REC_VERSION)) {
-							last_tpb[tpb_len++] = isc_tpb_rec_version;
-						} else if (PHP_IBASE_REC_NO_VERSION == (trans_argl & PHP_IBASE_REC_NO_VERSION)) {
-							last_tpb[tpb_len++] = isc_tpb_no_rec_version;
-						}
-					} else if (PHP_IBASE_CONSISTENCY == (trans_argl & PHP_IBASE_CONSISTENCY)) {
-						last_tpb[tpb_len++] = isc_tpb_consistency;
-					} else if (PHP_IBASE_CONCURRENCY == (trans_argl & PHP_IBASE_CONCURRENCY)) {
-						last_tpb[tpb_len++] = isc_tpb_concurrency;
-					}
-
-					/* lock resolution */
-					if (PHP_IBASE_NOWAIT == (trans_argl & PHP_IBASE_NOWAIT)) {
-						last_tpb[tpb_len++] = isc_tpb_nowait;
-					} else if (PHP_IBASE_WAIT == (trans_argl & PHP_IBASE_WAIT)) {
-						last_tpb[tpb_len++] = isc_tpb_wait;
+					// Skip conflicting parameters
+					if (PHP_IBASE_NOWAIT != (trans_argl & PHP_IBASE_NOWAIT) && PHP_IBASE_WAIT == (trans_argl & PHP_IBASE_WAIT)) {
 						if (PHP_IBASE_LOCK_TIMEOUT == (trans_argl & PHP_IBASE_LOCK_TIMEOUT)) {
 							if((i + 1 < argn) && (Z_TYPE(args[i + 1]) == IS_LONG)){
 								i++;
 								convert_to_long_ex(&args[i]);
 								trans_timeout = Z_LVAL(args[i]);
-
-								if (trans_timeout <= 0 || trans_timeout > 0x7FFF) {
-									php_error_docref(NULL, E_WARNING, "Invalid timeout parameter");
-								} else {
-									last_tpb[tpb_len++] = isc_tpb_lock_timeout;
-									last_tpb[tpb_len++] = sizeof(ISC_SHORT);
-									last_tpb[tpb_len] = (ISC_SHORT)trans_timeout;
-									tpb_len += sizeof(ISC_SHORT);
-								}
 							} else {
 								php_error_docref(NULL, E_WARNING, "IBASE_LOCK_TIMEOUT expects next argument to be timeout value");
 							}
 						}
 					}
+					_php_ibase_populate_trans(trans_argl, trans_timeout, last_tpb, &tpb_len);
 				}
 			}
 		}
