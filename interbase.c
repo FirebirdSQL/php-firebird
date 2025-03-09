@@ -42,7 +42,7 @@
 #include "php_interbase.h"
 #include "php_ibase_includes.h"
 #include "SAPI.h"
-
+#include <stdbool.h>
 #include <time.h>
 
 #define ROLLBACK    0
