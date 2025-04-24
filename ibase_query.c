@@ -947,6 +947,10 @@ static void _php_ibase_alloc_xsqlda(XSQLDA *sqlda) /* {{{ */
 	for (i = 0; i < sqlda->sqld; i++) {
 		XSQLVAR *var = &sqlda->sqlvar[i];
 
+        if ((var->sqltype & ~1) == SQL_TEXT) {
+            var->sqltype = SQL_VARYING | (var->sqltype & 1);
+        }
+
 		switch (var->sqltype & ~1) {
 			case SQL_TEXT:
 				var->sqldata = safe_emalloc(sizeof(char), var->sqllen, 0);
