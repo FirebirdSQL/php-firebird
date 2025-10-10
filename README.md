@@ -1,5 +1,10 @@
 # PHP Firebird extension
 
+## Using the driver on Windows
+In order for this extension to work, there are DLL files that must be available to the Windows system PATH. For information on how to do this, see the FAQ entitled "How do I add my PHP directory to the PATH on Windows" (https://www.php.net/manual/en/faq.installation.php#faq.installation.addtopath). Although copying DLL files from the PHP folder into the Windows system directory also works (because the system directory is by default in the system's PATH), this is not recommended. This extension requires the following files to be in the PATH: fbclient.dll,gds32.dll
+
+If you installed the Firebird/InterBase database server on the same machine PHP is running on, you will have this DLL already and fbclient.dll, gds32.dll (gds32.dll is generated from the installer for legacy applications) will already be in the PATH.
+
 ## Building the driver
 
 ### Build the driver on Linux

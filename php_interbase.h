@@ -32,7 +32,7 @@ extern zend_module_entry ibase_module_entry;
 
 #include "php_version.h"
 // Keep version in track with Firebird
-#define PHP_INTERBASE_VERSION "5.0.1"
+#define PHP_INTERBASE_VERSION "5.0.2"
 
 PHP_MINIT_FUNCTION(ibase);
 PHP_RINIT_FUNCTION(ibase);
