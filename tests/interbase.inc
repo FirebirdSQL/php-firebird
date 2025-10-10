@@ -30,5 +30,22 @@ function cleanup_db()
 	ibase_drop_db($r);
 }
 
+function get_fb_version(): float
+{
+	global $host, $user, $password, $fb_version;
+
+	if(isset($fb_version)) return $fb_version;
+
+	if($se = ibase_service_attach($host ? $host : "localhost", $user, $password)) {
+		$info = ibase_server_info($se, IBASE_SVC_SERVER_VERSION);
+		if($info === false)die("skip cannot ibase_server_info()");
+		$server_version  = explode(" ", $info);
+		$vers = (float)$server_version[count($server_version) - 1];
+		return $fb_version = $vers;
+	} else {
+		die("skip: cannot connect");
+	}
+}
+
 register_shutdown_function('cleanup_db');
 init_db();

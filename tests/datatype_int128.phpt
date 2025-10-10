@@ -3,6 +3,7 @@ Check for data type INT128 (Firebird 4.0 or above)
 --SKIPIF--
 <?php
 include("skipif.inc");
+if(get_fb_version() < 4.0)print "skip FB < 4.0";
 ?>
 --FILE--
 <?php
