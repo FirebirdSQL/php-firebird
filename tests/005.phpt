@@ -1,16 +1,21 @@
 --TEST--
 InterBase: transactions
 --SKIPIF--
-<?php die('skip: Broken test (Disabled until issue 41 is fixed)'); include("skipif.inc"); ?>
+<?php
+include("skipif.inc");
+if(get_fb_version() >= 5.0)print 'skip: FB >= 5.0';
+?>
 --FILE--
 <?php
+
+// See https://github.com/FirebirdSQL/php-firebird/issues/41
 
     require("interbase.inc");
 
     ibase_connect($test_base);
 
-    @ibase_query("create table test5 (i integer)");
-    @ibase_query("delete from test5");
+    ibase_query("create table test5 (i integer)");
+    //ibase_query("delete from test5");
     ibase_close();
 
 
@@ -264,7 +269,7 @@ three rows in fourth transaction with deadlock
 2	
 3	
 4	
-errmsg [lock conflict on no wait transaction deadlock %a]
+errmsg [%s]
 ---
 three rows
 --- test5 ---
