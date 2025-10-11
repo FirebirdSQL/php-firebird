@@ -13,16 +13,16 @@ if(get_fb_version() < 4.0)print "skip FB < 4.0";
     $db = ibase_connect($test_base);
 
     ibase_query(
-        "create table test_dt (
-            v_int128    int128 not null
+        "CREATE TABLE TEST_DT (
+            V_INT128 INT128 NOT NULL
          )");
     ibase_commit();
 
-    ibase_query("insert into test_dt (v_int128) values (1234)");
-    ibase_query("insert into test_dt (v_int128) values (-170141183460469231731687303715884105728)");
-    ibase_query("insert into test_dt (v_int128) values (170141183460469231731687303715884105727)");
+    ibase_query("INSERT INTO TEST_DT (V_INT128) VALUES (1234)");
+    ibase_query("INSERT INTO TEST_DT (V_INT128) VALUES (-170141183460469231731687303715884105728)");
+    ibase_query("INSERT INTO TEST_DT (V_INT128) VALUES (170141183460469231731687303715884105727)");
 
-    $sql = 'select * from test_dt';
+    $sql = 'SELECT * FROM TEST_DT';
     $query = ibase_query($sql);
     while(($row = ibase_fetch_assoc($query))) {
     	var_dump($row);
