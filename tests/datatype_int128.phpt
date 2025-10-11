@@ -8,19 +8,19 @@ if(get_fb_version() < 4.0)print "skip FB < 4.0";
 --FILE--
 <?php
 
-	require("interbase.inc");
+    require("interbase.inc");
 
-	$db = ibase_connect($test_base);
+    $db = ibase_connect($test_base);
 
     ibase_query(
-    	"create table test_dt (
+        "create table test_dt (
             v_int128    int128 not null
          )");
     ibase_commit();
 
-	ibase_query("insert into test_dt (v_int128) values (1234)");
-   	ibase_query("insert into test_dt (v_int128) values (-170141183460469231731687303715884105728)");
-   	ibase_query("insert into test_dt (v_int128) values (170141183460469231731687303715884105727)");
+    ibase_query("insert into test_dt (v_int128) values (1234)");
+    ibase_query("insert into test_dt (v_int128) values (-170141183460469231731687303715884105728)");
+    ibase_query("insert into test_dt (v_int128) values (170141183460469231731687303715884105727)");
 
     $sql = 'select * from test_dt';
     $query = ibase_query($sql);
