@@ -32,14 +32,14 @@ function cleanup_db()
 
 function get_fb_version(): float
 {
-	global $host, $user, $password, $fb_version;
+	global $host, $user, $password, $fb_version, $fb_version_str;
 
 	if(isset($fb_version)) return $fb_version;
 
 	if($se = ibase_service_attach($host ? $host : "localhost", $user, $password)) {
-		$info = ibase_server_info($se, IBASE_SVC_SERVER_VERSION);
-		if($info === false)die("skip cannot ibase_server_info()");
-		$server_version  = explode(" ", $info);
+		$fb_version_str = ibase_server_info($se, IBASE_SVC_SERVER_VERSION);
+		if($fb_version_str === false)die("skip cannot ibase_server_info()");
+		$server_version  = explode(" ", $fb_version_str);
 		$vers = (float)$server_version[count($server_version) - 1];
 		return $fb_version = $vers;
 	} else {
