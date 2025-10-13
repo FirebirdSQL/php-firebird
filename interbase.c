@@ -1589,6 +1589,19 @@ PHP_FUNCTION(ibase_gen_id)
 	RETURN_LONG((zend_long)result);
 }
 
+void fbp_dump_buffer(int len, const unsigned char *buffer){
+    int i;
+    for (i = 0; i < len; i++) {
+        if(buffer[i] < 31 || buffer[i] > 126)
+            php_printf("0x%02x ", buffer[i]);
+        else
+            php_printf("%c", buffer[i]);
+    }
+    if (i > 0) {
+        php_printf("\n");
+    }
+}
+
 /* }}} */
 
 #endif /* HAVE_IBASE */

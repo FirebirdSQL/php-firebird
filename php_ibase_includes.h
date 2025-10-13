@@ -203,4 +203,6 @@ void php_ibase_service_minit(INIT_FUNC_ARGS);
 #define max(a,b) ((a)>(b)?(a):(b))
 #endif
 
+void fbp_dump_buffer(int len, const unsigned char *buffer);
+
 #endif /* PHP_IBASE_INCLUDES_H */
