@@ -210,20 +210,21 @@ PHP_FUNCTION(ibase_delete_user)
 }
 /* }}} */
 
-/* {{{ proto resource ibase_service_attach(string host, string dba_username, string dba_password)
+/* {{{ proto resource ibase_service_attach([string host [, string dba_username [, string dba_password]]])
    Connect to the service manager */
 PHP_FUNCTION(ibase_service_attach)
 {
 	size_t hlen = 0, ulen = 0, plen = 0;
 	ibase_service *svm;
-	char buf[350], *host, *user, *pass;
+	char *host = NULL, *user = NULL, *pass = NULL;
+	char buf[350];
 	char loc[128] = "service_mgr";
 	isc_svc_handle handle = 0;
 	unsigned short p = 0;
 
 	RESET_ERRMSG;
 
-	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "|sss",
+	if (SUCCESS != zend_parse_parameters(ZEND_NUM_ARGS(), "|s!s!s!",
 			&host, &hlen, &user, &ulen, &pass, &plen)) {
 
 		RETURN_FALSE;
@@ -274,8 +275,8 @@ PHP_FUNCTION(ibase_service_attach)
 
 	svm = (ibase_service*)emalloc(sizeof(ibase_service));
 	svm->handle = handle;
-	svm->hostname = estrdup(host);
-	svm->username = estrdup(user);
+	svm->hostname = hlen > 0 ? estrdup(host) : NULL;
+	svm->username = ulen > 0 ? estrdup(user) : NULL;
 
 	RETVAL_RES(zend_register_resource(svm, le_service));
 	Z_TRY_ADDREF_P(return_value);
