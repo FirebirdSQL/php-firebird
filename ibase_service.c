@@ -251,14 +251,14 @@ PHP_FUNCTION(ibase_service_attach)
 	if(ulen > 0){
 		buf[p++] = isc_spb_user_name;
 		buf[p++] = (char)ulen;
-		memcpy(&buf[p], &user, ulen);
+		memcpy(&buf[p], user, ulen);
 		p += ulen;
 	}
 
 	if(plen > 0){
 		buf[p++] = isc_spb_password;
 		buf[p++] = (char)plen;
-		memcpy(&buf[p], &pass, plen);
+		memcpy(&buf[p], pass, plen);
 		p += plen;
 	}
 
