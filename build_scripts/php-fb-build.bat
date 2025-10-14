@@ -59,10 +59,10 @@ set pfb_build_root=php%pfb_php_vers%\%pfb_cpp_vers%\
 set check_code="if(!function_exists('ibase_connect'))exit(1);"
 
 set TPATH=%PATH%
-set PATH=%FB64_DIR%;%TPATH%
+set PATH=%PFB_FB64_DIR%;%TPATH%
 "%pfb_build_root%x64\php-src\x64\Release_TS\php.exe" -dextension=.\php_interbase.dll -r %check_code% || goto :error
 "%pfb_build_root%x64\php-src\x64\Release\php.exe" -dextension=.\php_interbase.dll -r %check_code% || goto :error
-set PATH=%FB32_DIR%;%TPATH%
+set PATH=%PFB_FB32_DIR%;%TPATH%
 "%pfb_build_root%x86\php-src\Release_TS\php.exe" -dextension=.\php_interbase.dll -r %check_code% || goto :error
 "%pfb_build_root%x86\php-src\Release\php.exe" -dextension=.\php_interbase.dll -r %check_code% || goto :error
 set PATH=%TPATH%
