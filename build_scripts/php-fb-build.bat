@@ -115,10 +115,10 @@ echo.
 call :log "%pfb_php_tag% build OK"
 
 @REM copy compiled extension to target directory
-copy %pfb_build_root%x64\php-src\x64\Release_TS\php_interbase.dll %PFB_OUTPUT_DIR%php_interbase-%PFB_VERS%-%pfb_php_vers%-%pfb_cpp_vers%-x64.dll>nul
-copy %pfb_build_root%x64\php-src\x64\Release\php_interbase.dll %PFB_OUTPUT_DIR%php_interbase-%PFB_VERS%-%pfb_php_vers%-%pfb_cpp_vers%-nts-x64.dll>nul
-copy %pfb_build_root%x86\php-src\Release_TS\php_interbase.dll %PFB_OUTPUT_DIR%php_interbase-%PFB_VERS%-%pfb_php_vers%-%pfb_cpp_vers%.dll>nul
-copy %pfb_build_root%x86\php-src\Release\php_interbase.dll %PFB_OUTPUT_DIR%php_interbase-%PFB_VERS%-%pfb_php_vers%-%pfb_cpp_vers%-nts.dll>nul
+copy %pfb_build_root%x64\php-src\x64\Release_TS\php_interbase.dll %PFB_OUTPUT_DIR%php_interbase-%PFB_VERS%-%pfb_php_vers%-%pfb_cpp_vers%-x64.dll
+copy %pfb_build_root%x64\php-src\x64\Release\php_interbase.dll %PFB_OUTPUT_DIR%php_interbase-%PFB_VERS%-%pfb_php_vers%-%pfb_cpp_vers%-nts-x64.dll
+copy %pfb_build_root%x86\php-src\Release_TS\php_interbase.dll %PFB_OUTPUT_DIR%php_interbase-%PFB_VERS%-%pfb_php_vers%-%pfb_cpp_vers%.dll
+copy %pfb_build_root%x86\php-src\Release\php_interbase.dll %PFB_OUTPUT_DIR%php_interbase-%PFB_VERS%-%pfb_php_vers%-%pfb_cpp_vers%-nts.dll
 
 exit /B 0
 
