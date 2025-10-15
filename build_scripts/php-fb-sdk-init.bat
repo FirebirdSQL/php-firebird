@@ -2,24 +2,23 @@
 @REM
 @REM Must be called under phpsdk-<php_vers>-<arch>.bat
 @REM
-@REM Calling script should set variables: <pfb_php_vers>
+@REM Calling script should set variables: <pfb_php_vers> <pfb_php_tag>
 @REM
-@REM set pfb_php_vers=7.4
+@REM Example: pfb_php_tag=7.4.13
+@REM Example: pfb_php_vers=7.4
 
 if [%pfb_php_vers%] == [] (
     echo pfb_php_vers varible not set
     exit 1
 )
 
-@REM Handle current master branch
-if "%pfb_php_vers%" == "master" (
-    set pfb_git_args=
-) else (
-    set pfb_git_args=--branch PHP-%pfb_php_vers%
+if [%pfb_php_tag%] == [] (
+    echo pfb_php_tag varible not set
+    exit 1
 )
 
 call phpsdk_buildtree php%pfb_php_vers%
-git clone --depth 1 %pfb_git_args% https://github.com/php/php-src.git
+git clone --depth 1 --branch %pfb_php_tag% https://github.com/php/php-src.git
 cd php-src
 
 @REM Remove built-in extension

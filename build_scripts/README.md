@@ -16,10 +16,8 @@ Make sure ``git`` is in you PATH
 2. Set up Firebird 32-bit and 64-bit installations or libraries.
 3. Set up PHP-SDK according to https://wiki.php.net/internals/windows/stepbystepbuild_sdk_2
 4. Clone php-firebird extension source somewhere.
-4. Copy these build scripts to C:\php-sdk\
 5. Adjust php-fb-config.bat.
-
     ``Note: PFB_SOURCE_DIR should point one level up. For example
     PFB_SOURCE_DIR=D:\php-firebird\ then your source should reside in D:\php-firebird\php-firebird\
     ``
-6. Run ``php-fb-build-all.bat`` to build for all PHP versions or run ``php-fb-build.bat 7.4 vc15`` to build for particular version.
+6. cd into php-sdk and from there run ``<path_to>\php-fb-build-all.bat`` to build for all PHP versions or run ``php-fb-build.bat 7.4 vc15`` to build for particular version.

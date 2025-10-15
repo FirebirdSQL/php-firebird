@@ -3,11 +3,11 @@
 @REM Must be called under phpsdk-<php_vers>-<arch>.bat
 @REM
 @REM Calling script should set variables:
-@REM <PFB_FB32_DIR> <PFB_FB64_DIR> <PFB_SOURCE_DIR> <pfb_php_vers> [pfb_nts] [pfb_x86]
+@REM <PFB_FB32_DIR> <PFB_FB64_DIR> <PFB_SOURCE_DIR> <pfb_php_vers> [pfb_ts] [pfb_arch]
 @REM
 @REM set pfb_php_vers=7.4
-@REM set pfb_nts=1 if nts expected, 0 if ts
-@REM set pfb_x86=1 if linking to x86 fbclient, o if x64
+@REM set pfb_ts=1 if thread safety enabled, 0 if not
+@REM set pfb_arch=x86 to build agains 32-bit, otherwise 64-bit
 @REM
 @REM <PFB_FB32_DIR> <PFB_FB64_DIR> <PFB_SOURCE_DIR> all set in php-fb-config.bat
 @REM
@@ -32,7 +32,7 @@ exit /B
 
     set build_msg=Building PHP-%pfb_php_vers%
 
-    if "%pfb_nts%" gtr "0"  (
+    if "%pfb_nts%" gtr "0" (
         set build_msg=%build_msg% non-TS
         set extra_args=--disable-zts
     ) else (
@@ -40,7 +40,7 @@ exit /B
         set extra_args=
     )
 
-    if "%pfb_x86%" gtr "0"  (
+    if %pfb_arch% EQU x86 (
         set with_interbase="shared,%PFB_FB32_DIR%"
         set build_msg=%build_msg% x86
     ) else (
