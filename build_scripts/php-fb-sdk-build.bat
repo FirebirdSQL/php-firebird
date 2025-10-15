@@ -32,7 +32,7 @@ exit /B
 
     set build_msg=Building PHP-%pfb_php_vers%
 
-    if "%pfb_nts%" gtr "0" (
+    if "%pfb_ts%" gtr "0" (
         set build_msg=%build_msg% non-TS
         set extra_args=--disable-zts
     ) else (
