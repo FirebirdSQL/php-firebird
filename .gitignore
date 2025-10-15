@@ -71,3 +71,5 @@ tests/*.sh
 # coverage
 /coverage.info
 /reports
+win_build_scripts
+.vscode-win
