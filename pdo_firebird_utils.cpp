@@ -14,6 +14,8 @@
   +----------------------------------------------------------------------+
 */
 
+#if FB_API_VER >= 40
+
 #include "pdo_firebird_utils.h"
 #include <firebird/Interface.h>
 #include <cstring>
@@ -40,7 +42,6 @@ extern "C" ISC_DATE fb_encode_date(unsigned year, unsigned month, unsigned day)
 	return util->encodeDate(year, month, day);
 }
 
-#if FB_API_VER >= 40
 static void fb_copy_status(const ISC_STATUS* from, ISC_STATUS* to, size_t maxLength)
 {
 	for(size_t i=0; i < maxLength; ++i) {
