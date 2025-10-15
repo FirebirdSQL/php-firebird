@@ -7,12 +7,12 @@
 @REM Example: pfb_php_tag=7.4.13
 @REM Example: pfb_php_vers=7.4
 
-if [%pfb_php_vers%] == [] (
+if "%pfb_php_vers%" == "" (
     echo pfb_php_vers varible not set
     exit 1
 )
 
-if [%pfb_php_tag%] == [] (
+if "%pfb_php_tag%" == "" (
     echo pfb_php_tag varible not set
     exit 1
 )

@@ -25,7 +25,7 @@ goto :MAIN
 exit /B
 
 :MAIN
-    if [%pfb_php_vers%] == [] (
+    if "%pfb_php_vers%" == "" (
         echo pfb_php_vers varible not set
         exit 1
     )
@@ -40,7 +40,7 @@ exit /B
         set extra_args=
     )
 
-    if %pfb_arch% EQU x86 (
+    if "%pfb_arch%" == "x86" (
         set with_interbase="shared,%PFB_FB32_DIR%"
         set build_msg=%build_msg% x86
     ) else (

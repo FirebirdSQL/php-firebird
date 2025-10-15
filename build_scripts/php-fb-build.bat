@@ -34,7 +34,7 @@ if('php-'.PHP_VERSION != '%pfb_php_tag%'){ printf(\"Version mismatch: expected '
 if((int)ZEND_THREAD_SAFE != %vb_ts%){ printf(\"Thread Safety mismatch: expected %vb_ts%, but got %%d \n\", ZEND_THREAD_SAFE); exit(1); }^
 if((PHP_INT_SIZE == 8 ? 'x64' : 'x86') != '%vb_arch%'){ printf(\"Architecture mismatch: expected '%vb_arch%', but got '%%s' \n\", (PHP_INT_SIZE == 8 ? 'x64' : 'x86')); exit(1); }
 
-if %vb_arch% EQU x86 (
+if "%vb_arch%" == "x86" (
     set vb_libs=%PFB_FB32_DIR%
 ) else (
     set vb_libs=%PFB_FB64_DIR%
@@ -55,13 +55,13 @@ exit /B
 set pfb_php_tag=%1
 set pfb_cpp_vers=%2
 
-if [%pfb_php_tag%] == [] (
+if "%pfb_php_tag%" == "" (
     call :usage
     echo pfb_php_tag varible not set
     exit 1
 )
 
-if [%pfb_cpp_vers%] == [] (
+if "%pfb_cpp_vers%" == "" (
     call :usage
     echo pfb_cpp_vers varible not set
     exit 1
@@ -70,7 +70,7 @@ if [%pfb_cpp_vers%] == [] (
 @REM Convert php-8.4.13 -> 8.4
 for /f "tokens=2,3 delims=-." %%a in ("%pfb_php_tag%") do set pfb_php_vers=%%a.%%b
 
-if [%pfb_php_vers%] == [] (
+if "%pfb_php_vers%" == "" (
     echo BUG: pfb_php_vers should be set at this point
     exit 1
 )
@@ -80,12 +80,12 @@ set pfb_build_root=php%pfb_php_vers%\%pfb_cpp_vers%\
 (for %%a in (x64 x86) do (
     set pfb_arch=%%a
 
-    if not exist %pfb_build_root%\%%a\php-src\.git\ (
+    if not exist "%pfb_build_root%\%%a\php-src\.git\" (
         call :log "Cloning %pfb_php_tag% %%a"
         call phpsdk-%pfb_cpp_vers%-%%a.bat -t %~dp0php-fb-sdk-init.bat || goto :error
     )
 
-    if %%a EQU x86 (
+    if "%%a" == "x86" (
         set php_exe_arch=%pfb_build_root%%%a\php-src\
     ) else (
         set php_exe_arch=%pfb_build_root%%%a\php-src\x64\
@@ -94,13 +94,13 @@ set pfb_build_root=php%pfb_php_vers%\%pfb_cpp_vers%\
     setlocal enabledelayedexpansion
     (for %%t in (0 1) do (
         set pfb_ts=%%t
-        if %%t EQU 1 (
+        if "%%t" equ "1" (
             set php_exe="!php_exe_arch!Release_TS\php.exe"
         ) else (
             set php_exe="!php_exe_arch!Release\php.exe"
         )
 
-        if [!php_exe!] == [] (
+        if "!php_exe!" == "" (
             echo BUG: php_exe should be set at this point
             exit 1
         )
