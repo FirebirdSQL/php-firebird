@@ -14,5 +14,5 @@ set PFB_VERS=3.0.1-%GIT_HASH%
 set PFB_OUTPUT_DIR=D:\php-firebird\releases\
 
 @REM FB 32-bit and 64-bit libraries
-set FB32_DIR=C:\Program Files\Firebird\Firebird_5_0-x86
-set FB64_DIR=C:\Program Files\Firebird\Firebird_5_0
+set PFB_FB32_DIR=C:\Program Files\Firebird\Firebird_5_0-x86
+set PFB_FB64_DIR=C:\Program Files\Firebird\Firebird_5_0
