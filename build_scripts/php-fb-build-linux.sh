@@ -4,7 +4,6 @@
 FIREBIRD_INCLUDE_DIR="/opt/firebird/include"
 INSTALL_DIR="../ext"
 REPO_URL="https://github.com/FirebirdSQL/php-firebird.git"
-DRIVER_VERSION="5.0.2"
 BRANCH_OR_COMMIT="master" # Set to a specific tag or commit if needed
 PHP_VERSIONS=("7.4" "8.0" "8.1" "8.2" "8.3" "8.4") # Adjust as needed
 BUILD_DIR="php-firebird-build"
@@ -15,6 +14,15 @@ mkdir -p "$INSTALL_DIR"
 rm -rf "$BUILD_DIR"
 echo "Cloning repository from $REPO_URL (branch: $BRANCH_OR_COMMIT)..."
 git clone --depth 1 --branch "$BRANCH_OR_COMMIT" "$REPO_URL" "$BUILD_DIR"
+
+# Read version from driver
+if [[ -f "$BUILD_DIR/php_interbase.h" ]]; then
+    DRIVER_VERSION=$(grep -Eo 'PHP_INTERBASE_VERSION\s+"[0-9.]+"' "$BUILD_DIR/php_interbase.h" | grep -Eo '[0-9.]+')
+elif [[ -f "$BUILD_DIR/package.xml" ]]; then
+    DRIVER_VERSION=$(grep -oPm1 "(?<=<version>)[^<]+" "$BUILD_DIR/package.xml")
+else
+    DRIVER_VERSION="unknown"
+fi
 
 for VERSION in "${PHP_VERSIONS[@]}"; do
     echo "==> Building for PHP $VERSION"
