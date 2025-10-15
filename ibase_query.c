@@ -1901,6 +1901,10 @@ PHP_FUNCTION(ibase_free_result)
 	}
 
 	ib_result = (ibase_result *)zend_fetch_resource_ex(result_arg, LE_RESULT, le_result);
+
+	_php_ibase_free_xsqlda(ib_result->out_sqlda);
+	efree(ib_result);
+
 	zend_list_delete(Z_RES_P(result_arg));
 
 	/*

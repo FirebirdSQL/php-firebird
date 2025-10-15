@@ -5,29 +5,28 @@ Bug #45373 (php crash on query with errors in params)
 include("skipif.inc");
 // See GitHub issue 44
 // https://github.com/FirebirdSQL/php-firebird/issues/44
-include("skipif-php8-or-newer.inc");
 ?>
 --FILE--
 <?php
 
-	require("interbase.inc");
+require("interbase.inc");
 
-	$db = ibase_connect($test_base);
+$db = ibase_connect($test_base);
 
+$q = ibase_prepare($db, "SELECT * FROM TEST1 WHERE I = ? AND C = ?");
+$r = ibase_execute($q, 1, 'test table not created with isql');
+var_dump(ibase_fetch_assoc($r));
+ibase_free_result($r);
 
-	$sql = "select * from test1 where i = ? and c = ?";
+// MUST run with error_reporting & E_NOTICE to generate Notice:
+$r = ibase_execute($q, 1, 'test table not created with isql', 1);
+var_dump(ibase_fetch_assoc($r));
+ibase_free_result($r);
 
-	$q = ibase_prepare($db, $sql);
-	$r = ibase_execute($q, 1, 'test table not created with isql');
-	var_dump(ibase_fetch_assoc($r));
-	ibase_free_result($r);
-
-	$r = ibase_execute($q, 1, 'test table not created with isql', 1);
-	var_dump(ibase_fetch_assoc($r));
-	ibase_free_result($r);
-
-	$r = ibase_execute($q, 1);
-	var_dump(ibase_fetch_assoc($r));
+// Enforcing function parameters became more stricter in latest versions of PHP
+if($r = ibase_execute($q, 1)) {
+  var_dump(ibase_fetch_assoc($r));
+}
 
 ?>
 --EXPECTF--
@@ -47,6 +46,3 @@ array(2) {
 }
 
 Warning: ibase_execute(): Statement expects 2 arguments, 1 given in %s on line %d
-
-Warning: ibase_fetch_assoc() expects parameter 1 to be resource, bool given in %s on line %d
-NULL

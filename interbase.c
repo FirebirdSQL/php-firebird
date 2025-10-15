@@ -256,7 +256,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_delete_user, 0, 0, 3)
 	ZEND_ARG_INFO(0, last_name)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_service_attach, 0, 0, 3)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_service_attach, 0, 0, 0)
 	ZEND_ARG_INFO(0, host)
 	ZEND_ARG_INFO(0, dba_username)
 	ZEND_ARG_INFO(0, dba_password)
@@ -711,12 +711,12 @@ static PHP_INI_DISP(php_ibase_password_displayer_cb)
 		PUTS(" | ");            \
 	}                           \
 	PUTS(str);                  \
-	has_puts = true;            \
+	has_puts = 1;               \
 } while (0)
 
 static PHP_INI_DISP(php_ibase_trans_displayer)
 {
-	bool has_puts = false;
+	int has_puts = 0;
 	char *value;
 
 	if (type == ZEND_INI_DISPLAY_ORIG && ini_entry->modified) {
@@ -1587,6 +1587,19 @@ PHP_FUNCTION(ibase_gen_id)
 	}
 #endif
 	RETURN_LONG((zend_long)result);
+}
+
+void fbp_dump_buffer(int len, const unsigned char *buffer){
+    int i;
+    for (i = 0; i < len; i++) {
+        if(buffer[i] < 31 || buffer[i] > 126)
+            php_printf("0x%02x ", buffer[i]);
+        else
+            php_printf("%c", buffer[i]);
+    }
+    if (i > 0) {
+        php_printf("\n");
+    }
 }
 
 /* }}} */

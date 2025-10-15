@@ -10,7 +10,7 @@ include("skipif-php7-or-older.inc");
 
 require("config.inc");
 
-unlink($file = tempnam('/tmp',"php_ibase_test"));
+unlink($file = tempnam(sys_get_temp_dir(),"php_ibase_test"));
 if(!empty($host))$file = "$host:$file";
 
 $db = ibase_query(IBASE_CREATE,
