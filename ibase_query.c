@@ -714,6 +714,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 		XSQLVAR *var = &sqlda->sqlvar[i];
 
 		var->sqlind = &buf[i].sqlind;
+		var->sqldata = (void*)&buf[i].val;
 
 		/* check if a NULL should be inserted */
 		switch (Z_TYPE_P(b_var)) {
@@ -747,7 +748,6 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 
 			case IS_NULL:
 					buf[i].sqlind = -1;
-					sqlda->sqlvar->sqldata = NULL;
 
 				if (var->sqltype & SQL_ARRAY) ++array_cnt;
 
@@ -757,8 +757,6 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 		/* if we make it to this point, we must provide a value for the parameter */
 
 		buf[i].sqlind = 0;
-
-		var->sqldata = (void*)&buf[i].val;
 
 		switch (var->sqltype & ~1) {
 			struct tm t;
