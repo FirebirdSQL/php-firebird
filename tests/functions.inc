@@ -82,3 +82,19 @@ function rand_number($len , $prec = -1, $sign = 1)
     }
     return $n;
 }
+
+function array2sql_parts($data) {
+    $fields_str = join(",", array_keys($data));
+    $q_str = join(",", array_fill(0, count($data), "?"));
+    return [$fields_str, $q_str, $data];
+}
+
+function dump_rows($q) {
+    while($row = ibase_fetch_row($q)){
+        var_dump($row);
+    }
+}
+
+function dump_table_rows($table) {
+    dump_rows(ibase_query(sprintf('SELECT * FROM "%s"', $table)));
+}
