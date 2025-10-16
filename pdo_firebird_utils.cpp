@@ -14,6 +14,8 @@
   +----------------------------------------------------------------------+
 */
 
+#include <ibase.h>
+
 #if FB_API_VER >= 40
 
 #include "pdo_firebird_utils.h"
