@@ -1590,7 +1590,8 @@ PHP_FUNCTION(ibase_gen_id)
 }
 
 #if PHP_DEBUG
-void fbp_dump_buffer(int len, const unsigned char *buffer){
+void fbp_dump_buffer(int len, const unsigned char *buffer)
+{
 	int i;
 	for (i = 0; i < len; i++) {
 		if(buffer[i] < 32 || buffer[i] > 126)
@@ -1603,13 +1604,31 @@ void fbp_dump_buffer(int len, const unsigned char *buffer){
 	}
 }
 
-void fbp_dump_buffer_raw(int len, const unsigned char *buffer){
+void fbp_dump_buffer_raw(int len, const unsigned char *buffer)
+{
 	int i;
 	for (i = 0; i < len; i++) {
 		php_printf("%c", buffer[i]);
 	}
 }
 #endif
+
+void fbp_error_ex(long level, char *msg, ...)
+{
+	va_list ap;
+	char buf[1024] = {0};
+
+	va_start(ap, msg);
+
+	/* vsnprintf NUL terminates the buf and writes at most n-1 chars+NUL */
+	vsnprintf(buf, sizeof(buf), msg, ap);
+	va_end(ap);
+
+	// IBG(sql_code) = -999; /* no SQL error */
+
+	php_error(level, "%s", buf);
+}
+
 /* }}} */
 
 #endif /* HAVE_IBASE */
