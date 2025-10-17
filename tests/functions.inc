@@ -90,7 +90,7 @@ function array2sql_parts($data) {
 }
 
 function dump_rows($q) {
-    while($row = ibase_fetch_row($q)){
+    while($row = ibase_fetch_assoc($q)){
         var_dump($row);
     }
 }

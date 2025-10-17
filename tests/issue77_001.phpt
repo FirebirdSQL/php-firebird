@@ -35,20 +35,20 @@ test77();
 ?>
 --EXPECT--
 array(2) {
-  [0]=>
+  ["TTYPE"]=>
   string(1) "1"
-  [1]=>
+  ["F8"]=>
   NULL
 }
 array(2) {
-  [0]=>
+  ["TTYPE"]=>
   string(1) "1"
-  [1]=>
+  ["F8"]=>
   NULL
 }
 array(2) {
-  [0]=>
+  ["TTYPE"]=>
   string(1) "2"
-  [1]=>
+  ["F8"]=>
   NULL
 }
