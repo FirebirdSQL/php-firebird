@@ -98,3 +98,25 @@ function dump_rows($q) {
 function dump_table_rows($table) {
     dump_rows(ibase_query(sprintf('SELECT * FROM "%s"', $table)));
 }
+
+function insert_into($table, $data) {
+    [$fields_str, $q_str] = array2sql_parts($data);
+    return ibase_query(sprintf('INSERT INTO "%s" (%s) VALUES (%s)',
+        $table, $fields_str, $q_str
+    ), ...array_values($data));
+}
+
+/** @var float $v */
+function skip_if_fb_lt($v) {
+    if(($cv = get_fb_version()) < $v)die("skip: Firebird version $cv < $v");
+}
+
+/** @var float $v */
+function skip_if_fb_gt($v) {
+    if(($cv = get_fb_version()) > $v)die("skip: Firebird version $cv > $v");
+}
+
+/** @var float $v */
+function skip_if_fb_gte($v) {
+    if(($cv = get_fb_version()) >= $v)die("skip: Firebird version $cv >= $v");
+}
