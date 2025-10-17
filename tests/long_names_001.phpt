@@ -40,14 +40,12 @@ function test_table(string $table){
 }
 
 (function(){
-	global $MAX_LEN, $test_base;
+	global $MAX_LEN;
 
 	var_dump($MAX_LEN);
 
 	test_table(str_repeat('T', $MAX_LEN));
 	test_table(str_repeat('😂', $MAX_LEN));
-
-	print $test_base;
 })();
 
 ?>
