@@ -1597,7 +1597,7 @@ void fbp_dump_buffer(int len, const unsigned char *buffer)
 		if(buffer[i] < 32 || buffer[i] > 126)
 			php_printf("0x%02x ", buffer[i]);
 		else
-			php_printf("%c", buffer[i]);
+			php_printf(" [%c] ", buffer[i]);
 	}
 	if (i > 0) {
 		php_printf("\n");
