@@ -1598,10 +1598,9 @@ void fbp_dump_buffer(int len, const unsigned char *buffer)
 			php_printf("0x%02x ", buffer[i]);
 		else
 			php_printf(" [%c] ", buffer[i]);
+		if(i % 16 == 15)php_printf("\n");
 	}
-	if (i > 0) {
-		php_printf("\n");
-	}
+	if(i > 0)php_printf("\n");
 }
 
 void fbp_dump_buffer_raw(int len, const unsigned char *buffer)
