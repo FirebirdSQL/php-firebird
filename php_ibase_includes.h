@@ -33,7 +33,7 @@
 #endif
 
 #ifndef METADATALENGTH
-#define METADATALENGTH 68
+#define METADATALENGTH 63*4
 #endif
 
 #define RESET_ERRMSG do { IBG(errmsg)[0] = '\0'; IBG(sql_code) = 0; } while (0)
