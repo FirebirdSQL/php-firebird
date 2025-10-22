@@ -83,10 +83,14 @@ function rand_number($len , $prec = -1, $sign = 1)
     return $n;
 }
 
+function fields2sql_parts($fields) {
+    $fields_str = '"'.join('","', $fields).'"';
+    $q_str = join(",", array_fill(0, count($fields), "?"));
+    return [$fields_str, $q_str];
+}
+
 function array2sql_parts($data) {
-    $fields_str = join(",", array_keys($data));
-    $q_str = join(",", array_fill(0, count($data), "?"));
-    return [$fields_str, $q_str, $data];
+    return [...fields2sql_parts(array_keys($data)), $data];
 }
 
 function dump_rows($q) {
