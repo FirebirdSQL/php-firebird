@@ -949,8 +949,8 @@ int _php_ibase_attach_db(char **args, size_t *len, zend_long *largs, isc_db_hand
 
 #if FB_API_VER >= 40
 	// Do not handle directly INT128 or DECFLOAT, convert to VARCHAR at server instead
-	const char *compat = "int128 to varchar;decfloat to varchar";
-	dpb_len = slprintf(dpb, buf_len, "%c%c%s", isc_dpb_set_bind, strlen(compat), compat);
+	const char compat[] = "int128 to varchar;decfloat to varchar";
+	dpb_len = slprintf(dpb, buf_len, "%c%c%s", isc_dpb_set_bind, (char)(sizeof(compat) - 1), compat);
 	dpb += dpb_len;
 	buf_len -= dpb_len;
 #endif
