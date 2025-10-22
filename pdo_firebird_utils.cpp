@@ -81,4 +81,26 @@ extern "C" void fb_decode_timestamp_tz(const ISC_TIMESTAMP_TZ* timestampTz,
 							timeZoneBufferLength, timeZoneBuffer);
 }
 
+extern "C" int fb_get_sql_info(ISC_STATUS* st, isc_stmt_handle* stmt,
+	unsigned itemsLength, const unsigned char* items,
+	unsigned bufferLength, unsigned char* buffer)
+{
+	Firebird::IMaster* master = Firebird::fb_get_master_interface();
+	Firebird::ThrowStatusWrapper status(master->getStatus());
+	Firebird::IStatement* statement = NULL;
+
+	if (fb_get_statement_interface(st, &statement, stmt)){
+		// if (sv[0] == 1 && sv[1] > 0)
+		return st[1];
+	}
+
+	// TODO: check status;
+	statement->getInfo(&status, itemsLength, items, bufferLength, buffer);
+
+	statement->release();
+	statement = NULL;
+
+	return 0;
+}
+
 #endif

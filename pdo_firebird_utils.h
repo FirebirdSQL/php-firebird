@@ -39,6 +39,10 @@ void fb_decode_timestamp_tz(const ISC_TIMESTAMP_TZ* timestampTz,
 	unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);
 
+int fb_get_sql_info(ISC_STATUS* st, isc_stmt_handle* stmt,
+	unsigned itemsLength, const unsigned char* items,
+	unsigned bufferLength, unsigned char* buffer);
+
 #endif
 
 #ifdef __cplusplus
