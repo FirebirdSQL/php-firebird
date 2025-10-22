@@ -524,7 +524,7 @@ void _php_ibase_error(void) /* {{{ */
 /* }}} */
 
 /* print php interbase module error and save it for ibase_errmsg() */
-void _php_ibase_module_error(char *msg, ...) /* {{{ */
+void _php_ibase_module_error(const char *msg, ...) /* {{{ */
 {
 	va_list ap;
 
@@ -1612,7 +1612,7 @@ void fbp_dump_buffer_raw(int len, const unsigned char *buffer)
 }
 #endif
 
-void fbp_error_ex(long level, char *msg, ...)
+void fbp_error_ex(long level, const char *msg, ...)
 {
 	va_list ap;
 	char buf[1024] = {0};

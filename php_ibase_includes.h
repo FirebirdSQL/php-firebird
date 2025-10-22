@@ -163,7 +163,7 @@ typedef void (*info_func_t)(char*);
 #endif
 
 void _php_ibase_error(void);
-void _php_ibase_module_error(char *, ...)
+void _php_ibase_module_error(const char *, ...)
 	PHP_ATTRIBUTE_FORMAT(printf,1,2);
 
 /* determine if a resource is a link or transaction handle */
@@ -208,7 +208,7 @@ void fbp_dump_buffer(int len, const unsigned char *buffer);
 void fbp_dump_buffer_raw(int len, const unsigned char *buffer);
 #endif
 
-void fbp_error_ex(long level, char *, ...)
+void fbp_error_ex(long level, const char *, ...)
     PHP_ATTRIBUTE_FORMAT(printf,2,3);
 
 #ifdef PHP_WIN32
