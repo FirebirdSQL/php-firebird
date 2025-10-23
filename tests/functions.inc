@@ -99,15 +99,21 @@ function dump_rows($q) {
     }
 }
 
-function dump_table_rows($table) {
-    dump_rows(ibase_query(sprintf('SELECT * FROM "%s"', $table)));
+function dump_table_rows($table, $tr = null) {
+    if($tr)$args[] = $tr;
+    $args[] = sprintf('SELECT * FROM "%s"', $table);
+
+    dump_rows(ibase_query(...$args));
 }
 
-function insert_into($table, $data) {
+function insert_into($table, $data, $tr = null) {
+    if($tr) $args[] = $tr;
     [$fields_str, $q_str] = array2sql_parts($data);
-    return ibase_query(sprintf('INSERT INTO "%s" (%s) VALUES (%s)',
+    $args[] = sprintf('INSERT INTO "%s" (%s) VALUES (%s)',
         $table, $fields_str, $q_str
-    ), ...array_values($data));
+    );
+
+    return ibase_query(...array_merge($args, array_values($data)));
 }
 
 /** @var float $v */
