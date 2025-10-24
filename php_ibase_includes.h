@@ -33,7 +33,11 @@
 #endif
 
 #ifndef METADATALENGTH
-#define METADATALENGTH 63*4
+#if FB_API_VER >= 40
+#    define METADATALENGTH 63*4
+#else
+#    define METADATALENGTH 31
+#endif
 #endif
 
 #define RESET_ERRMSG do { IBG(errmsg)[0] = '\0'; IBG(sql_code) = 0; } while (0)
