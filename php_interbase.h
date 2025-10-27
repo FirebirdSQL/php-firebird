@@ -36,7 +36,7 @@ extern zend_module_entry ibase_module_entry;
 #define TO_STRING(x) TO_STRING_(x)
 
 #ifndef FB_API_VER
-  FATAL: FB_API_VER is not defined. Assumed very old, unsupported client library
+  static_assert(false, "FATAL: FB_API_VER is not defined. Assumed very old, unsupported client library");
 #endif
 
 #define PHP_INTERBASE_VER_MAJOR 6
