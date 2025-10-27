@@ -557,10 +557,11 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 }
 /* }}} */
 
-static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
-	ibase_query *ib_query)
+static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 {
 	BIND_BUF *buf = ib_query->bind_buf;
+	XSQLDA *sqlda = ib_query->in_sqlda;
+
 	int i, array_cnt = 0, rv = SUCCESS;
 
 	for (i = 0; i < sqlda->sqld; ++i) { /* bound vars */
