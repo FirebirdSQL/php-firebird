@@ -49,70 +49,12 @@
 #define FETCH_ARRAY     2
 
 typedef struct {
-	ISC_ARRAY_DESC ar_desc;
-	ISC_LONG ar_size; /* size of entire array in bytes */
-	unsigned short el_type, el_size;
-} ibase_array;
-
-typedef struct {
-	ibase_db_link* link;
-	isc_stmt_handle stmt;
-} ibase_statement;
-
-typedef struct {
-	ibase_db_link *link;
-	ibase_trans *trans;
-	isc_stmt_handle stmt;
-	zend_resource* stmt_res;
-	unsigned short type;
-	unsigned char has_more_rows, statement_type;
-	XSQLDA *out_sqlda;
-	ibase_array out_array[1]; /* last member */
-} ibase_result;
-
-typedef struct _ib_query {
-	ibase_db_link *link;
-	ibase_trans *trans;
-	zend_resource *result_res;
-	isc_stmt_handle stmt;
-	zend_resource *stmt_res;
-	XSQLDA *in_sqlda, *out_sqlda;
-	ibase_array *in_array, *out_array;
-	unsigned short in_array_cnt, out_array_cnt;
-	unsigned short dialect;
-	char statement_type;
-	char *query;
-	zend_resource *trans_res;
-} ibase_query;
-
-typedef struct {
 	unsigned short vary_length;
 	char vary_string[1];
 } IBVARY;
 
-/* sql variables union
- * used for convert and binding input variables
- */
-typedef struct {
-	union {
-// Boolean data type exists since FB 3.0
-#ifdef SQL_BOOLEAN
-		FB_BOOLEAN bval;
-#endif
-		short sval;
-		float fval;
-		ISC_LONG lval;
-		ISC_QUAD qval;
-		ISC_TIMESTAMP tsval;
-		ISC_DATE dtval;
-		ISC_TIME tmval;
-	} val;
-	short sqlind;
-} BIND_BUF;
+static int le_query;
 
-static int le_statement, le_result, le_query;
-
-#define LE_RESULT "Firebird/InterBase result"
 #define LE_QUERY "Firebird/InterBase query"
 
 static void _php_ibase_free_xsqlda(XSQLDA *sqlda) /* {{{ */
@@ -131,45 +73,6 @@ static void _php_ibase_free_xsqlda(XSQLDA *sqlda) /* {{{ */
 			}
 		}
 		efree(sqlda);
-	}
-}
-/* }}} */
-
-static void _php_ibase_free_statement(zend_resource* rsrc) /* {{{ */
-{
-	ibase_statement* ib_stmt = (ibase_statement*)rsrc->ptr;
-
-	IBDEBUG("Freeing statement by dtor...");
-	if (ib_stmt) {
-		if (ib_stmt->stmt) {
-			static char info[] = { isc_info_base_level, isc_info_end };
-			char res_buf[8];
-			IBDEBUG("Dropping statement handle (free_stmt_handle)...");
-			/* Only free statement if db-connection is still open */
-			if (SUCCESS == isc_database_info(IB_STATUS, &ib_stmt->link->handle,
-				sizeof(info), info, sizeof(res_buf), res_buf)) {
-				if (isc_dsql_free_statement(IB_STATUS, &ib_stmt->stmt, DSQL_drop)) {
-					_php_ibase_error();
-				}
-			}
-		}
-		efree(ib_stmt);
-	}
-}
-/* }}} */
-
-static void _php_ibase_free_result(zend_resource *rsrc) /* {{{ */
-{
-	ibase_result *ib_result = (ibase_result *) rsrc->ptr;
-
-	IBDEBUG("Freeing result by dtor...");
-	if (ib_result) {
-		_php_ibase_free_xsqlda(ib_result->out_sqlda);
-		if (ib_result->stmt_res != NULL) {
-			zend_list_delete(ib_result->stmt_res);
-			ib_result->stmt_res = NULL;
-		}
-		efree(ib_result);
 	}
 }
 /* }}} */
@@ -218,10 +121,7 @@ static void php_ibase_free_query_rsrc(zend_resource *rsrc) /* {{{ */
 
 void php_ibase_query_minit(INIT_FUNC_ARGS) /* {{{ */
 {
-	le_statement = zend_register_list_destructors_ex(_php_ibase_free_statement, NULL,
-		"interbase statement", module_number);
-	le_result = zend_register_list_destructors_ex(_php_ibase_free_result, NULL,
-		"interbase result", module_number);
+	(void)type;
 	le_query = zend_register_list_destructors_ex(php_ibase_free_query_rsrc, NULL,
 		"interbase query", module_number);
 }

@@ -117,6 +117,50 @@ typedef struct event {
 	enum event_state { NEW, ACTIVE, DEAD } state;
 } ibase_event;
 
+/* sql variables union
+ * used for convert and binding input variables
+ */
+typedef struct {
+	union {
+// Boolean data type exists since FB 3.0
+#ifdef SQL_BOOLEAN
+		FB_BOOLEAN bval;
+#endif
+		short sval;
+		float fval;
+		ISC_LONG lval;
+		ISC_QUAD qval;
+		ISC_TIMESTAMP tsval;
+		ISC_DATE dtval;
+		ISC_TIME tmval;
+	} val;
+	short nullind;
+} BIND_BUF;
+
+typedef struct {
+	ISC_ARRAY_DESC ar_desc;
+	ISC_LONG ar_size; /* size of entire array in bytes */
+	unsigned short el_type, el_size;
+} ibase_array;
+
+typedef struct _ib_query {
+	ibase_db_link *link;
+	ibase_trans *trans;
+	zend_resource *res;
+	isc_stmt_handle stmt;
+	XSQLDA *in_sqlda, *out_sqlda;
+	ibase_array *in_array, *out_array;
+	unsigned short type, has_more_rows, is_open;
+	unsigned short in_array_cnt, out_array_cnt;
+	unsigned short dialect;
+	char *query;
+	ISC_UCHAR statement_type;
+	BIND_BUF *bind_buf;
+	ISC_SHORT *in_nullind, *out_nullind;
+	ISC_USHORT in_fields_count, out_fields_count;
+	HashTable *ht_aliases, *ht_ind; // Precomputed for ibase_fetch_*()
+} ibase_query;
+
 enum php_interbase_option {
 	PHP_IBASE_DEFAULT            = 0,
 	PHP_IBASE_CREATE             = 0,
