@@ -783,6 +783,26 @@ PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY_EX("ibase.default_lock_timeout", "0", PHP_INI_ALL, OnUpdateLongGEZero, default_lock_timeout, zend_ibase_globals, ibase_globals, display_link_numbers)
 PHP_INI_END()
 
+#ifdef __GNUC__
+void* _php_ibase_get_fbclient_symbol(const char* sym)
+{
+	return dlsym(RTLD_DEFAULT, sym);
+}
+#elif defined(PHP_WIN32)
+void* _php_ibase_get_fbclient_symbol(const char* sym)
+{
+	HMODULE l = GetModuleHandle("fbclient");
+
+	if (!l && !(l = GetModuleHandle("gds32"))) {
+		return NULL;
+	}
+
+	return GetProcAddress(l, sym);
+}
+#else
+	static_assert(false, "TODO: implement dynamic symbol name lookup for your platform");
+#endif
+
 static PHP_GINIT_FUNCTION(ibase)
 {
 #if defined(COMPILE_DL_INTERBASE) && defined(ZTS)
@@ -791,6 +811,8 @@ static PHP_GINIT_FUNCTION(ibase)
 	ibase_globals->num_persistent = ibase_globals->num_links = 0;
 	ibase_globals->sql_code = *ibase_globals->errmsg = 0;
 	ibase_globals->default_link = NULL;
+	ibase_globals->fb_get_master_interface = _php_ibase_get_fbclient_symbol("fb_get_master_interface");
+	ibase_globals->fb_get_statement_interface = _php_ibase_get_fbclient_symbol("fb_get_statement_interface");
 }
 
 PHP_MINIT_FUNCTION(ibase)

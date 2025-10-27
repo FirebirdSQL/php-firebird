@@ -75,6 +75,8 @@ ZEND_BEGIN_MODULE_GLOBALS(ibase)
 	zend_long sql_code;
 	zend_long default_trans_params;
 	zend_long default_lock_timeout; // only used togetger with trans_param IBASE_LOCK_TIMEOUT
+	void *fb_get_master_interface;
+	void *fb_get_statement_interface;
 ZEND_END_MODULE_GLOBALS(ibase)
 
 ZEND_EXTERN_MODULE_GLOBALS(ibase)
