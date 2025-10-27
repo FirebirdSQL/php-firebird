@@ -1080,8 +1080,6 @@ PHP_FUNCTION(ibase_query)
 	zend_resource *trans_res = NULL;
 	ibase_db_link *ib_link = NULL;
 	ibase_trans *trans = NULL;
-	ibase_query ib_query = { NULL, NULL, 0, 0 };
-	ibase_result *result = NULL;
 
 	RESET_ERRMSG;
 
@@ -1117,13 +1115,13 @@ PHP_FUNCTION(ibase_query)
 			if (SUCCESS == zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(),
 					 "ls", &l, &query, &query_len) && l == PHP_IBASE_CREATE) {
 				isc_db_handle db = 0;
-				isc_tr_handle trans = 0;
+				isc_tr_handle trh = 0;
 
 				if (((l = INI_INT("ibase.max_links")) != -1) && (IBG(num_links) >= l)) {
 					_php_ibase_module_error("CREATE DATABASE is not allowed: maximum link count "
 						"(" ZEND_LONG_FMT ") reached", l);
 
-				} else if (isc_dsql_execute_immediate(IB_STATUS, &db, &trans, (short)query_len,
+				} else if (isc_dsql_execute_immediate(IB_STATUS, &db, &trh, (short)query_len,
 						query, SQL_DIALECT_CURRENT, NULL)) {
 					_php_ibase_error();
 
@@ -1143,8 +1141,9 @@ PHP_FUNCTION(ibase_query)
 
 					RETVAL_RES(zend_register_resource(ib_link, le_link));
 					Z_TRY_ADDREF_P(return_value);
-					Z_TRY_ADDREF_P(return_value);
+
 					IBG(default_link) = Z_RES_P(return_value);
+					Z_TRY_ADDREF_P(return_value);
 				}
 				return;
 			}
