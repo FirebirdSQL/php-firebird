@@ -71,9 +71,6 @@ static void _php_ibase_free_xsqlda(XSQLDA *sqlda) /* {{{ */
 		var = sqlda->sqlvar;
 		for (i = 0; i < sqlda->sqld; i++, var++) {
 			efree(var->sqldata);
-			if (var->sqlind) {
-				efree(var->sqlind);
-			}
 		}
 		efree(sqlda);
 	}
@@ -563,6 +560,7 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 	ibase_query *ib_query)
 {
+	BIND_BUF *buf = ib_query->bind_buf;
 	int i, array_cnt = 0, rv = SUCCESS;
 
 	for (i = 0; i < sqlda->sqld; ++i) { /* bound vars */
@@ -570,7 +568,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 		zval *b_var = &b_vars[i];
 		XSQLVAR *var = &sqlda->sqlvar[i];
 
-		var->sqlind = &buf[i].sqlind;
+		var->sqlind = &buf[i].nullind;
 		var->sqldata = (void*)&buf[i].val;
 
 		/* check if a NULL should be inserted */
@@ -604,7 +602,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 				if (! force_null) break;
 
 			case IS_NULL:
-					buf[i].sqlind = -1;
+					buf[i].nullind = -1;
 
 				if (var->sqltype & SQL_ARRAY) ++array_cnt;
 
@@ -613,7 +611,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 
 		/* if we make it to this point, we must provide a value for the parameter */
 
-		buf[i].sqlind = 0;
+		buf[i].nullind = 0;
 
 		switch (var->sqltype & ~1) {
 			struct tm t;
@@ -737,7 +735,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 						break;
 					}
 					case IS_NULL:
-						buf[i].sqlind = -1;
+						buf[i].nullind = -1;
 						break;
 					default:
 						_php_ibase_module_error("Parameter %d: must be boolean", i+1);
@@ -865,7 +863,7 @@ static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds) /* 
 		} /* switch */
 
 		if (var->sqltype & 1) { /* sql NULL flag */
-			var->sqlind = emalloc(sizeof(short));
+			var->sqlind = &nullinds[i];
 		} else {
 			var->sqlind = NULL;
 		}
