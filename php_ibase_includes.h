@@ -254,6 +254,7 @@ extern "C" {
 #endif
 
 void _php_ibase_insert_alias(HashTable *ht, const char *alias, size_t alias_len);
+static int _php_ibase_get_vars_count(ibase_query *ib_query);
 
 #ifdef __cplusplus
 }

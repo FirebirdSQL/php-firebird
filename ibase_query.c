@@ -2223,18 +2223,88 @@ PHP_FUNCTION(ibase_param_info)
 		return;
 	}
 
-	ib_query = (ibase_query *)zend_fetch_resource_ex(result_arg, LE_QUERY, le_query);
 
-	if (ib_query->in_sqlda == NULL) {
-		RETURN_FALSE;
+static int _php_ibase_get_vars_count(ibase_query *ib_query)
+{
+	int rv = FAILURE;
+	// size_t buf_size = 128;
+	// ISC_UCHAR *buf = emalloc(buf_size);
+
+	ISC_UCHAR buf[64] = {0};
+	size_t buf_size = sizeof(buf);
+
+	size_t pos;
+
+	static ISC_UCHAR info_req[] = {
+		isc_info_sql_stmt_type,
+		isc_info_sql_select,
+			isc_info_sql_num_variables,
+		isc_info_sql_bind,
+			isc_info_sql_num_variables,
+	};
+// _php_ibase_parse_info_retry:
+// 	memset(buf, 0, buf_size);
+	pos = 0;
+
+	// Assume buf will be tagged with `isc_info_truncated` and later in parsing
+	// we will catch that. Until `isc_info_truncated` is reached assume pos +=
+	// 2, etc are safe.
+	if (isc_dsql_sql_info(IB_STATUS, &ib_query->stmt, sizeof(info_req), (ISC_SCHAR *)info_req, buf_size, (ISC_SCHAR *)buf)) {
+		_php_ibase_error();
+		goto _php_ibase_parse_info_fail;
 	}
 
-	if (field_arg < 0 || field_arg >= ib_query->in_sqlda->sqld) {
-		RETURN_FALSE;
+	int ctx = 0;
+	while((buf[pos] != isc_info_end) && (pos < buf_size))
+	{
+		const ISC_UCHAR tag = buf[pos++];
+		switch(tag) {
+			case isc_info_sql_stmt_type: {
+				const ISC_USHORT size = (ISC_USHORT)isc_portable_integer(&buf[pos], 2); pos += 2;
+				ib_query->statement_type = (ISC_UCHAR)isc_portable_integer(&buf[pos], size); pos += size;
+			} break;
+			case isc_info_sql_select: ctx = 1; break;
+			case isc_info_sql_bind: ctx = 2; break;
+			case isc_info_sql_num_variables: {
+				const ISC_USHORT size = (ISC_USHORT)isc_portable_integer(&buf[pos], 2); pos += 2;
+				const ISC_USHORT count = (ISC_USHORT)isc_portable_integer(&buf[pos], size); pos += size;
+				if(ctx == 1) {
+					ib_query->out_fields_count = count;
+				} else if(ctx == 2) {
+					ib_query->in_fields_count = count;
+				} else {
+					fbp_fatal("isc_info_sql_num_variables: unknown ctx %d", ctx);
+				}
+				ctx = 0;
+			} break;
+			case isc_info_truncated: {
+				fbp_notice("BUG: sql_info buffer truncated, current capacity: %ld", buf_size);
+				// Dynamic resize
+				// buf_size *= 2;
+				// buf = erealloc(buf, buf_size);
+				// goto _php_ibase_parse_info_retry;
+			} break;
+			case isc_info_error: {
+				fbp_fatal("sql_info buffer error, pos: %lu", pos);
+				goto _php_ibase_parse_info_fail;
+			} break;
+			default: {
+				fbp_fatal("BUG: unrecognized sql_info entry: %d, pos: %lu", tag, pos);
+				goto _php_ibase_parse_info_fail;
+			} break;
+		}
 	}
 
-	_php_ibase_field_info(return_value,ib_query->in_sqlda->sqlvar + field_arg);
+	if(buf[pos] != isc_info_end) {
+		fbp_fatal("BUG: sql_info unexpected end of buffer at pos: %lu", pos);
+		goto _php_ibase_parse_info_fail;
+	}
+
+	rv = SUCCESS;
+
+_php_ibase_parse_info_fail:
+	// efree(buf);
+	return rv;
 }
-/* }}} */
 
 #endif /* HAVE_IBASE */
