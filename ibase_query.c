@@ -1897,7 +1897,7 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 	if (is_outvar) {
 		// TODO: use newer API for long names
 		add_index_stringl(return_value, 0, var->sqlname, MIN(31, var->sqlname_length));
-		add_assoc_stringl(return_value, "name", var->aliasname, MIN(31, var->aliasname_length));
+		add_assoc_stringl(return_value, "name", var->sqlname, MIN(31, var->sqlname_length));
 
 		add_index_stringl(return_value, 1, var->aliasname, MIN(31, var->aliasname_length));
 		add_assoc_stringl(return_value, "alias", var->aliasname, MIN(31, var->aliasname_length));
