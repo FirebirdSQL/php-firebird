@@ -1731,7 +1731,7 @@ PHP_FUNCTION(ibase_name_result)
 	zval *result_arg;
 	char *name_arg;
 	size_t name_arg_len;
-	ibase_result *ib_result;
+	ibase_query *ib_query;
 
 	RESET_ERRMSG;
 
@@ -1739,16 +1739,18 @@ PHP_FUNCTION(ibase_name_result)
 		return;
 	}
 
-	ib_result = (ibase_result *)zend_fetch_resource_ex(result_arg, LE_RESULT, le_result);
+	if(_php_ibase_fetch_query_res(result_arg, &ib_query)) {
+		return;
+	}
 
-	if (isc_dsql_set_cursor_name(IB_STATUS, &ib_result->stmt, name_arg, 0)) {
+	if (isc_dsql_set_cursor_name(IB_STATUS, &ib_query->stmt, name_arg, 0)) {
 		_php_ibase_error();
 		RETURN_FALSE;
 	}
+
 	RETURN_TRUE;
 }
 /* }}} */
-
 
 /* {{{ proto bool ibase_free_result(resource result)
    Free the memory used by a result */
