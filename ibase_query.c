@@ -1550,6 +1550,36 @@ static int _php_ibase_arr_zval(zval *ar_zval, char *data, zend_ulong data_size, 
 }
 /* }}} */
 
+void _php_ibase_insert_alias(HashTable *ht, const char *alias, size_t alias_len)
+{
+	char buf[METADATALENGTH + 3 + 1]; // _00 + \0
+	zval t2;
+	int i = 0;
+	char const *base = "FIELD"; /* use 'FIELD' if name is empty */
+	size_t alias_len_w_suff = alias_len + 3;
+
+	switch (*alias) {
+		void *p;
+
+		default:
+			i = 1;
+			base = alias;
+
+			while ((p = zend_symtable_str_find_ptr(
+					ht, alias, alias_len)) != NULL) {
+
+		case '\0':
+				// TODO: i > 99?
+				snprintf(buf, sizeof(buf), "%s_%02d", base, i++);
+				alias = buf;
+				alias_len = alias_len_w_suff;
+			}
+	}
+
+	ZVAL_NULL(&t2);
+	zend_hash_str_add_new(ht, alias, alias_len, &t2);
+}
+
 static void _php_ibase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int fetch_type) /* {{{ */
 {
 	zval *result_arg;

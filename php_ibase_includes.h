@@ -249,6 +249,16 @@ void _php_ibase_free_event(ibase_event *event);
 /* provided by ibase_service.c */
 void php_ibase_service_minit(INIT_FUNC_ARGS);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void _php_ibase_insert_alias(HashTable *ht, const char *alias, size_t alias_len);
+
+#ifdef __cplusplus
+}
+#endif
+
 #ifndef max
 #define max(a,b) ((a)>(b)?(a):(b))
 #endif

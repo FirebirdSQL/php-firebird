@@ -17,7 +17,10 @@
 #ifndef PDO_FIREBIRD_UTILS_H
 #define PDO_FIREBIRD_UTILS_H
 
+#if FB_API_VER >= 40
+
 #include <ibase.h>
+#include "php_ibase_includes.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,8 +32,6 @@ ISC_TIME fb_encode_time(unsigned hours, unsigned minutes, unsigned seconds, unsi
 
 ISC_DATE fb_encode_date(unsigned year, unsigned month, unsigned day);
 
-#if FB_API_VER >= 40
-
 void fb_decode_time_tz(const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);
 
@@ -39,14 +40,11 @@ void fb_decode_timestamp_tz(const ISC_TIMESTAMP_TZ* timestampTz,
 	unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);
 
-int fb_get_sql_info(ISC_STATUS* st, isc_stmt_handle* stmt,
-	unsigned itemsLength, const unsigned char* items,
-	unsigned bufferLength, unsigned char* buffer);
-
-#endif
+int fb_insert_aliases(ISC_STATUS* st, ibase_query *ib_query);
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif	/* PDO_FIREBIRD_UTILS_H */

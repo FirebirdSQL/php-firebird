@@ -18,9 +18,11 @@
 
 #if FB_API_VER >= 40
 
-#include "pdo_firebird_utils.h"
 #include <firebird/Interface.h>
 #include <cstring>
+#include "php.h"
+#include "pdo_firebird_utils.h"
+#include "php_ibase_includes.h"
 
 /* Returns the client version. 0 bytes are minor version, 1 bytes are major version. */
 extern "C" unsigned fb_get_client_version(void)
@@ -81,24 +83,38 @@ extern "C" void fb_decode_timestamp_tz(const ISC_TIMESTAMP_TZ* timestampTz,
 							timeZoneBufferLength, timeZoneBuffer);
 }
 
-extern "C" int fb_get_sql_info(ISC_STATUS* st, isc_stmt_handle* stmt,
-	unsigned itemsLength, const unsigned char* items,
-	unsigned bufferLength, unsigned char* buffer)
+extern "C" int fb_insert_aliases(ISC_STATUS* st, ibase_query *ib_query)
 {
 	Firebird::IMaster* master = Firebird::fb_get_master_interface();
 	Firebird::ThrowStatusWrapper status(master->getStatus());
 	Firebird::IStatement* statement = NULL;
+	Firebird::IMessageMetadata* meta = NULL;
+	ISC_STATUS res;
 
-	if (fb_get_statement_interface(st, &statement, stmt)){
-		// if (sv[0] == 1 && sv[1] > 0)
-		return st[1];
+	if (res = fb_get_statement_interface(st, &statement, &ib_query->stmt)){
+		return res;
 	}
 
-	// TODO: check status;
-	statement->getInfo(&status, itemsLength, items, bufferLength, buffer);
+	try {
+		meta = statement->getOutputMetadata(&status);
+		unsigned cols = meta->getCount(&status);
 
-	statement->release();
-	statement = NULL;
+		assert(cols == ib_query->out_fields_count);
+
+		zval t;
+		for (unsigned i = 0; i < cols; ++i)
+		{
+			_php_ibase_insert_alias(ib_query->ht_aliases,
+				meta->getAlias(&status, i), strlen(meta->getAlias(&status, i)));
+		}
+	}
+	catch (const Firebird::FbException& error)
+	{
+		if (status.hasData())  {
+			fb_copy_status((const ISC_STATUS*)status.getErrors(), st, 20);
+			return st[1];
+		}
+	}
 
 	return 0;
 }
