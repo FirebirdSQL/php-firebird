@@ -1746,6 +1746,8 @@ PHP_FUNCTION(ibase_name_result)
    Free the memory used by a result */
 PHP_FUNCTION(ibase_free_result)
 {
+	(void)execute_data;
+	RETVAL_TRUE;
 	// ibase_result was removed, nothing to be done here
 }
 /* }}} */
