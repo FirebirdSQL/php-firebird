@@ -1892,8 +1892,8 @@ PHP_FUNCTION(ibase_free_query)
 PHP_FUNCTION(ibase_num_fields)
 {
 	zval *result;
-	int type;
 	XSQLDA *sqlda;
+	ibase_query *ib_query;
 
 	RESET_ERRMSG;
 
@@ -1901,19 +1901,11 @@ PHP_FUNCTION(ibase_num_fields)
 		return;
 	}
 
-	type = Z_RES_P(result)->type;
-
-	if (type == le_query) {
-		ibase_query *ib_query;
-
-		ib_query = (ibase_query *)zend_fetch_resource_ex(result, LE_QUERY, le_query);
-		sqlda = ib_query->out_sqlda;
-	} else {
-		ibase_result *ib_result;
-
-		ib_result = (ibase_result *)zend_fetch_resource_ex(result, LE_RESULT, le_result);
-		sqlda = ib_result->out_sqlda;
+	if(_php_ibase_fetch_query_res(result, &ib_query)) {
+		return;
 	}
+
+	sqlda = ib_query->out_sqlda;
 
 	if (sqlda == NULL) {
 		RETURN_LONG(0);
@@ -1923,21 +1915,54 @@ PHP_FUNCTION(ibase_num_fields)
 }
 /* }}} */
 
-static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
+static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int is_outvar, int num) /* {{{ */
 {
 	unsigned short len;
 	char buf[16], *s = buf;
+	XSQLDA *sqlda;
+	XSQLVAR *var;
+
+	if(is_outvar){
+		sqlda = ib_query->out_sqlda;
+		if (sqlda == NULL) {
+			_php_ibase_module_error("Trying to get field info from a non-select query");
+			RETURN_FALSE;
+		}
+	} else {
+		sqlda = ib_query->in_sqlda;
+		if (sqlda == NULL) {
+			// TODO: Add warning? Remove above warning?
+			RETURN_FALSE;
+		}
+	}
+
+	var = sqlda->sqlvar;
+
+	if (!var || num < 0 || num >= sqlda->sqld)RETURN_FALSE;
+
+	var += num;
 
 	array_init(return_value);
 
-	add_index_stringl(return_value, 0, var->sqlname, var->sqlname_length);
-	add_assoc_stringl(return_value, "name", var->sqlname, var->sqlname_length);
+	if (is_outvar) {
+		// TODO: use newer API for long names
+		add_index_stringl(return_value, 0, var->sqlname, MIN(31, var->sqlname_length));
+		add_assoc_stringl(return_value, "name", var->aliasname, MIN(31, var->aliasname_length));
 
-	add_index_stringl(return_value, 1, var->aliasname, var->aliasname_length);
-	add_assoc_stringl(return_value, "alias", var->aliasname, var->aliasname_length);
+		add_index_stringl(return_value, 1, var->aliasname, MIN(31, var->aliasname_length));
+		add_assoc_stringl(return_value, "alias", var->aliasname, MIN(31, var->aliasname_length));
 
-	add_index_stringl(return_value, 2, var->relname, var->relname_length);
-	add_assoc_stringl(return_value, "relation", var->relname, var->relname_length);
+		add_index_stringl(return_value, 2, var->relname, MIN(31, var->relname_length));
+		add_assoc_stringl(return_value, "relation", var->relname, MIN(31, var->relname_length));
+	} else {
+		// AFAIK describe bind does not set these. Confirmation pending.
+		add_index_stringl(return_value, 0, "", 0);
+		add_assoc_stringl(return_value, "name", "", 0);
+		add_index_stringl(return_value, 1, "", 0);
+		add_assoc_stringl(return_value, "alias", "", 0);
+		add_index_stringl(return_value, 2, "", 0);
+		add_assoc_stringl(return_value, "relation", "", 0);
+	}
 
 	len = slprintf(buf, 16, "%d", var->sqllen);
 	add_index_stringl(return_value, 3, buf, len);
@@ -2020,6 +2045,7 @@ static void _php_ibase_field_info(zval *return_value, XSQLVAR *var) /* {{{ */
 				break;
 #if FB_API_VER >= 40
 			// These are converted to VARCHAR via isc_dpb_set_bind tag at connect and will appear to clients as VARCHAR
+			// TODO: add info regardless
 			// case SQL_DEC16:
 			// case SQL_DEC34:
 			// case SQL_INT128:
@@ -2043,8 +2069,7 @@ PHP_FUNCTION(ibase_field_info)
 {
 	zval *result_arg;
 	zend_long field_arg;
-	int type;
-	XSQLDA *sqlda;
+	ibase_query *ib_query;
 
 	RESET_ERRMSG;
 
@@ -2052,29 +2077,11 @@ PHP_FUNCTION(ibase_field_info)
 		return;
 	}
 
-	type = Z_RES_P(result_arg)->type;
-
-	if (type == le_query) {
-		ibase_query *ib_query;
-
-		ib_query= (ibase_query *)zend_fetch_resource_ex(result_arg, LE_QUERY, le_query);
-		sqlda = ib_query->out_sqlda;
-	} else {
-		ibase_result *ib_result;
-
-		ib_result = (ibase_result *)zend_fetch_resource_ex(result_arg, LE_RESULT, le_result);
-		sqlda = ib_result->out_sqlda;
+	if(_php_ibase_fetch_query_res(result_arg, &ib_query)) {
+		return;
 	}
 
-	if (sqlda == NULL) {
-		_php_ibase_module_error("Trying to get field info from a non-select query");
-		RETURN_FALSE;
-	}
-
-	if (field_arg < 0 || field_arg >= sqlda->sqld) {
-		RETURN_FALSE;
-	}
-	_php_ibase_field_info(return_value, sqlda->sqlvar + field_arg);
+	_php_ibase_field_info(return_value, ib_query, 1, (ISC_SHORT)field_arg);
 }
 /* }}} */
 
@@ -2091,7 +2098,9 @@ PHP_FUNCTION(ibase_num_params)
 		return;
 	}
 
-	ib_query = (ibase_query *)zend_fetch_resource_ex(result, LE_QUERY, le_query);
+	if(_php_ibase_fetch_query_res(result, &ib_query)) {
+		return;
+	}
 
 	if (ib_query->in_sqlda == NULL) {
 		RETURN_LONG(0);
@@ -2115,6 +2124,13 @@ PHP_FUNCTION(ibase_param_info)
 		return;
 	}
 
+	if(_php_ibase_fetch_query_res(result_arg, &ib_query)) {
+		return;
+	}
+
+	_php_ibase_field_info(return_value, ib_query, 0, field_arg);
+}
+/* }}} */
 
 static int _php_ibase_get_vars_count(ibase_query *ib_query)
 {
