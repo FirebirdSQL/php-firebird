@@ -860,7 +860,9 @@ static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds) /* 
 				break;
 #endif
 			default:
-				php_error(E_WARNING, "Unhandled sqltype: %d for sqlname %s %s:%d", var->sqltype, var->sqlname, __FILE__, __LINE__);
+				// TODO: report human readable type. Grab ints from sqlda_pub.h
+				// and just map to char *
+				php_error(E_WARNING, "Unhandled sqltype: %d for sqlname %s %s:%d. Probably compiled against old fbclient library (%d)", var->sqltype, var->sqlname, __FILE__, __LINE__, FB_API_VER);
 				break;
 		} /* switch */
 
