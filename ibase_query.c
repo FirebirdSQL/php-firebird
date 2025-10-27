@@ -261,126 +261,92 @@ static int _php_ibase_alloc_array(ibase_array **ib_arrayp, XSQLDA *sqlda, /* {{{
 /* }}} */
 
 /* allocate and prepare query */
-static int _php_ibase_alloc_query(ibase_query *ib_query, ibase_db_link *link, /* {{{ */
-	ibase_trans *trans, char *query, unsigned short dialect, zend_resource *trans_res)
+static int _php_ibase_prepare(ibase_query **new_query, ibase_db_link *link, /* {{{ */
+	ibase_trans *trans, char *query)
 {
-	static char info_type[] = {isc_info_sql_stmt_type};
-	char result[8];
-
 	/* Return FAILURE, if querystring is empty */
 	if (*query == '\0') {
 		php_error_docref(NULL, E_WARNING, "Querystring empty.");
 		return FAILURE;
 	}
 
+	ibase_query *ib_query = ecalloc(1, sizeof(ibase_query));
+
+	ib_query->res = zend_register_resource(ib_query, le_query);
 	ib_query->link = link;
 	ib_query->trans = trans;
-	ib_query->result_res = NULL;
-	ib_query->stmt = 0;
-	ib_query->stmt_res = NULL;
-	ib_query->in_array = NULL;
-	ib_query->out_array = NULL;
-	ib_query->dialect = dialect;
+	ib_query->dialect = link->dialect;
 	ib_query->query = estrdup(query);
-	ib_query->trans_res = trans_res;
-	ib_query->out_sqlda = NULL;
-	ib_query->in_sqlda = NULL;
 
 	if (isc_dsql_allocate_statement(IB_STATUS, &link->handle, &ib_query->stmt)) {
 		_php_ibase_error();
 		goto _php_ibase_alloc_query_error;
 	}
-	{	/* allocate zend resource for statement*/
-		ibase_statement* ib_stmt = emalloc(sizeof(ibase_statement));
-		ib_stmt->link = link;
-		ib_stmt->stmt = ib_query->stmt;
-		ib_query->stmt_res = zend_register_resource(ib_stmt, le_statement);
-	}
-
-	ib_query->out_sqlda = (XSQLDA *) emalloc(XSQLDA_LENGTH(1));
-	ib_query->out_sqlda->sqln = 1;
-	ib_query->out_sqlda->version = SQLDA_CURRENT_VERSION;
 
 	if (isc_dsql_prepare(IB_STATUS, &ib_query->trans->handle, &ib_query->stmt,
-			0, query, dialect, ib_query->out_sqlda)) {
+			0, query, link->dialect, NULL)) {
+		IBDEBUG("isc_dsql_prepare() failed\n");
 		_php_ibase_error();
 		goto _php_ibase_alloc_query_error;
 	}
 
-	/* find out what kind of statement was prepared */
-	if (isc_dsql_sql_info(IB_STATUS, &ib_query->stmt, sizeof(info_type),
-			info_type, sizeof(result), result)) {
-		_php_ibase_error();
+
+	// TODO: Rename. It also sets statement_type
+	if(_php_ibase_get_vars_count(ib_query)){
 		goto _php_ibase_alloc_query_error;
 	}
-	ib_query->statement_type = result[3];
 
-	/* not enough output variables ? */
-	if (ib_query->out_sqlda->sqld > ib_query->out_sqlda->sqln) {
-		ib_query->out_sqlda = erealloc(ib_query->out_sqlda, XSQLDA_LENGTH(ib_query->out_sqlda->sqld));
-		ib_query->out_sqlda->sqln = ib_query->out_sqlda->sqld;
+	if(ib_query->out_fields_count) {
+		ib_query->out_sqlda = (XSQLDA *) emalloc(XSQLDA_LENGTH(ib_query->out_fields_count));
+		ib_query->out_sqlda->sqln = ib_query->out_fields_count;
 		ib_query->out_sqlda->version = SQLDA_CURRENT_VERSION;
+
 		if (isc_dsql_describe(IB_STATUS, &ib_query->stmt, SQLDA_CURRENT_VERSION, ib_query->out_sqlda)) {
+			IBDEBUG("isc_dsql_describe() failed\n");
 			_php_ibase_error();
+			goto _php_ibase_alloc_query_error;
+		}
+
+		assert(ib_query->out_sqlda->sqln == ib_query->out_sqlda->sqld);
+		assert(ib_query->out_sqlda->sqld == ib_query->out_fields_count);
+
+		ib_query->out_nullind = safe_emalloc(sizeof(*ib_query->out_nullind), ib_query->out_sqlda->sqld, 0);
+		_php_ibase_alloc_xsqlda_vars(ib_query->out_sqlda, ib_query->out_nullind);
+		if (FAILURE == _php_ibase_alloc_array(&ib_query->out_array, ib_query->out_sqlda,
+			link->handle, trans->handle, &ib_query->out_array_cnt)) {
 			goto _php_ibase_alloc_query_error;
 		}
 	}
 
-	/* maybe have input placeholders? */
-	ib_query->in_sqlda = emalloc(XSQLDA_LENGTH(1));
-	ib_query->in_sqlda->sqln = 1;
-	ib_query->in_sqlda->version = SQLDA_CURRENT_VERSION;
-	if (isc_dsql_describe_bind(IB_STATUS, &ib_query->stmt, SQLDA_CURRENT_VERSION, ib_query->in_sqlda)) {
-		_php_ibase_error();
-		goto _php_ibase_alloc_query_error;
-	}
-
-	/* not enough input variables ? */
-	if (ib_query->in_sqlda->sqln < ib_query->in_sqlda->sqld) {
-		ib_query->in_sqlda = erealloc(ib_query->in_sqlda, XSQLDA_LENGTH(ib_query->in_sqlda->sqld));
-		ib_query->in_sqlda->sqln = ib_query->in_sqlda->sqld;
+	if(ib_query->in_fields_count) {
+		ib_query->in_sqlda = emalloc(XSQLDA_LENGTH(ib_query->in_fields_count));
+		ib_query->in_sqlda->sqln = ib_query->in_fields_count;
 		ib_query->in_sqlda->version = SQLDA_CURRENT_VERSION;
 
-		if (isc_dsql_describe_bind(IB_STATUS, &ib_query->stmt,
-				SQLDA_CURRENT_VERSION, ib_query->in_sqlda)) {
+		if (isc_dsql_describe_bind(IB_STATUS, &ib_query->stmt, SQLDA_CURRENT_VERSION, ib_query->in_sqlda)) {
+			IBDEBUG("isc_dsql_describe_bind() failed\n");
 			_php_ibase_error();
+			goto _php_ibase_alloc_query_error;
+		}
+
+		assert(ib_query->in_sqlda->sqln == ib_query->in_sqlda->sqld);
+		assert(ib_query->in_sqlda->sqld == ib_query->in_fields_count);
+
+		ib_query->bind_buf = safe_emalloc(sizeof(BIND_BUF), ib_query->in_sqlda->sqld, 0);
+		ib_query->in_nullind = safe_emalloc(sizeof(*ib_query->in_nullind), ib_query->in_sqlda->sqld, 0);
+		if (FAILURE == _php_ibase_alloc_array(&ib_query->in_array, ib_query->in_sqlda,
+			link->handle, trans->handle, &ib_query->in_array_cnt)) {
 			goto _php_ibase_alloc_query_error;
 		}
 	}
 
-	/* no, haven't placeholders at all */
-	if (ib_query->in_sqlda->sqld == 0) {
-		efree(ib_query->in_sqlda);
-		ib_query->in_sqlda = NULL;
-	} else if (FAILURE == _php_ibase_alloc_array(&ib_query->in_array, ib_query->in_sqlda,
-			link->handle, trans->handle, &ib_query->in_array_cnt)) {
-		goto _php_ibase_alloc_query_error;
-	}
-
-	if (ib_query->out_sqlda->sqld == 0) {
-		efree(ib_query->out_sqlda);
-		ib_query->out_sqlda = NULL;
-	} else 	if (FAILURE == _php_ibase_alloc_array(&ib_query->out_array, ib_query->out_sqlda,
-			link->handle, trans->handle, &ib_query->out_array_cnt)) {
-		goto _php_ibase_alloc_query_error;
-	}
+	*new_query = ib_query;
 
 	return SUCCESS;
 
 _php_ibase_alloc_query_error:
+	zend_list_delete(ib_query->res);
 
-	if (ib_query->out_sqlda) {
-		efree(ib_query->out_sqlda);
-	}
-	if (ib_query->in_sqlda) {
-		efree(ib_query->in_sqlda);
-	}
-	if (ib_query->out_array) {
-		efree(ib_query->out_array);
-	}
-	if (ib_query->query) {
-		efree(ib_query->query);
-	}
 	return FAILURE;
 }
 /* }}} */
@@ -1206,46 +1172,32 @@ PHP_FUNCTION(ibase_query)
 	}
 
 	/* open default transaction */
-	if (ib_link == NULL || FAILURE == _php_ibase_def_trans(ib_link, &trans)
-			|| FAILURE == _php_ibase_alloc_query(&ib_query, ib_link, trans, query, ib_link->dialect, trans_res)) {
+	if (ib_link == NULL || FAILURE == _php_ibase_def_trans(ib_link, &trans)){
 		return;
 	}
 
-	do {
-		int bind_n = ZEND_NUM_ARGS() - bind_i,
-			expected_n = ib_query.in_sqlda ? ib_query.in_sqlda->sqld : 0;
+	ibase_query *ib_query;
+	if(FAILURE == _php_ibase_prepare(&ib_query, ib_link, trans, query)) {
+		return;
+	}
 
-		if (bind_n != expected_n) {
-			php_error_docref(NULL, (bind_n < expected_n) ? E_WARNING : E_NOTICE,
-				"Statement expects %d arguments, %d given", expected_n, bind_n);
-			if (bind_n < expected_n) {
-				break;
-			}
-		} else if (bind_n > 0) {
-			if (zend_parse_parameters(ZEND_NUM_ARGS(), "+", &bind_args, &bind_num) == FAILURE) {
-				return;
-			}
+	{ // was while
+		int bind_n = ZEND_NUM_ARGS() - bind_i;
+		if (zend_parse_parameters(ZEND_NUM_ARGS(), "+", &bind_args, &bind_num) == FAILURE) {
+			goto _php_ibase_query_error;
 		}
 
-		if (FAILURE == _php_ibase_exec(INTERNAL_FUNCTION_PARAM_PASSTHRU, &result, &ib_query,
-				&bind_args[bind_i])) {
-			break;
+		if (FAILURE == _php_ibase_exec(INTERNAL_FUNCTION_PARAM_PASSTHRU, ib_query, &bind_args[bind_i], bind_n)) {
+			goto _php_ibase_query_error;
 		}
 
-		if (result != NULL) { /* statement returns a result */
-			result->type = QUERY_RESULT;
+		return;
+	}
 
-			/* EXECUTE PROCEDURE returns only one row => statement can be released immediately */
-			if (ib_query.statement_type != isc_info_sql_stmt_exec_procedure) {
-				ib_query.stmt = 0; /* keep stmt when free query */
-			}
-			RETVAL_RES(zend_register_resource(result, le_result));
-			Z_TRY_ADDREF_P(return_value);
-		}
-	} while (0);
+	assert(false && "UNREACHABLE");
 
-	_php_ibase_free_query(&ib_query);
-
+_php_ibase_query_error:
+	zend_list_delete(ib_query->res);
 }
 /* }}} */
 
@@ -1888,13 +1840,11 @@ PHP_FUNCTION(ibase_prepare)
 		RETURN_FALSE;
 	}
 
-	ib_query = (ibase_query *) emalloc(sizeof(ibase_query));
-
-	if (FAILURE == _php_ibase_alloc_query(ib_query, ib_link, trans, query, ib_link->dialect, trans_res)) {
-		efree(ib_query);
+	if(FAILURE == _php_ibase_prepare(&ib_query, ib_link, trans, query)){
 		RETURN_FALSE;
 	}
-	RETVAL_RES(zend_register_resource(ib_query, le_query));
+
+	RETVAL_RES(ib_query->res);
 	Z_TRY_ADDREF_P(return_value);
 }
 /* }}} */
