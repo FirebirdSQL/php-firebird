@@ -788,7 +788,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 			/* we end up here if none of the switch cases handled the field */
 			convert_to_string(b_var);
 			var->sqldata = Z_STRVAL_P(b_var);
-			var->sqllen	 = Z_STRLEN_P(b_var);
+			var->sqllen	 = (ISC_SHORT)Z_STRLEN_P(b_var);
 			var->sqltype = SQL_TEXT;
 	} /* for */
 	return rv;
@@ -1272,7 +1272,7 @@ PHP_FUNCTION(ibase_num_rows)
 /* }}} */
 
 static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ */
-	int scale, int flag)
+	int scale, size_t flag)
 {
 	static ISC_INT64 const scales[] = { 1, 10, 100, 1000,
 		10000,
@@ -1394,8 +1394,8 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 					return FAILURE;
 				}
 
-				size_t l = sprintf(string_data, "%s %s", timeBuf, timeZoneBuffer);
-				ZVAL_STRINGL(val, string_data, l);
+				size_t tz_len = sprintf(string_data, "%s %s", timeBuf, timeZoneBuffer);
+				ZVAL_STRINGL(val, string_data, tz_len);
 			}
 			break;
 #endif
@@ -1433,7 +1433,7 @@ format_date_time:
 /* }}}	*/
 
 static int _php_ibase_arr_zval(zval *ar_zval, char *data, zend_ulong data_size, /* {{{ */
-	ibase_array *ib_array, int dim, int flag)
+	ibase_array *ib_array, int dim, size_t flag)
 {
 	/**
 	 * Create multidimension array - recursion function
