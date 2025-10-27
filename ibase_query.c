@@ -59,6 +59,7 @@ static int le_query;
 
 #define LE_QUERY "Firebird/InterBase query"
 
+static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds);
 static void _php_ibase_free_xsqlda(XSQLDA *sqlda) /* {{{ */
 {
 	int i;
@@ -806,7 +807,7 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 }
 /* }}} */
 
-static void _php_ibase_alloc_xsqlda(XSQLDA *sqlda) /* {{{ */
+static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds) /* {{{ */
 {
 	int i;
 
