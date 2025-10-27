@@ -23,7 +23,9 @@
    +----------------------------------------------------------------------+
  */
 
- #include <stdbool.h>
+// #pragma GCC diagnostic error "-Wextra"
+// #pragma GCC diagnostic error "-Wall"
+// #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
