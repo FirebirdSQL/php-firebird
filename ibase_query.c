@@ -885,18 +885,37 @@ static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds) /* 
 }
 /* }}} */
 
-static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_result **ib_resultp, /* {{{ */
-	ibase_query *ib_query, zval *args)
+static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, zval *args, int bind_n) /* {{{ */
 {
-	XSQLDA *in_sqlda = NULL, *out_sqlda = NULL;
-	BIND_BUF *bind_buf = NULL;
 	int i, rv = FAILURE;
 	static char info_count[] = { isc_info_sql_records };
 	char result[64];
 	ISC_STATUS isc_result;
-	int argc = ib_query->in_sqlda ? ib_query->in_sqlda->sqld : 0;
+	int argc = ib_query->in_fields_count;
+
+	(void)execute_data;
 
 	RESET_ERRMSG;
+	RETVAL_FALSE;
+
+	if (bind_n != argc) {
+		php_error_docref(NULL, (bind_n < argc) ? E_WARNING : E_NOTICE,
+			"Statement expects %d arguments, %d given", argc, bind_n);
+
+		if (bind_n < argc) {
+			return FAILURE;
+		}
+	}
+
+	/* Have we used this cursor before and it's still open (exec proc has no cursor) ? */
+	if (ib_query->is_open && ib_query->statement_type != isc_info_sql_stmt_exec_procedure) {
+		IBDEBUG("Implicitly closing a cursor");
+		if (isc_dsql_free_statement(IB_STATUS, &ib_query->stmt, DSQL_close)) {
+			_php_ibase_error();
+			return FAILURE;
+		}
+		ib_query->is_open = 0;
+	}
 
 	for (i = 0; i < argc; ++i) {
 		SEPARATE_ZVAL(&args[i]);
@@ -915,7 +934,7 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_result **ib_resul
 			if (isc_dsql_execute_immediate(IB_STATUS, &ib_query->link->handle, &tr, 0,
 					ib_query->query, ib_query->dialect, NULL)) {
 				_php_ibase_error();
-				goto _php_ibase_exec_error;
+				goto _php_ibase_ex_error;
 			}
 
 			trans = (ibase_trans *) emalloc(sizeof(ibase_trans));
@@ -947,7 +966,7 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_result **ib_resul
 			if (isc_dsql_execute_immediate(IB_STATUS, &ib_query->link->handle,
 					&ib_query->trans->handle, 0, ib_query->query, ib_query->dialect, NULL)) {
 				_php_ibase_error();
-				goto _php_ibase_exec_error;
+				goto _php_ibase_ex_error;
 			}
 
 			if (ib_query->trans->handle == 0 && ib_query->trans_res != NULL) {
@@ -965,54 +984,40 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_result **ib_resul
 			RETVAL_FALSE;
 	}
 
-	/* allocate sqlda and output buffers */
-	if (ib_query->out_sqlda) { /* output variables in select, select for update */
-		ibase_result *res;
-
-		IBDEBUG("Query wants XSQLDA for output");
-		res = emalloc(sizeof(ibase_result)+sizeof(ibase_array)*max(0,ib_query->out_array_cnt-1));
-		res->link = ib_query->link;
-		res->trans = ib_query->trans;
-		res->stmt = ib_query->stmt;
-		GC_ADDREF(res->stmt_res = ib_query->stmt_res);
-
-		res->statement_type = ib_query->statement_type;
-		res->has_more_rows = 1;
-
-		out_sqlda = res->out_sqlda = emalloc(XSQLDA_LENGTH(ib_query->out_sqlda->sqld));
-		memcpy(out_sqlda, ib_query->out_sqlda, XSQLDA_LENGTH(ib_query->out_sqlda->sqld));
-		_php_ibase_alloc_xsqlda(out_sqlda);
-
-		if (ib_query->out_array) {
-			memcpy(&res->out_array, ib_query->out_array, sizeof(ibase_array)*ib_query->out_array_cnt);
-		}
-		*ib_resultp = res;
-	}
-
-	if (ib_query->in_sqlda) { /* has placeholders */
+	if (ib_query->in_fields_count) { /* has placeholders */
 		IBDEBUG("Query wants XSQLDA for input");
-		in_sqlda = emalloc(XSQLDA_LENGTH(ib_query->in_sqlda->sqld));
-		memcpy(in_sqlda, ib_query->in_sqlda, XSQLDA_LENGTH(ib_query->in_sqlda->sqld));
-		bind_buf = safe_emalloc(sizeof(BIND_BUF), ib_query->in_sqlda->sqld, 0);
-		if (_php_ibase_bind(in_sqlda, args, bind_buf, ib_query) == FAILURE) {
+		if (_php_ibase_bind(ib_query, args) == FAILURE) {
 			IBDEBUG("Could not bind input XSQLDA");
-			goto _php_ibase_exec_error;
+			goto _php_ibase_ex_error;
 		}
 	}
 
 	if (ib_query->statement_type == isc_info_sql_stmt_exec_procedure) {
 		isc_result = isc_dsql_execute2(IB_STATUS, &ib_query->trans->handle,
-			&ib_query->stmt, SQLDA_CURRENT_VERSION, in_sqlda, out_sqlda);
+			&ib_query->stmt, SQLDA_CURRENT_VERSION, ib_query->in_sqlda, ib_query->out_sqlda);
 	} else {
 		isc_result = isc_dsql_execute(IB_STATUS, &ib_query->trans->handle,
-			&ib_query->stmt, SQLDA_CURRENT_VERSION, in_sqlda);
+			&ib_query->stmt, SQLDA_CURRENT_VERSION, ib_query->in_sqlda);
 	}
+
 	if (isc_result) {
 		IBDEBUG("Could not execute query");
 		_php_ibase_error();
-		goto _php_ibase_exec_error;
+		goto _php_ibase_ex_error;
 	}
+
 	ib_query->trans->affected_rows = 0;
+
+	// TODO: test INSERT / UPDATE / UPDATE OR INSERT with  ... RETURNING
+	if (ib_query->out_sqlda) { /* output variables in select, select for update */
+		ib_query->has_more_rows = 1;
+		ib_query->is_open = 1;
+
+		RETVAL_RES(ib_query->res);
+		Z_TRY_ADDREF_P(return_value);
+
+		return SUCCESS;
+	}
 
 	switch (ib_query->statement_type) {
 
@@ -1026,7 +1031,7 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_result **ib_resul
 			if (isc_dsql_sql_info(IB_STATUS, &ib_query->stmt, sizeof(info_count),
 					info_count, sizeof(result), result)) {
 				_php_ibase_error();
-				goto _php_ibase_exec_error;
+				goto _php_ibase_ex_error;
 			}
 
 			affected_rows = 0;
@@ -1059,24 +1064,7 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_result **ib_resul
 
 	rv = SUCCESS;
 
-_php_ibase_exec_error:
-
-	if (in_sqlda) {
-		efree(in_sqlda);
-	}
-	if (bind_buf)
-		efree(bind_buf);
-
-	if (rv == FAILURE) {
-		if (*ib_resultp) {
-			efree(*ib_resultp);
-			*ib_resultp = NULL;
-		}
-		if (out_sqlda) {
-			_php_ibase_free_xsqlda(out_sqlda);
-		}
-	}
-
+_php_ibase_ex_error:
 	return rv;
 }
 /* }}} */
@@ -1856,69 +1844,28 @@ PHP_FUNCTION(ibase_execute)
 {
 	zval *query, *args = NULL;
 	ibase_query *ib_query;
-	ibase_result *result = NULL;
 	int bind_n = 0;
 
 	RESET_ERRMSG;
 
 	RETVAL_FALSE;
 
-	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "|r*", &query, &args, &bind_n)) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r*", &query, &args, &bind_n)) {
 		return;
 	}
 
-	ib_query = (ibase_query *)zend_fetch_resource_ex(query, LE_QUERY, le_query);
+	if(_php_ibase_fetch_query_res(query, &ib_query)) {
+		return;
+	}
 
-	do {
-		int	expected_n = ib_query->in_sqlda ? ib_query->in_sqlda->sqld : 0;
-
-		if (bind_n != expected_n) {
-			php_error_docref(NULL, (bind_n < expected_n) ? E_WARNING : E_NOTICE,
-				"Statement expects %d arguments, %d given", expected_n, bind_n);
-
-			if (bind_n < expected_n) {
-				break;
-			}
-		}
-
-		/* Have we used this cursor before and it's still open (exec proc has no cursor) ? */
-		if (ib_query->result_res != NULL) {
-			if (ib_query->statement_type != isc_info_sql_stmt_exec_procedure) {
-				IBDEBUG("Implicitly closing a cursor");
-
-				if (isc_dsql_free_statement(IB_STATUS, &ib_query->stmt, DSQL_close)) {
-					_php_ibase_error();
-					break;
-				}
-			}
-			zend_list_delete(ib_query->result_res);
-			ib_query->result_res = NULL;
-		}
-
-		if (FAILURE == _php_ibase_exec(INTERNAL_FUNCTION_PARAM_PASSTHRU, &result, ib_query, args)) {
-			break;
-		}
+	// was do {
+		_php_ibase_exec(INTERNAL_FUNCTION_PARAM_PASSTHRU, ib_query, args, bind_n);
 
 		/* free the query if trans handle was released */
-		if (ib_query->trans->handle == 0) {
-			zend_list_delete(Z_RES_P(query));
-		}
-
-		if (result != NULL) {
-			zval *ret;
-
-			result->type = EXECUTE_RESULT;
-			if (ib_query->statement_type == isc_info_sql_stmt_exec_procedure) {
-				result->stmt = 0;
-			}
-
-			ret = zend_list_insert(result, le_result);
-			ib_query->result_res = Z_RES_P(ret);
-			ZVAL_COPY_VALUE(return_value, ret);
-			Z_TRY_ADDREF_P(return_value);
-			Z_TRY_ADDREF_P(return_value);
-		}
-	} while (0);
+		// if (ib_query->trans->handle == 0) {
+		// 	zend_list_delete(Z_RES_P(query));
+		// }
+	// } while (0);
 }
 /* }}} */
 
