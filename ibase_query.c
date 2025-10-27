@@ -84,29 +84,18 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 {
 	IBDEBUG("Freeing query...");
 
-	if (ib_query->in_sqlda) {
-		efree(ib_query->in_sqlda);
-	}
-	if (ib_query->out_sqlda) {
-		efree(ib_query->out_sqlda);
-	}
-	if (ib_query->stmt_res != NULL) {
-		zend_list_delete(ib_query->stmt_res);
-		ib_query->stmt_res = NULL;
-	}
-	if (ib_query->result_res != NULL) {
-		zend_list_delete(ib_query->result_res);
-		ib_query->result_res = NULL;
-	}
-	if (ib_query->in_array) {
-		efree(ib_query->in_array);
-	}
-	if (ib_query->out_array) {
-		efree(ib_query->out_array);
-	}
-	if (ib_query->query) {
-		efree(ib_query->query);
-	}
+	if(ib_query->in_nullind)efree(ib_query->in_nullind);
+	if(ib_query->out_nullind)efree(ib_query->out_nullind);
+	if(ib_query->bind_buf)efree(ib_query->bind_buf);
+	if(ib_query->in_sqlda)efree(ib_query->in_sqlda); // Note to myself: no need for _php_ibase_free_xsqlda()
+	if(ib_query->out_sqlda)_php_ibase_free_xsqlda(ib_query->out_sqlda);
+	if(ib_query->in_array)efree(ib_query->in_array);
+	if(ib_query->out_array)efree(ib_query->out_array);
+	if(ib_query->query)efree(ib_query->query);
+	if(ib_query->ht_aliases)zend_array_destroy(ib_query->ht_aliases);
+	if(ib_query->ht_ind)zend_array_destroy(ib_query->ht_ind);
+
+	efree(ib_query);
 }
 /* }}} */
 
@@ -117,7 +106,6 @@ static void php_ibase_free_query_rsrc(zend_resource *rsrc) /* {{{ */
 	if (ib_query != NULL) {
 		IBDEBUG("Preparing to free query by dtor...");
 		_php_ibase_free_query(ib_query);
-		efree(ib_query);
 	}
 }
 /* }}} */
@@ -1756,29 +1744,7 @@ PHP_FUNCTION(ibase_name_result)
    Free the memory used by a result */
 PHP_FUNCTION(ibase_free_result)
 {
-	zval *result_arg;
-	ibase_result *ib_result;
-
-	RESET_ERRMSG;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r", &result_arg) == FAILURE) {
-		return;
-	}
-
-	ib_result = (ibase_result *)zend_fetch_resource_ex(result_arg, LE_RESULT, le_result);
-
-	_php_ibase_free_xsqlda(ib_result->out_sqlda);
-	efree(ib_result);
-
-	zend_list_delete(Z_RES_P(result_arg));
-
-	/*
-	* Bugfix of issue #40
-	* Reset pointer after freeing to NULL
-	*/
-	Z_RES_P(result_arg)->ptr = NULL;
-
-	RETURN_TRUE;
+	// ibase_result was removed, nothing to be done here
 }
 /* }}} */
 
@@ -1867,23 +1833,7 @@ PHP_FUNCTION(ibase_execute)
    Free memory used by a query */
 PHP_FUNCTION(ibase_free_query)
 {
-	zval *query_arg;
-	ibase_query *ib_query;
-
-	RESET_ERRMSG;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r", &query_arg) == FAILURE) {
-		return;
-	}
-
-	ib_query = (ibase_query *)zend_fetch_resource_ex(query_arg, LE_QUERY, le_query);
-	if (!ib_query) {
-		RETURN_FALSE;
-	}
-
-	zend_list_close(Z_RES_P(query_arg));
-	zend_list_delete(Z_RES_P(query_arg));
-	RETURN_TRUE;
+	_php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 }
 /* }}} */
 
