@@ -434,7 +434,7 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					break;
 			}
 		} else {
-			struct tm t = { 0, 0, 0, 0, 0, 0 };
+			struct tm t = { 0 };
 
 			switch (array->el_type) {
 #ifndef HAVE_STRPTIME
@@ -674,7 +674,8 @@ static int _php_ibase_bind(XSQLDA *sqlda, zval *b_vars, BIND_BUF *buf, /* {{{ */
 				if (Z_STRLEN_P(b_var) != BLOB_ID_LEN ||
 					!_php_ibase_string_to_quad(Z_STRVAL_P(b_var), &buf[i].val.qval)) {
 
-					ibase_blob ib_blob = { 0, BLOB_INPUT };
+					ibase_blob ib_blob = { 0 };
+					ib_blob.type = BLOB_INPUT;
 
 					if (isc_create_blob(IB_STATUS, &ib_query->link->handle,
 							&ib_query->trans->handle, &ib_blob.bl_handle, &ib_blob.bl_qd)) {
