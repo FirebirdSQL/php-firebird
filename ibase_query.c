@@ -1514,18 +1514,18 @@ void _php_ibase_insert_alias(HashTable *ht, const char *alias, size_t alias_len)
 
 static void _php_ibase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int fetch_type) /* {{{ */
 {
-	zval *result_arg;
+	zval *res_arg, *result;
 	zend_long flag = 0;
 	zend_long i, array_cnt = 0;
 	ibase_query *ib_query;
 
 	RESET_ERRMSG;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r|l", &result_arg, &flag)) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r|l", &res_arg, &flag)) {
 		RETURN_FALSE;
 	}
 
-	if(_php_ibase_fetch_query_res(result_arg, &ib_query)) {
+	if(_php_ibase_fetch_query_res(res_arg, &ib_query)) {
 		RETURN_FALSE;
 	}
 
@@ -1573,113 +1573,109 @@ static void _php_ibase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int fetch_type) 
 
 	for(i = 0; i < ib_query->out_fields_count; ++i) {
 		XSQLVAR *var = &ib_query->out_sqlda->sqlvar[i];
+		result = zend_hash_get_current_data(ht_ret);
 
-	// TODO: just continue and unnest. All fields are set to NULL already
-		if (((var->sqltype & 1) == 0) || *var->sqlind != -1) {
-			zval *result = zend_hash_get_current_data(ht_ret);
+		switch (var->sqltype & ~1) {
 
-			switch (var->sqltype & ~1) {
+			default:
+				_php_ibase_var_zval(result, var->sqldata, var->sqltype, var->sqllen,
+					var->sqlscale, flag);
+				break;
+			case SQL_BLOB:
+				if (flag & PHP_IBASE_FETCH_BLOBS) { /* fetch blob contents into hash */
 
-				default:
-					_php_ibase_var_zval(result, var->sqldata, var->sqltype, var->sqllen,
-						var->sqlscale, flag);
-					break;
-				case SQL_BLOB:
-					if (flag & PHP_IBASE_FETCH_BLOBS) { /* fetch blob contents into hash */
+					ibase_blob blob_handle;
+					zend_ulong max_len = 0;
+					static char bl_items[] = {isc_info_blob_total_length};
+					char bl_info[20];
+					unsigned short i;
 
-						ibase_blob blob_handle;
-						zend_ulong max_len = 0;
-						static char bl_items[] = {isc_info_blob_total_length};
-						char bl_info[20];
-						unsigned short i;
+					blob_handle.bl_handle = 0;
+					blob_handle.bl_qd = *(ISC_QUAD *) var->sqldata;
 
-						blob_handle.bl_handle = 0;
-						blob_handle.bl_qd = *(ISC_QUAD *) var->sqldata;
-
-						if (isc_open_blob(IB_STATUS, &ib_query->link->handle, &ib_query->trans->handle,
-								&blob_handle.bl_handle, &blob_handle.bl_qd)) {
-							_php_ibase_error();
-							goto _php_ibase_fetch_error;
-						}
-
-						if (isc_blob_info(IB_STATUS, &blob_handle.bl_handle, sizeof(bl_items),
-								bl_items, sizeof(bl_info), bl_info)) {
-							_php_ibase_error();
-							goto _php_ibase_fetch_error;
-						}
-
-						/* find total length of blob's data */
-						for (i = 0; i < sizeof(bl_info); ) {
-							unsigned short item_len;
-							char item = bl_info[i++];
-
-							if (item == isc_info_end || item == isc_info_truncated ||
-								item == isc_info_error || i >= sizeof(bl_info)) {
-
-								_php_ibase_module_error("Could not determine BLOB size (internal error)"
-									);
-								goto _php_ibase_fetch_error;
-							}
-
-							item_len = (unsigned short) isc_vax_integer(&bl_info[i], 2);
-
-							if (item == isc_info_blob_total_length) {
-								max_len = isc_vax_integer(&bl_info[i+2], item_len);
-								break;
-							}
-							i += item_len+2;
-						}
-
-						if (max_len == 0) {
-							ZVAL_STRING(result, "");
-						} else if (SUCCESS != _php_ibase_blob_get(result, &blob_handle,
-								max_len)) {
-							goto _php_ibase_fetch_error;
-						}
-
-						if (isc_close_blob(IB_STATUS, &blob_handle.bl_handle)) {
-							_php_ibase_error();
-							goto _php_ibase_fetch_error;
-						}
-
-					} else { /* blob id only */
-						ISC_QUAD bl_qd = *(ISC_QUAD *) var->sqldata;
-						ZVAL_NEW_STR(result, _php_ibase_quad_to_string(bl_qd));
+					if (isc_open_blob(IB_STATUS, &ib_query->link->handle, &ib_query->trans->handle,
+							&blob_handle.bl_handle, &blob_handle.bl_qd)) {
+						_php_ibase_error();
+						goto _php_ibase_fetch_error;
 					}
-					break;
-				case SQL_ARRAY:
-					if (flag & PHP_IBASE_FETCH_ARRAYS) { /* array can be *huge* so only fetch if asked */
-						ISC_QUAD ar_qd = *(ISC_QUAD *) var->sqldata;
-						ibase_array *ib_array = &ib_query->out_array[array_cnt++];
-						void *ar_data = emalloc(ib_array->ar_size);
 
-						if (isc_array_get_slice(IB_STATUS, &ib_query->link->handle,
-								&ib_query->trans->handle, &ar_qd, &ib_array->ar_desc,
-								ar_data, &ib_array->ar_size)) {
-							_php_ibase_error();
-							efree(ar_data);
+					if (isc_blob_info(IB_STATUS, &blob_handle.bl_handle, sizeof(bl_items),
+							bl_items, sizeof(bl_info), bl_info)) {
+						_php_ibase_error();
+						goto _php_ibase_fetch_error;
+					}
+
+					/* find total length of blob's data */
+					for (i = 0; i < sizeof(bl_info); ) {
+						unsigned short item_len;
+						char item = bl_info[i++];
+
+						if (item == isc_info_end || item == isc_info_truncated ||
+							item == isc_info_error || i >= sizeof(bl_info)) {
+
+							_php_ibase_module_error("Could not determine BLOB size (internal error)"
+								);
 							goto _php_ibase_fetch_error;
 						}
 
-						if (FAILURE == _php_ibase_arr_zval(result, ar_data, ib_array->ar_size, ib_array,
-								0, flag)) {
-							efree(ar_data);
-							goto _php_ibase_fetch_error;
+						item_len = (unsigned short) isc_vax_integer(&bl_info[i], 2);
+
+						if (item == isc_info_blob_total_length) {
+							max_len = isc_vax_integer(&bl_info[i+2], item_len);
+							break;
 						}
+						i += item_len+2;
+					}
+
+					if (max_len == 0) {
+						ZVAL_STRING(result, "");
+					} else if (SUCCESS != _php_ibase_blob_get(result, &blob_handle,
+							max_len)) {
+						goto _php_ibase_fetch_error;
+					}
+
+					if (isc_close_blob(IB_STATUS, &blob_handle.bl_handle)) {
+						_php_ibase_error();
+						goto _php_ibase_fetch_error;
+					}
+
+				} else { /* blob id only */
+					ISC_QUAD bl_qd = *(ISC_QUAD *) var->sqldata;
+					ZVAL_NEW_STR(result, _php_ibase_quad_to_string(bl_qd));
+				}
+				break;
+			case SQL_ARRAY:
+				if (flag & PHP_IBASE_FETCH_ARRAYS) { /* array can be *huge* so only fetch if asked */
+					ISC_QUAD ar_qd = *(ISC_QUAD *) var->sqldata;
+					ibase_array *ib_array = &ib_query->out_array[array_cnt++];
+					void *ar_data = emalloc(ib_array->ar_size);
+
+					if (isc_array_get_slice(IB_STATUS, &ib_query->link->handle,
+							&ib_query->trans->handle, &ar_qd, &ib_array->ar_desc,
+							ar_data, &ib_array->ar_size)) {
+						_php_ibase_error();
 						efree(ar_data);
-
-					} else { /* blob id only */
-						ISC_QUAD ar_qd = *(ISC_QUAD *) var->sqldata;
-						ZVAL_NEW_STR(result, _php_ibase_quad_to_string(ar_qd));
+						goto _php_ibase_fetch_error;
 					}
-					break;
-				_php_ibase_fetch_error:
-					RETURN_FALSE;
-			} /* switch */
-		}
+
+					if (FAILURE == _php_ibase_arr_zval(result, ar_data, ib_array->ar_size, ib_array,
+							0, flag)) {
+						efree(ar_data);
+						goto _php_ibase_fetch_error;
+					}
+					efree(ar_data);
+
+				} else { /* blob id only */
+					ISC_QUAD ar_qd = *(ISC_QUAD *) var->sqldata;
+					ZVAL_NEW_STR(result, _php_ibase_quad_to_string(ar_qd));
+				}
+				break;
+			_php_ibase_fetch_error:
+				RETURN_FALSE;
+		} /* switch */
 
 		zend_hash_move_forward(ht_ret);
-	} /* for field */
+	}
 
 	RETVAL_ARR(ht_ret);
 }
