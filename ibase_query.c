@@ -1529,11 +1529,11 @@ static void _php_ibase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int fetch_type) 
 		RETURN_FALSE;
 	}
 
-	assert(ib_query->out_fields_count > 0);
-
 	if (ib_query->out_sqlda == NULL || !ib_query->has_more_rows || !ib_query->is_open) {
 		RETURN_FALSE;
 	}
+
+	assert(ib_query->out_fields_count > 0);
 
 	if (ib_query->statement_type != isc_info_sql_stmt_exec_procedure) {
 		if (isc_dsql_fetch(IB_STATUS, &ib_query->stmt, 1, ib_query->out_sqlda)) {
