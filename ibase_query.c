@@ -1573,6 +1573,13 @@ static void _php_ibase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int fetch_type) 
 
 	for(i = 0; i < ib_query->out_fields_count; ++i) {
 		XSQLVAR *var = &ib_query->out_sqlda->sqlvar[i];
+
+		// NULLs are already set
+		if (!(((var->sqltype & 1) == 0) || *var->sqlind != -1)) {
+			zend_hash_move_forward(ht_ret);
+			continue;
+		}
+
 		result = zend_hash_get_current_data(ht_ret);
 
 		switch (var->sqltype & ~1) {
