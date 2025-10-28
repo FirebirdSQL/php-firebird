@@ -2184,7 +2184,7 @@ static int _php_ibase_fetch_query_res(zval *from, ibase_query **ib_query)
 
 	if(*ib_query == NULL) {
 		// TODO: throw something or not? notice? warning?
-		php_error_docref(NULL, E_NOTICE, "query already freed");
+		// fbp_notice("query already freed");
 		return FAILURE;
 	}
 
