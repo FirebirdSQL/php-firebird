@@ -1169,6 +1169,8 @@ PHP_FUNCTION(ibase_query)
 			goto _php_ibase_query_error;
 		}
 
+		ib_query->was_result_once = 1;
+
 		return;
 	}
 
@@ -1749,9 +1751,7 @@ PHP_FUNCTION(ibase_name_result)
    Free the memory used by a result */
 PHP_FUNCTION(ibase_free_result)
 {
-	(void)execute_data;
-	RETVAL_TRUE;
-	// ibase_result was removed, nothing to be done here
+	_php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1);
 }
 /* }}} */
 
@@ -1840,7 +1840,7 @@ PHP_FUNCTION(ibase_execute)
    Free memory used by a query */
 PHP_FUNCTION(ibase_free_query)
 {
-	_php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	_php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAM_PASSTHRU, 0);
 }
 /* }}} */
 
@@ -2236,7 +2236,7 @@ static void _php_ibase_alloc_ht_ind(ibase_query *ib_query)
 	}
 }
 
-static void _php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAMETERS)
+static void _php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAMETERS, int as_result)
 {
 	zval *query_arg;
 	ibase_query *ib_query;
@@ -2251,7 +2251,9 @@ static void _php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAMETERS)
 		return;
 	}
 
-	zend_list_close(Z_RES_P(query_arg));
+	if(!as_result || ib_query->was_result_once) {
+		zend_list_close(Z_RES_P(query_arg));
+	}
 
 	RETURN_TRUE;
 }

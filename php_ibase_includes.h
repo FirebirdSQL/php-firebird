@@ -161,6 +161,7 @@ typedef struct _ib_query {
 	ISC_SHORT *in_nullind, *out_nullind;
 	ISC_USHORT in_fields_count, out_fields_count;
 	HashTable *ht_aliases, *ht_ind; // Precomputed for ibase_fetch_*()
+	int was_result_once;
 } ibase_query;
 
 enum php_interbase_option {
@@ -258,7 +259,7 @@ static int _php_ibase_get_vars_count(ibase_query *ib_query);
 static int _php_ibase_fetch_query_res(zval *from, ibase_query **ib_query);
 static int _php_ibase_alloc_ht_aliases(ibase_query *ib_query);
 static void _php_ibase_alloc_ht_ind(ibase_query *ib_query);
-static void _php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAMETERS);
+static void _php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAMETERS, int as_result);
 
 #ifdef __cplusplus
 }
