@@ -2148,7 +2148,8 @@ static int _php_ibase_get_vars_count(ibase_query *ib_query)
 				ctx = 0;
 			} break;
 			case isc_info_truncated: {
-				fbp_notice("BUG: sql_info buffer truncated, current capacity: %ld", buf_size);
+				fbp_fatal("BUG: sql_info buffer truncated, current capacity: %ld", buf_size);
+				// fbp_notice("BUG: sql_info buffer truncated, current capacity: %ld", buf_size);
 				// Dynamic resize
 				// buf_size *= 2;
 				// buf = erealloc(buf, buf_size);
