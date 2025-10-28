@@ -1894,8 +1894,19 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 
 	array_init(return_value);
 
-	if (is_outvar) {
-		// TODO: use newer API for long names
+	// AFAIK describe bind does not set sqlname, aliasname, relname?
+	// Confirmation needed so I leave this as is. After that we can check
+	// is_outvar
+
+#if FB_API_VER >= 40
+	if(IBG(fb_get_master_interface) && IBG(fb_get_statement_interface)) {
+		if(fb_insert_field_info(IB_STATUS, ib_query, is_outvar, num, return_value)){
+			_php_ibase_error();
+			RETURN_FALSE;
+		}
+	} else {
+#endif
+		// Old API
 		add_index_stringl(return_value, 0, var->sqlname, MIN(31, var->sqlname_length));
 		add_assoc_stringl(return_value, "name", var->sqlname, MIN(31, var->sqlname_length));
 
@@ -1904,15 +1915,9 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 
 		add_index_stringl(return_value, 2, var->relname, MIN(31, var->relname_length));
 		add_assoc_stringl(return_value, "relation", var->relname, MIN(31, var->relname_length));
-	} else {
-		// AFAIK describe bind does not set these. Confirmation pending.
-		add_index_stringl(return_value, 0, "", 0);
-		add_assoc_stringl(return_value, "name", "", 0);
-		add_index_stringl(return_value, 1, "", 0);
-		add_assoc_stringl(return_value, "alias", "", 0);
-		add_index_stringl(return_value, 2, "", 0);
-		add_assoc_stringl(return_value, "relation", "", 0);
+#if FB_API_VER >= 40
 	}
+#endif
 
 	len = slprintf(buf, 16, "%d", var->sqllen);
 	add_index_stringl(return_value, 3, buf, len);

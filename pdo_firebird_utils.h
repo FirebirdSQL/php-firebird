@@ -41,6 +41,7 @@ void fb_decode_timestamp_tz(const ISC_TIMESTAMP_TZ* timestampTz,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);
 
 int fb_insert_aliases(ISC_STATUS* st, ibase_query *ib_query);
+int fb_insert_field_info(ISC_STATUS* st, ibase_query *ib_query, int is_outvar, int num, zval *into_array);
 
 #ifdef __cplusplus
 }

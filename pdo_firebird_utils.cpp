@@ -101,12 +101,50 @@ extern "C" int fb_insert_aliases(ISC_STATUS* st, ibase_query *ib_query)
 
 		assert(cols == ib_query->out_fields_count);
 
-		zval t;
 		for (unsigned i = 0; i < cols; ++i)
 		{
 			_php_ibase_insert_alias(ib_query->ht_aliases,
 				meta->getAlias(&status, i), strlen(meta->getAlias(&status, i)));
 		}
+	}
+	catch (const Firebird::FbException& error)
+	{
+		if (status.hasData())  {
+			fb_copy_status((const ISC_STATUS*)status.getErrors(), st, 20);
+			return st[1];
+		}
+	}
+
+	return 0;
+}
+
+extern "C" int fb_insert_field_info(ISC_STATUS* st, ibase_query *ib_query, int is_outvar, int num, zval *into_array)
+{
+	Firebird::IMaster* master = Firebird::fb_get_master_interface();
+	Firebird::ThrowStatusWrapper status(master->getStatus());
+	Firebird::IStatement* statement = NULL;
+	Firebird::IMessageMetadata* meta = NULL;
+	ISC_STATUS res;
+
+	if (res = fb_get_statement_interface(st, &statement, &ib_query->stmt)){
+		return res;
+	}
+
+	try {
+		if(is_outvar) {
+			meta = statement->getOutputMetadata(&status);
+		} else {
+			meta = statement->getInputMetadata(&status);
+		}
+
+		add_index_string(into_array, 0, meta->getField(&status, num));
+		add_assoc_string(into_array, "name", meta->getField(&status, num));
+
+		add_index_string(into_array, 1, meta->getAlias(&status, num));
+		add_assoc_string(into_array, "alias", meta->getAlias(&status, num));
+
+		add_index_string(into_array, 2, meta->getRelation(&status, num));
+		add_assoc_string(into_array, "relation", meta->getRelation(&status, num));
 	}
 	catch (const Firebird::FbException& error)
 	{
