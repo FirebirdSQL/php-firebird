@@ -130,3 +130,20 @@ function skip_if_fb_gt($v) {
 function skip_if_fb_gte($v) {
     if(($cv = get_fb_version()) >= $v)die("skip: Firebird version $cv >= $v");
 }
+
+function ibase_query_bulk(array $queries, $tr = null) {
+    foreach($queries as $q){
+        if(is_array($q)){
+            [$sql, $args] = $q;
+        } else {
+            $sql = $q;
+            $args = [];
+        }
+
+        if($tr) {
+            ibase_query($tr, $sql, ...$args);
+        } else {
+            ibase_query($sql, ...$args);
+        }
+    }
+}
