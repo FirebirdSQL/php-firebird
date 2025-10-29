@@ -248,7 +248,7 @@ static int _php_ibase_alloc_array(ibase_array **ib_arrayp, XSQLDA *sqlda, /* {{{
 
 /* allocate and prepare query */
 static int _php_ibase_prepare(ibase_query **new_query, ibase_db_link *link, /* {{{ */
-	ibase_trans *trans, char *query)
+	ibase_trans *trans, zend_resource *trans_res, char *query)
 {
 	/* Return FAILURE, if querystring is empty */
 	if (*query == '\0') {
@@ -261,6 +261,7 @@ static int _php_ibase_prepare(ibase_query **new_query, ibase_db_link *link, /* {
 	ib_query->res = zend_register_resource(ib_query, le_query);
 	ib_query->link = link;
 	ib_query->trans = trans;
+	ib_query->trans_res = trans_res;
 	ib_query->dialect = link->dialect;
 	ib_query->query = estrdup(query);
 
@@ -1155,7 +1156,7 @@ PHP_FUNCTION(ibase_query)
 	}
 
 	ibase_query *ib_query;
-	if(FAILURE == _php_ibase_prepare(&ib_query, ib_link, trans, query)) {
+	if(FAILURE == _php_ibase_prepare(&ib_query, ib_link, trans, trans_res, query)) {
 		return;
 	}
 
@@ -1796,7 +1797,7 @@ PHP_FUNCTION(ibase_prepare)
 		RETURN_FALSE;
 	}
 
-	if(FAILURE == _php_ibase_prepare(&ib_query, ib_link, trans, query)){
+	if(FAILURE == _php_ibase_prepare(&ib_query, ib_link, trans, trans_res, query)){
 		RETURN_FALSE;
 	}
 

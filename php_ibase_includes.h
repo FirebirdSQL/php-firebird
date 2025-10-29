@@ -148,6 +148,7 @@ typedef struct {
 typedef struct _ib_query {
 	ibase_db_link *link;
 	ibase_trans *trans;
+	zend_resource *trans_res;
 	zend_resource *res;
 	isc_stmt_handle stmt;
 	XSQLDA *in_sqlda, *out_sqlda;
