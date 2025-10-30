@@ -147,3 +147,8 @@ function ibase_query_bulk(array $queries, $tr = null) {
         }
     }
 }
+
+/** @var Exception $e */
+function php_ibase_exception_handler($e) {
+   echo "Fatal error: Uncaught ".get_class($e).": ", $e->getMessage(), "\n";
+}
