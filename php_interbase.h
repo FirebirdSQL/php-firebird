@@ -43,7 +43,7 @@ extern zend_module_entry ibase_module_entry;
 #define PHP_INTERBASE_VER_MINOR 1
 #define PHP_INTERBASE_VER_REV 1
 
-// Keep FB_API_VER two digit style
+// Keep two digit style similar to FB_API_VER
 #define PHP_INTERBASE_VER PHP_INTERBASE_VER_MAJOR * 10 + PHP_INTERBASE_VER_MINOR
 #define PHP_INTERBASE_VER_STR TO_STRING(PHP_INTERBASE_VER_MAJOR) "." TO_STRING(PHP_INTERBASE_VER_MINOR) "." TO_STRING(PHP_INTERBASE_VER_REV)
 
