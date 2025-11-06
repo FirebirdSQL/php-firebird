@@ -118,17 +118,23 @@ function insert_into($table, $data, $tr = null) {
 
 /** @var float $v */
 function skip_if_fb_lt($v) {
-    if(($cv = get_fb_version()) < $v)die("skip: Firebird version $cv < $v");
+    if(($cv = get_fb_version()) < $v)die("skip Firebird server version $cv < $v");
 }
 
 /** @var float $v */
 function skip_if_fb_gt($v) {
-    if(($cv = get_fb_version()) > $v)die("skip: Firebird version $cv > $v");
+    if(($cv = get_fb_version()) > $v)die("skip Firebird server version $cv > $v");
 }
 
 /** @var float $v */
 function skip_if_fb_gte($v) {
-    if(($cv = get_fb_version()) >= $v)die("skip: Firebird version $cv >= $v");
+    if(($cv = get_fb_version()) >= $v)die("skip Firebird server version $cv >= $v");
+}
+
+/** @var float $v */
+function skip_if_fbclient_lt($v) {
+    if(!function_exists("ibase_get_client_version"))die("skip Unable to determine Firebird client library version");
+    if(($cv = ibase_get_client_version()) < $v)die("skip Firebird client library version $cv < $v");
 }
 
 function ibase_query_bulk(array $queries, $tr = null) {

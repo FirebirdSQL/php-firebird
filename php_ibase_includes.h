@@ -75,8 +75,12 @@ ZEND_BEGIN_MODULE_GLOBALS(ibase)
 	zend_long sql_code;
 	zend_long default_trans_params;
 	zend_long default_lock_timeout; // only used togetger with trans_param IBASE_LOCK_TIMEOUT
-	void *fb_get_master_interface;
-	void *fb_get_statement_interface;
+	void *get_master_interface;
+	void *master_instance;
+	void *get_statement_interface;
+	int client_version;
+	int client_major_version;
+	int client_minor_version;
 ZEND_END_MODULE_GLOBALS(ibase)
 
 ZEND_EXTERN_MODULE_GLOBALS(ibase)
@@ -287,5 +291,11 @@ void fbp_error_ex(long level, const char *, ...)
 #define fbp_warning(msg, ...) fbp_error_ex(E_WARNING, msg " (%s:%d)\n" __VA_OPT__(,) __VA_ARGS__, __FILE__, __LINE__)
 #define fbp_notice(msg, ...)  fbp_error_ex(E_NOTICE,  msg " (%s:%d)\n" __VA_OPT__(,) __VA_ARGS__, __FILE__, __LINE__)
 #endif
+
+typedef ISC_STATUS (ISC_EXPORT *fb_get_statement_interface_t)(
+	ISC_STATUS* status_vector, void* db_handle, isc_stmt_handle* stmt_handle
+);
+
+typedef void* (ISC_EXPORT *fb_get_master_interface_t)(void);
 
 #endif /* PHP_IBASE_INCLUDES_H */

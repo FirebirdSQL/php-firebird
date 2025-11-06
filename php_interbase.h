@@ -119,6 +119,8 @@ PHP_FUNCTION(ibase_wait_event);
 PHP_FUNCTION(ibase_set_event_handler);
 PHP_FUNCTION(ibase_free_event_handler);
 
+PHP_FUNCTION(ibase_get_client_version);
+
 #else
 
 #define phpext_interbase_ptr NULL

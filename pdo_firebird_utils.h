@@ -26,11 +26,7 @@
 extern "C" {
 #endif
 
-unsigned fb_get_client_version(void);
-
-ISC_TIME fb_encode_time(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions);
-
-ISC_DATE fb_encode_date(unsigned year, unsigned month, unsigned day);
+unsigned fb_get_client_version(void *master_ptr);
 
 void fb_decode_time_tz(const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);

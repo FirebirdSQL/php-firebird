@@ -25,9 +25,9 @@
 #include "php_ibase_includes.h"
 
 /* Returns the client version. 0 bytes are minor version, 1 bytes are major version. */
-extern "C" unsigned fb_get_client_version(void)
+extern "C" unsigned fb_get_client_version(void *master_ptr)
 {
-	Firebird::IMaster* master = Firebird::fb_get_master_interface();
+	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
 	return util->getClientVersion();
 }
