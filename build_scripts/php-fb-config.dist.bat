@@ -1,4 +1,8 @@
 @echo off
+@REM Do not modify this file directly.
+@REM Create build_scripts/php-fb-config.bat if you need to change any variable
+@REM and put overrides there
+
 @REM php-firebird source directory
 @REM Should point one level up. For example
 @REM PFB_SOURCE_DIR=D:\php-firebird\ then your source should reside in D:\php-firebird\php-firebird\
@@ -11,18 +15,8 @@ set PFB_OUTPUT_DIR=%PFB_SOURCE_DIR%releases\
 set PFB_FB32_DIR=C:\Program Files\Firebird\Firebird_5_0-x86
 set PFB_FB64_DIR=C:\Program Files\Firebird\Firebird_5_0
 
-@REM Attach current git commit hash. git command must be in PATH
-set USE_GIT_HASH=0
+@REM Attach current git commit hash to version. git command must be in PATH
+set PFB_ATTACH_GIT_HASH_TO_VERS=0
 
-@REM Grab version
-for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_MAJOR" %~dp0..\php_interbase.h') do set VER_MAJOR=%%i
-for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_MINOR" %~dp0..\php_interbase.h') do set VER_MINOR=%%i
-for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_REV" %~dp0..\php_interbase.h') do set VER_REV=%%i
-for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_PRE" %~dp0..\php_interbase.h') do set VER_PRE=%%~i
-set PFB_VERS=%VER_MAJOR%.%VER_MINOR%.%VER_REV%%VER_PRE%
-
-if %USE_GIT_HASH% equ 1 (
-	for /f %%i in ('git -C %~dp0..\ rev-parse --short HEAD') do set PFB_VERS=%PFB_VERS%-%%i
-)
-
+@REM Additional flags for ./configure
 @REM set PFB_CONFIGURE_FLAGS=--enable-debug

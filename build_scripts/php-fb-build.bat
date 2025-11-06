@@ -4,6 +4,7 @@
 @REM
 
 @REM config  ======================================================================================
+call %~dp0php-fb-config.dist.bat
 call %~dp0php-fb-config.bat
 
 set pfb_php_tag=%1
@@ -39,6 +40,17 @@ for /f "tokens=2,3 delims=-." %%a in ("%pfb_php_tag%") do set pfb_php_vers=%%a.%
 if "%pfb_php_vers%" == "" (
     call :log "BUG: pfb_php_vers should be set at this point"
     exit 1
+)
+
+@REM Grab version
+for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_MAJOR" %~dp0..\php_interbase.h') do set VER_MAJOR=%%i
+for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_MINOR" %~dp0..\php_interbase.h') do set VER_MINOR=%%i
+for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_REV" %~dp0..\php_interbase.h') do set VER_REV=%%i
+for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_PRE" %~dp0..\php_interbase.h') do set VER_PRE=%%~i
+set PFB_VERS=%VER_MAJOR%.%VER_MINOR%.%VER_REV%%VER_PRE%
+
+if %PFB_ATTACH_GIT_HASH_TO_VERS% equ 1 (
+	for /f %%i in ('git -C %~dp0..\ rev-parse --short HEAD') do set PFB_VERS=%PFB_VERS%-%%i
 )
 
 @REM Initialize
