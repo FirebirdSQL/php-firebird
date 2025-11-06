@@ -93,17 +93,17 @@ function array2sql_parts($data) {
     return [...fields2sql_parts(array_keys($data)), $data];
 }
 
-function dump_rows($q) {
-    while($row = ibase_fetch_assoc($q)){
+function dump_rows($q, int $flags = 0) {
+    while($row = ibase_fetch_assoc($q, $flags)){
         var_dump($row);
     }
 }
 
-function dump_table_rows($table, $tr = null) {
+function dump_table_rows($table, $tr = null, int $flags = 0) {
     if($tr)$args[] = $tr;
     $args[] = sprintf('SELECT * FROM "%s"', $table);
 
-    dump_rows(ibase_query(...$args));
+    dump_rows(ibase_query(...$args), $flags);
 }
 
 function insert_into($table, $data, $tr = null) {
