@@ -53,5 +53,5 @@ exit /B
     call phpsdk_buildtree php%pfb_php_vers%
     cd /D php-src
     call buildconf.bat --force --add-modules-dir=%PFB_SOURCE_DIR%
-    call configure.bat --disable-all --enable-cli %extra_args% --with-interbase=%with_interbase%
+    call configure.bat --disable-all --enable-cli %PFB_CONFIGURE_FLAGS% %extra_args% --with-interbase=%with_interbase%
     nmake
