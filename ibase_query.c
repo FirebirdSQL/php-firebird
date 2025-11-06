@@ -1377,20 +1377,27 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 		// case SQL_INT128:
 		case SQL_TIME_TZ:
 		case SQL_TIMESTAMP_TZ:
+			// Should be converted to VARCHAR via isc_dpb_set_bind tag at
+			// connect if fbclient does not have fb_get_master_instance().
+			// Assert this just in case.
+			if(!IBG(master_instance)) {
+				assert(false && "UNREACHABLE");
+			}
+
 			char timeZoneBuffer[40] = {0};
 			unsigned year, month, day, hours, minutes, seconds, fractions;
 
 			if((type & ~1) == SQL_TIME_TZ){
 				format = INI_STR("ibase.timeformat");
-				fb_decode_time_tz((ISC_TIME_TZ *) data, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
-				ISC_TIME time = fb_encode_time(hours, minutes, seconds, fractions);
+				fb_decode_time_tz(IBG(master_instance), (ISC_TIME_TZ *) data, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
+				ISC_TIME time = fb_encode_time(IBG(master_instance), hours, minutes, seconds, fractions);
 				isc_decode_sql_time(&time, &t);
 			} else {
 				format = INI_STR("ibase.timestampformat");
-				fb_decode_timestamp_tz((ISC_TIMESTAMP_TZ *) data, &year, &month, &day, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
+				fb_decode_timestamp_tz(IBG(master_instance), (ISC_TIMESTAMP_TZ *) data, &year, &month, &day, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
 				ISC_TIMESTAMP ts;
-				ts.timestamp_date = fb_encode_date(year, month, day);
-				ts.timestamp_time = fb_encode_time(hours, minutes, seconds, fractions);
+				ts.timestamp_date = fb_encode_date(IBG(master_instance), year, month, day);
+				ts.timestamp_time = fb_encode_time(IBG(master_instance), hours, minutes, seconds, fractions);
 				isc_decode_timestamp(&ts, &t);
 			}
 
@@ -1408,7 +1415,7 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 			}
 			break;
 #endif
-		case SQL_DATE: /* == case SQL_TIMESTAMP: */
+		case SQL_TIMESTAMP:
 			format = INI_STR("ibase.timestampformat");
 			isc_decode_timestamp((ISC_TIMESTAMP *) data, &t);
 			goto format_date_time;
@@ -1911,8 +1918,14 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 	// is_outvar
 
 #if FB_API_VER >= 40
-	if(IBG(fb_get_master_interface) && IBG(fb_get_statement_interface)) {
-		if(fb_insert_field_info(IB_STATUS, ib_query, is_outvar, num, return_value)){
+	if(IBG(master_instance) && IBG(get_statement_interface)) {
+		void *statement = NULL;
+		if(((fb_get_statement_interface_t)IBG(get_statement_interface))(IB_STATUS, &statement, &ib_query->stmt)){
+			_php_ibase_error();
+			RETURN_FALSE;
+		}
+
+		if(fb_insert_field_info(IBG(master_instance), IB_STATUS, is_outvar, num, return_value, statement)){
 			_php_ibase_error();
 			RETURN_FALSE;
 		}
@@ -2208,8 +2221,13 @@ static int _php_ibase_alloc_ht_aliases(ibase_query *ib_query)
 	zend_hash_init(ib_query->ht_aliases, ib_query->out_fields_count, NULL, ZVAL_PTR_DTOR, 0);
 
 #if FB_API_VER >= 40
-	if(IBG(fb_get_master_interface) && IBG(fb_get_statement_interface)) {
-		if(fb_insert_aliases(IB_STATUS, ib_query)){
+	if(IBG(master_instance) && IBG(get_statement_interface)) {
+		void *statement = NULL;
+		if(((fb_get_statement_interface_t)IBG(get_statement_interface))(IB_STATUS, &statement, &ib_query->stmt)){
+			return FAILURE;
+		}
+
+		if(fb_insert_aliases(IBG(master_instance), IB_STATUS, ib_query, statement)){
 			return FAILURE;
 		}
 	} else {

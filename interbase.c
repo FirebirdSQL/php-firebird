@@ -44,6 +44,7 @@
 #include "SAPI.h"
 #include <stdbool.h>
 #include <time.h>
+#include "pdo_firebird_utils.h"
 
 #define ROLLBACK    0
 #define COMMIT      1
@@ -1002,9 +1003,23 @@ int _php_ibase_attach_db(char **args, size_t *len, zend_long *largs, isc_db_hand
 	}
 
 #if FB_API_VER >= 40
-	// Do not handle directly INT128 or DECFLOAT, convert to VARCHAR at server instead
-	const char compat[] = "int128 to varchar;decfloat to varchar";
-	dpb_len = slprintf(dpb, buf_len, "%c%c%s", isc_dpb_set_bind, (char)(sizeof(compat) - 1), compat);
+	const char *compat_buf;
+	char compat_buf_size;
+
+	// ibase_query(): Data type unknown
+	// If fbclient >= 4 then convert to VARCHAR at server only INT128 and DECFLOAT
+	// If we have older client, convert also timezone types
+	if(IBG(client_major_version) >= 4) {
+		const char compat[] = "INT128 TO VARCHAR;DECFLOAT TO VARCHAR";
+		compat_buf = compat;
+		compat_buf_size = sizeof(compat) - 1;
+	} else {
+		const char compat[] = "INT128 TO VARCHAR;DECFLOAT TO VARCHAR;TIME WITH TIME ZONE TO TIME WITHOUT TIME ZONE;TIMESTAMP WITH TIME ZONE TO TIMESTAMP WITHOUT TIME ZONE";
+		compat_buf = compat;
+		compat_buf_size = sizeof(compat) - 1;
+	}
+
+	dpb_len = slprintf(dpb, buf_len, "%c%c%s", isc_dpb_set_bind, compat_buf_size, compat_buf);
 	dpb += dpb_len;
 	buf_len -= dpb_len;
 #endif
