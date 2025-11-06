@@ -50,6 +50,10 @@
 #define FETCH_ROW       1
 #define FETCH_ARRAY     2
 
+// Appearantly XSQLVAR len fields can come in > 31 and < 0 depending on
+// fbclient-server combination
+#define CAP_XSQLVAR_LEN(len, str) ((len) > 31 || (len) < 0 ? MIN(31, strlen((str))) : (len))
+
 typedef struct {
 	unsigned short vary_length;
 	char vary_string[1];
@@ -1915,14 +1919,14 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 	} else {
 #endif
 		// Old API
-		add_index_stringl(return_value, 0, var->sqlname, MIN(31, var->sqlname_length));
-		add_assoc_stringl(return_value, "name", var->sqlname, MIN(31, var->sqlname_length));
+		add_index_stringl(return_value, 0, var->sqlname, CAP_XSQLVAR_LEN(var->sqlname_length, var->sqlname));
+		add_assoc_stringl(return_value, "name", var->sqlname, CAP_XSQLVAR_LEN(var->sqlname_length, var->sqlname));
 
-		add_index_stringl(return_value, 1, var->aliasname, MIN(31, var->aliasname_length));
-		add_assoc_stringl(return_value, "alias", var->aliasname, MIN(31, var->aliasname_length));
+		add_index_stringl(return_value, 1, var->aliasname, CAP_XSQLVAR_LEN(var->aliasname_length, var->aliasname));
+		add_assoc_stringl(return_value, "alias", var->aliasname, CAP_XSQLVAR_LEN(var->aliasname_length, var->aliasname));
 
-		add_index_stringl(return_value, 2, var->relname, MIN(31, var->relname_length));
-		add_assoc_stringl(return_value, "relation", var->relname, MIN(31, var->relname_length));
+		add_index_stringl(return_value, 2, var->relname, CAP_XSQLVAR_LEN(var->relname_length, var->relname));
+		add_assoc_stringl(return_value, "relation", var->relname, CAP_XSQLVAR_LEN(var->relname_length, var->relname));
 #if FB_API_VER >= 40
 	}
 #endif
@@ -2215,7 +2219,7 @@ static int _php_ibase_alloc_ht_aliases(ibase_query *ib_query)
 			XSQLVAR *var = &ib_query->out_sqlda->sqlvar[i];
 
 			_php_ibase_insert_alias(ib_query->ht_aliases,
-				var->aliasname, MIN(31, var->aliasname_length));
+				var->aliasname, CAP_XSQLVAR_LEN(var->aliasname_length, var->aliasname));
 		}
 #if FB_API_VER >= 40
 	}
