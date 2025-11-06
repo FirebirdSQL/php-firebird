@@ -50,10 +50,6 @@
 #define FETCH_ROW       1
 #define FETCH_ARRAY     2
 
-// Appearantly XSQLVAR len fields can come in > 31 and < 0 depending on
-// fbclient-server combination
-#define CAP_XSQLVAR_LEN(len, str) ((len) > 31 || (len) < 0 ? MIN(31, strlen((str))) : (len))
-
 typedef struct {
 	unsigned short vary_length;
 	char vary_string[1];
@@ -1496,12 +1492,14 @@ static int _php_ibase_arr_zval(zval *ar_zval, char *data, zend_ulong data_size, 
 }
 /* }}} */
 
-void _php_ibase_insert_alias(HashTable *ht, const char *alias, size_t alias_len)
+void _php_ibase_insert_alias(HashTable *ht, const char *alias)
 {
 	char buf[METADATALENGTH + 3 + 1]; // _00 + \0
 	zval t2;
 	int i = 0;
 	char const *base = "FIELD"; /* use 'FIELD' if name is empty */
+
+	size_t alias_len = strlen(alias);
 	size_t alias_len_w_suff = alias_len + 3;
 
 	switch (*alias) {
@@ -1932,14 +1930,14 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 	} else {
 #endif
 		// Old API
-		add_index_stringl(return_value, 0, var->sqlname, CAP_XSQLVAR_LEN(var->sqlname_length, var->sqlname));
-		add_assoc_stringl(return_value, "name", var->sqlname, CAP_XSQLVAR_LEN(var->sqlname_length, var->sqlname));
+		add_index_stringl(return_value, 0, var->sqlname, strlen(var->sqlname));
+		add_assoc_stringl(return_value, "name", var->sqlname, strlen(var->sqlname));
 
-		add_index_stringl(return_value, 1, var->aliasname, CAP_XSQLVAR_LEN(var->aliasname_length, var->aliasname));
-		add_assoc_stringl(return_value, "alias", var->aliasname, CAP_XSQLVAR_LEN(var->aliasname_length, var->aliasname));
+		add_index_stringl(return_value, 1, var->aliasname, strlen(var->aliasname));
+		add_assoc_stringl(return_value, "alias", var->aliasname, strlen(var->aliasname));
 
-		add_index_stringl(return_value, 2, var->relname, CAP_XSQLVAR_LEN(var->relname_length, var->relname));
-		add_assoc_stringl(return_value, "relation", var->relname, CAP_XSQLVAR_LEN(var->relname_length, var->relname));
+		add_index_stringl(return_value, 2, var->relname, strlen(var->relname));
+		add_assoc_stringl(return_value, "relation", var->relname, strlen(var->relname));
 #if FB_API_VER >= 40
 	}
 #endif
@@ -2236,8 +2234,7 @@ static int _php_ibase_alloc_ht_aliases(ibase_query *ib_query)
 		for(size_t i = 0; i < ib_query->out_fields_count; i++){
 			XSQLVAR *var = &ib_query->out_sqlda->sqlvar[i];
 
-			_php_ibase_insert_alias(ib_query->ht_aliases,
-				var->aliasname, CAP_XSQLVAR_LEN(var->aliasname_length, var->aliasname));
+			_php_ibase_insert_alias(ib_query->ht_aliases, var->aliasname);
 		}
 #if FB_API_VER >= 40
 	}

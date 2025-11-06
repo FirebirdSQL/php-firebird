@@ -99,8 +99,7 @@ extern "C" int fb_insert_aliases(void *master_ptr, ISC_STATUS* st, ibase_query *
 
 		for (unsigned i = 0; i < cols; ++i)
 		{
-			_php_ibase_insert_alias(ib_query->ht_aliases,
-				meta->getAlias(&status, i), strlen(meta->getAlias(&status, i)));
+			_php_ibase_insert_alias(ib_query->ht_aliases, meta->getAlias(&status, i));
 		}
 	}
 	catch (const Firebird::FbException& error)

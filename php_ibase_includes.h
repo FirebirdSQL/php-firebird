@@ -259,7 +259,7 @@ void php_ibase_service_minit(INIT_FUNC_ARGS);
 extern "C" {
 #endif
 
-void _php_ibase_insert_alias(HashTable *ht, const char *alias, size_t alias_len);
+void _php_ibase_insert_alias(HashTable *ht, const char *alias);
 static int _php_ibase_get_vars_count(ibase_query *ib_query);
 static int _php_ibase_fetch_query_res(zval *from, ibase_query **ib_query);
 static int _php_ibase_alloc_ht_aliases(ibase_query *ib_query);
