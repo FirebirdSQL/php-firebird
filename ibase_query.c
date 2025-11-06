@@ -2267,11 +2267,11 @@ static void _php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAMETERS, int as_resu
 	RESET_ERRMSG;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r", &query_arg) == FAILURE) {
-		return;
+		RETURN_FALSE;
 	}
 
 	if(_php_ibase_fetch_query_res(query_arg, &ib_query)) {
-		return;
+		RETURN_FALSE;
 	}
 
 	if(!as_result || ib_query->was_result_once) {
