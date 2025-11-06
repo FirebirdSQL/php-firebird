@@ -17,8 +17,8 @@ set USE_GIT_HASH=0
 for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_MAJOR" %~dp0..\php_interbase.h') do set VER_MAJOR=%%i
 for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_MINOR" %~dp0..\php_interbase.h') do set VER_MINOR=%%i
 for /f "tokens=3" %%i in ('findstr /b /c:"#define PHP_INTERBASE_VER_REV" %~dp0..\php_interbase.h') do set VER_REV=%%i
-set PFB_VERS=%VER_MAJOR%.%VER_MINOR%.%VER_REV%-beta
+set PFB_VERS=%VER_MAJOR%.%VER_MINOR%.%VER_REV%-RC0
 
-if "%USE_GIT_HASH%" gtr "0" (
+if %USE_GIT_HASH% equ 1 (
 	for /f %%i in ('git -C %~dp0..\ rev-parse --short HEAD') do set PFB_VERS=%PFB_VERS%-%%i
 )

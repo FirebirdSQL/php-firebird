@@ -23,7 +23,7 @@ if "%pfb_cpp_vers%" == "" (
     exit 1
 )
 
-if "%pfb_ts%" gtr "0" (
+if "%pfb_ts%" == "1" (
     set pfb_ts=1
 ) else (
     set pfb_ts=0
@@ -57,7 +57,7 @@ if "%pfb_arch%" == "x86" (
     set build_root=%php_root%x64\
 )
 
-if "%pfb_ts%" gtr "0" (
+if %pfb_ts% equ 1 (
     set build_root=%build_root%Release_TS\
 ) else (
     set build_root=%build_root%Release\
