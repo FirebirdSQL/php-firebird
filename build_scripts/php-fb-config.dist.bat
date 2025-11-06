@@ -25,4 +25,4 @@ if %USE_GIT_HASH% equ 1 (
 	for /f %%i in ('git -C %~dp0..\ rev-parse --short HEAD') do set PFB_VERS=%PFB_VERS%-%%i
 )
 
-set PFB_CONFIGURE_FLAGS=--enable-debug
+@REM set PFB_CONFIGURE_FLAGS=--enable-debug
