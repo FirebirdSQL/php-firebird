@@ -19,11 +19,11 @@ function test_table(string $table){
 	$c = 0;
 
 	$fields = [
-		'"'.str_repeat("F", $MAX_LEN).'"',
-		'"'.str_repeat("🥰", intdiv($MAX_LEN, 4)).'ppp"', // 7*(utf 4 bytes)+3 padding
+		str_repeat("F", $MAX_LEN),
+		str_repeat("🥰", intdiv($MAX_LEN, 4)).'ppp', // 7*(utf 4 bytes)+3 padding
 	];
-	$fields_str = join(" INTEGER, ", $fields)." INTEGER";
-	$create_sql = sprintf('CREATE TABLE "%s" (%s)', $table, $fields_str);
+	$fields_str = join('" INTEGER,"', $fields);
+	$create_sql = sprintf('CREATE TABLE "%s" ("%s" INTEGER)', $table, $fields_str);
 
 	if(ibase_query($create_sql)){
 		ibase_commit();
@@ -41,12 +41,23 @@ function test_table(string $table){
 (function(){
 	global $MAX_LEN;
 
+	var_dump($MAX_LEN);
+
 	test_table(str_repeat('T', $MAX_LEN));
+	test_table(str_repeat('😂', intdiv($MAX_LEN, 4)));
 })();
 
 ?>
 --EXPECT--
+int(31)
 Table:TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+array(2) {
+  ["FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"]=>
+  int(1)
+  ["🥰🥰🥰🥰🥰🥰🥰ppp"]=>
+  int(2)
+}
+Table:😂😂😂😂😂😂😂
 array(2) {
   ["FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"]=>
   int(1)

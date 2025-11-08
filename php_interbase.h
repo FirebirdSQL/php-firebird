@@ -30,9 +30,27 @@
 extern zend_module_entry ibase_module_entry;
 #define phpext_interbase_ptr &ibase_module_entry
 
-#include "php_version.h"
-// Keep version in track with Firebird
-#define PHP_INTERBASE_VERSION "5.0.3"
+#include "ibase.h"
+
+#define TO_STRING_(x) #x
+#define TO_STRING(x) TO_STRING_(x)
+
+#ifndef FB_API_VER
+  static_assert(false, "FATAL: FB_API_VER is not defined. Assumed very old, unsupported client library");
+#endif
+
+#define PHP_INTERBASE_VER_MAJOR 6
+#define PHP_INTERBASE_VER_MINOR 1
+#define PHP_INTERBASE_VER_REV 1
+#define PHP_INTERBASE_VER_PRE "-RC1"
+
+// Keep two digit style similar to FB_API_VER
+#define PHP_INTERBASE_VER PHP_INTERBASE_VER_MAJOR * 10 + PHP_INTERBASE_VER_MINOR
+#define PHP_INTERBASE_VER_STR \
+  TO_STRING(PHP_INTERBASE_VER_MAJOR) "." \
+  TO_STRING(PHP_INTERBASE_VER_MINOR) "." \
+  TO_STRING(PHP_INTERBASE_VER_REV) \
+  PHP_INTERBASE_VER_PRE
 
 PHP_MINIT_FUNCTION(ibase);
 PHP_RINIT_FUNCTION(ibase);
@@ -100,6 +118,8 @@ PHP_FUNCTION(ibase_errcode);
 PHP_FUNCTION(ibase_wait_event);
 PHP_FUNCTION(ibase_set_event_handler);
 PHP_FUNCTION(ibase_free_event_handler);
+
+PHP_FUNCTION(ibase_get_client_version);
 
 #else
 

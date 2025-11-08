@@ -11,9 +11,13 @@ function init_db()
 {
 	global $test_base, $user, $password;
 
-	$test_db = ibase_query(IBASE_CREATE,
-		sprintf("CREATE SCHEMA '%s' USER '%s' PASSWORD '%s' DEFAULT CHARACTER SET %s",$test_base,
-		$user, $password, ($charset = ini_get('ibase.default_charset')) ? $charset : 'NONE'));
+	$sql = sprintf("CREATE SCHEMA '%s' USER '%s' PASSWORD '%s' DEFAULT CHARACTER SET %s",
+		$test_base, $user, $password,
+		($charset = ini_get('ibase.default_charset')) ? $charset : 'NONE'
+	);
+
+	$test_db = ibase_query(IBASE_CREATE, $sql);
+
 	$tr = ibase_trans($test_db);
 	ibase_query($tr,"create table test1 (i integer, c varchar(100))");
 	ibase_commit_ret($tr);
@@ -26,8 +30,9 @@ function cleanup_db()
 {
 	global $test_base;
 
-	$r = ibase_connect($test_base);
-	ibase_drop_db($r);
+	if($r = ibase_connect($test_base)){
+		ibase_drop_db($r);
+	}
 }
 
 function get_fb_version(): float

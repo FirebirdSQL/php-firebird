@@ -83,40 +83,78 @@ function rand_number($len , $prec = -1, $sign = 1)
     return $n;
 }
 
-function array2sql_parts($data) {
-    $fields_str = join(",", array_keys($data));
-    $q_str = join(",", array_fill(0, count($data), "?"));
-    return [$fields_str, $q_str, $data];
+function fields2sql_parts($fields) {
+    $fields_str = '"'.join('","', $fields).'"';
+    $q_str = join(",", array_fill(0, count($fields), "?"));
+    return [$fields_str, $q_str];
 }
 
-function dump_rows($q) {
-    while($row = ibase_fetch_assoc($q)){
+function array2sql_parts($data) {
+    return [...fields2sql_parts(array_keys($data)), $data];
+}
+
+function dump_rows($q, int $flags = 0) {
+    while($row = ibase_fetch_assoc($q, $flags)){
         var_dump($row);
     }
 }
 
-function dump_table_rows($table) {
-    dump_rows(ibase_query(sprintf('SELECT * FROM "%s"', $table)));
+function dump_table_rows($table, $tr = null, int $flags = 0) {
+    if($tr)$args[] = $tr;
+    $args[] = sprintf('SELECT * FROM "%s"', $table);
+
+    dump_rows(ibase_query(...$args), $flags);
 }
 
-function insert_into($table, $data) {
+function insert_into($table, $data, $tr = null) {
+    if($tr) $args[] = $tr;
     [$fields_str, $q_str] = array2sql_parts($data);
-    return ibase_query(sprintf('INSERT INTO "%s" (%s) VALUES (%s)',
+    $args[] = sprintf('INSERT INTO "%s" (%s) VALUES (%s)',
         $table, $fields_str, $q_str
-    ), ...array_values($data));
+    );
+
+    return ibase_query(...array_merge($args, array_values($data)));
 }
 
 /** @var float $v */
 function skip_if_fb_lt($v) {
-    if(($cv = get_fb_version()) < $v)die("skip: Firebird version $cv < $v");
+    if(($cv = get_fb_version()) < $v)die("skip Firebird server version $cv < $v");
 }
 
 /** @var float $v */
 function skip_if_fb_gt($v) {
-    if(($cv = get_fb_version()) > $v)die("skip: Firebird version $cv > $v");
+    if(($cv = get_fb_version()) > $v)die("skip Firebird server version $cv > $v");
 }
 
 /** @var float $v */
 function skip_if_fb_gte($v) {
-    if(($cv = get_fb_version()) >= $v)die("skip: Firebird version $cv >= $v");
+    if(($cv = get_fb_version()) >= $v)die("skip Firebird server version $cv >= $v");
+}
+
+/** @var float $v */
+function skip_if_fbclient_lt($v) {
+    if(!function_exists("ibase_get_client_version"))die("skip Unable to determine Firebird client library version");
+    if(($cv = ibase_get_client_version()) < $v)die("skip Firebird client library version $cv < $v");
+}
+
+function ibase_query_bulk(array $queries, $tr = null) {
+    foreach($queries as $q){
+        if(is_array($q)){
+            [$sql, $args] = $q;
+        } else {
+            $sql = $q;
+            $args = [];
+        }
+
+        if($tr) {
+            ibase_query($tr, $sql, ...$args);
+        } else {
+            ibase_query($sql, ...$args);
+        }
+    }
+}
+
+/** @var Exception $e */
+function php_ibase_exception_handler($e) {
+   echo "Fatal error: Uncaught ".get_class($e).": ", $e->getMessage(), "\n";
 }

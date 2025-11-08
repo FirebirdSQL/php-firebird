@@ -3,7 +3,6 @@ InterBase: transactions
 --SKIPIF--
 <?php
 include("skipif.inc");
-if(get_fb_version() >= 5.0)print 'skip: FB >= 5.0';
 ?>
 --FILE--
 <?php
@@ -269,7 +268,7 @@ three rows in fourth transaction with deadlock
 2	
 3	
 4	
-errmsg [%s]
+errmsg [%S]
 ---
 three rows
 --- test5 ---

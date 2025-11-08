@@ -32,12 +32,12 @@ exit /B
 
     set build_msg=Building PHP-%pfb_php_vers%
 
-    if "%pfb_ts%" gtr "0" (
-        set build_msg=%build_msg% non-TS
-        set extra_args=--disable-zts
-    ) else (
+    if %pfb_ts% equ 1 (
         set build_msg=%build_msg% TS
         set extra_args=
+    ) else (
+        set build_msg=%build_msg% non-TS
+        set extra_args=--disable-zts
     )
 
     if "%pfb_arch%" == "x86" (
@@ -53,5 +53,5 @@ exit /B
     call phpsdk_buildtree php%pfb_php_vers%
     cd /D php-src
     call buildconf.bat --force --add-modules-dir=%PFB_SOURCE_DIR%
-    call configure.bat --disable-all --enable-cli %extra_args% --with-interbase=%with_interbase%
+    call configure.bat --disable-all --enable-cli %PFB_CONFIGURE_FLAGS% %extra_args% --with-interbase=%with_interbase%
     nmake

@@ -3,7 +3,7 @@ Long names: Firebird 4.0 or newer
 --SKIPIF--
 <?php
 require_once("skipif.inc");
-skip_if_fb_lt(4.0);
+skip_if_fb_lt(4.0) || skip_if_fbclient_lt(4.0);
 ?>
 --FILE--
 <?php
@@ -20,11 +20,11 @@ function test_table(string $table){
 	$c = 0;
 
 	$fields = [
-		'"'.str_repeat("F", $MAX_LEN).'"',
-		'"'.str_repeat("🥰", $MAX_LEN).'"',
+		str_repeat("F", $MAX_LEN),
+		str_repeat("🥰", $MAX_LEN),
 	];
-	$fields_str = join(" INTEGER, ", $fields)." INTEGER";
-	$create_sql = sprintf('CREATE TABLE "%s" (%s)', $table, $fields_str);
+	$fields_str = join('" INTEGER,"', $fields);
+	$create_sql = sprintf('CREATE TABLE "%s" ("%s" INTEGER)', $table, $fields_str);
 
 	if(ibase_query($create_sql)){
 		ibase_commit();
@@ -50,16 +50,17 @@ function test_table(string $table){
 
 ?>
 --EXPECT--
+int(63)
 Table:TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 array(2) {
-  ["FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"]=>
+  ["FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"]=>
   int(1)
   ["🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰"]=>
   int(2)
 }
 Table:😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂😂
 array(2) {
-  ["FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"]=>
+  ["FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"]=>
   int(1)
   ["🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰🥰"]=>
   int(2)

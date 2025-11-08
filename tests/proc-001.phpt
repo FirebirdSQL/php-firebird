@@ -14,11 +14,11 @@ require("interbase.inc");
 	AS
 	DECLARE VARIABLE I INTEGER;
 	BEGIN
-		:I = 1;
+		I = 1;
 		WHILE (:I <= 5) DO BEGIN
-			:N = :I;
-			:RESULT = :ARG + :I;
-			:I =:I + 1;
+			N = :I;
+			RESULT = :ARG + :I;
+			I = :I + 1;
 			SUSPEND;
 		END
 	END");

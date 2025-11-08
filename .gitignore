@@ -73,3 +73,4 @@ tests/*.sh
 /reports
 win_build_scripts
 .vscode-win
+build_scripts/php-fb-config.bat
