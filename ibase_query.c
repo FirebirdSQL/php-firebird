@@ -483,7 +483,6 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					convert_to_double(val);
 					*(float*) buf = (float) Z_DVAL_P(val);
 					break;
-// Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
 				case SQL_BOOLEAN:
 					convert_to_boolean(val);
@@ -697,7 +696,6 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 					buf[i].val.qval = ib_blob.bl_qd;
 				}
 				continue;
-// Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
 			case SQL_BOOLEAN:
 
@@ -815,7 +813,6 @@ static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds) /* 
 			case SQL_VARYING:
 				var->sqldata = safe_emalloc(sizeof(char), var->sqllen + sizeof(short), 0);
 				break;
-// Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
 			case SQL_BOOLEAN:
 				var->sqldata = emalloc(sizeof(FB_BOOLEAN));
@@ -1312,7 +1309,6 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 		case SQL_TEXT:
 			ZVAL_STRINGL(val, (char*)data, len);
 			break;
-// Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
 		case SQL_BOOLEAN:
 			ZVAL_BOOL(val, *(FB_BOOLEAN *) data);
@@ -1322,6 +1318,7 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 			n = *(short *) data;
 			goto _sql_long;
 		case SQL_INT64:
+// TODO: do tests cover these cases?
 #if (SIZEOF_ZEND_LONG >= 8)
 			n = *(zend_long *) data;
 			goto _sql_long;
@@ -1955,7 +1952,6 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 		unsigned short precision = 0;
 
 		switch (var->sqltype & ~1) {
-// Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
 			case SQL_BOOLEAN:
 				precision = 1;
@@ -1985,7 +1981,6 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 			case SQL_SHORT:
 				s = "SMALLINT";
 				break;
-// Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
 			case SQL_BOOLEAN:
 				s = "BOOLEAN";

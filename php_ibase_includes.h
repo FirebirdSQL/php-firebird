@@ -128,7 +128,6 @@ typedef struct event {
  */
 typedef struct {
 	union {
-// Boolean data type exists since FB 3.0
 #ifdef SQL_BOOLEAN
 		FB_BOOLEAN bval;
 #endif
