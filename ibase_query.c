@@ -1216,64 +1216,6 @@ PHP_FUNCTION(ibase_affected_rows)
 }
 /* }}} */
 
-/* {{{ proto int ibase_num_rows( resource result_identifier )
-   Return the number of rows that are available in a result */
-#if abies_0
-PHP_FUNCTION(ibase_num_rows)
-{
-	/**
-	 * As this function relies on the InterBase API function isc_dsql_sql_info()
-	 * which has a couple of limitations (which I hope will be fixed in future
-	 * releases of Firebird), this function is fairly useless. I'm leaving it
-	 * in place for people who can live with the limitations, which I only
-	 * found out about after I had implemented it anyway.
-	 *
-	 * Currently, there's no way to determine how many rows can be fetched from
-	 * a cursor. The only number that _can_ be determined is the number of rows
-	 * that have already been pre-fetched by the client library.
-	 * This implies the following:
-	 * - num_rows() always returns zero before the first fetch;
-	 * - num_rows() for SELECT ... FOR UPDATE is broken -> never returns a
-	 *   higher number than the number of records fetched so far (no pre-fetch);
-	 * - the result of num_rows() for other statements is merely a lower bound
-	 *   on the number of records => calling ibase_num_rows() again after a couple
-	 *   of fetches will most likely return a new (higher) figure for large result
-	 *   sets.
-	 */
-
-	zval *result_arg;
-	ibase_result *ib_result;
-	static char info_count[] = {isc_info_sql_records};
-	char result[64];
-
-	RESET_ERRMSG;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r", &result_arg) == FAILURE) {
-		return;
-	}
-
-	ib_result = (ibase_result *)zend_fetch_resource_ex(&result_arg, LE_RESULT, le_result);
-
-	if (isc_dsql_sql_info(IB_STATUS, &ib_result->stmt, sizeof(info_count), info_count, sizeof(result), result)) {
-		_php_ibase_error();
-		RETURN_FALSE;
-	}
-
-	if (result[0] == isc_info_sql_records) {
-		unsigned i = 3, result_size = isc_vax_integer(&result[1],2);
-
-		while (result[i] != isc_info_end && i < result_size) {
-			short len = (short)isc_vax_integer(&result[i+1],2);
-			if (result[i] == isc_info_req_select_count) {
-				RETURN_LONG(isc_vax_integer(&result[i+3],len));
-			}
-			i += len+3;
-		}
-	}
-}
-#endif
-/* }}} */
-
 static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ */
 	int scale, size_t flag)
 {

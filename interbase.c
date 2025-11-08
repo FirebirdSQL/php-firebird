@@ -168,12 +168,6 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_affected_rows, 0, 0, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 ZEND_END_ARG_INFO()
 
-#if abies_0
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_num_rows, 0, 0, 1)
-	ZEND_ARG_INFO(0, result_identifier)
-ZEND_END_ARG_INFO()
-#endif
-
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_fetch_row, 0, 0, 1)
 	ZEND_ARG_INFO(0, result)
 	ZEND_ARG_INFO(0, fetch_flags)
@@ -341,9 +335,6 @@ static const zend_function_entry ibase_functions[] = {
 	PHP_FE(ibase_gen_id, 		arginfo_ibase_gen_id)
 	PHP_FE(ibase_num_fields, 	arginfo_ibase_num_fields)
 	PHP_FE(ibase_num_params, 	arginfo_ibase_num_params)
-#if abies_0
-	PHP_FE(ibase_num_rows, 		arginfo_ibase_num_rows)
-#endif
 	PHP_FE(ibase_affected_rows, arginfo_ibase_affected_rows)
 	PHP_FE(ibase_field_info, 	arginfo_ibase_field_info)
 	PHP_FE(ibase_param_info, 	arginfo_ibase_param_info)
@@ -407,9 +398,6 @@ static const zend_function_entry ibase_functions[] = {
 	PHP_FALIAS(fbird_gen_id,		ibase_gen_id, 		arginfo_ibase_gen_id)
 	PHP_FALIAS(fbird_num_fields,	ibase_num_fields, 	arginfo_ibase_num_fields)
 	PHP_FALIAS(fbird_num_params,	ibase_num_params, 	arginfo_ibase_num_params)
-#if abies_0
-	PHP_FALIAS(fbird_num_rows,		ibase_num_rows, 	arginfo_ibase_num_rows)
-#endif
 	PHP_FALIAS(fbird_affected_rows,	ibase_affected_rows, arginfo_ibase_affected_rows)
 	PHP_FALIAS(fbird_field_info,	ibase_field_info, 	arginfo_ibase_field_info)
 	PHP_FALIAS(fbird_param_info,	ibase_param_info, 	arginfo_ibase_param_info)
