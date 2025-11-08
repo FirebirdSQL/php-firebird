@@ -136,110 +136,111 @@ static int _php_ibase_alloc_array(ibase_array **ib_arrayp, XSQLDA *sqlda, /* {{{
 		zend_ulong ar_size = 1;
 		XSQLVAR *var = &sqlda->sqlvar[i];
 
-		if ((var->sqltype & ~1) == SQL_ARRAY) {
-			ibase_array *a = &ar[n++];
-			ISC_ARRAY_DESC *ar_desc = &a->ar_desc;
+		if ((var->sqltype & ~1) != SQL_ARRAY) {
+			 continue;
+		}
 
-			if (isc_array_lookup_bounds(IB_STATUS, &link, &trans, var->relname,
-					var->sqlname, ar_desc)) {
-				_php_ibase_error();
-				efree(ar);
-				return FAILURE;
-			}
+		ibase_array *a = &ar[n++];
+		ISC_ARRAY_DESC *ar_desc = &a->ar_desc;
 
-			switch (ar_desc->array_desc_dtype) {
-				case blr_text:
-				case blr_text2:
-					a->el_type = SQL_TEXT;
-					a->el_size = ar_desc->array_desc_length;
-					break;
-// Boolean data type exists since FB 3.0
+		if (isc_array_lookup_bounds(IB_STATUS, &link, &trans, var->relname,
+				var->sqlname, ar_desc)) {
+			_php_ibase_error();
+			efree(ar);
+			return FAILURE;
+		}
+
+		switch (ar_desc->array_desc_dtype) {
+			case blr_text:
+			case blr_text2:
+				a->el_type = SQL_TEXT;
+				a->el_size = ar_desc->array_desc_length;
+				break;
 #ifdef SQL_BOOLEAN
 				case blr_bool:
 					a->el_type = SQL_BOOLEAN;
 					a->el_size = sizeof(FB_BOOLEAN);
 					break;
 #endif
-				case blr_short:
-					a->el_type = SQL_SHORT;
-					a->el_size = sizeof(short);
-					break;
-				case blr_long:
-					a->el_type = SQL_LONG;
-					a->el_size = sizeof(ISC_LONG);
-					break;
-				case blr_float:
-					a->el_type = SQL_FLOAT;
-					a->el_size = sizeof(float);
-					break;
-				case blr_double:
-					a->el_type = SQL_DOUBLE;
-					a->el_size = sizeof(double);
-					break;
-				case blr_int64:
-					a->el_type = SQL_INT64;
-					a->el_size = sizeof(ISC_INT64);
-					break;
-				case blr_timestamp:
-					a->el_type = SQL_TIMESTAMP;
-					a->el_size = sizeof(ISC_TIMESTAMP);
-					break;
-				case blr_sql_date:
-					a->el_type = SQL_TYPE_DATE;
-					a->el_size = sizeof(ISC_DATE);
-					break;
-				case blr_sql_time:
-					a->el_type = SQL_TYPE_TIME;
-					a->el_size = sizeof(ISC_TIME);
-					break;
+			case blr_short:
+				a->el_type = SQL_SHORT;
+				a->el_size = sizeof(short);
+				break;
+			case blr_long:
+				a->el_type = SQL_LONG;
+				a->el_size = sizeof(ISC_LONG);
+				break;
+			case blr_float:
+				a->el_type = SQL_FLOAT;
+				a->el_size = sizeof(float);
+				break;
+			case blr_double:
+				a->el_type = SQL_DOUBLE;
+				a->el_size = sizeof(double);
+				break;
+			case blr_int64:
+				a->el_type = SQL_INT64;
+				a->el_size = sizeof(ISC_INT64);
+				break;
+			case blr_timestamp:
+				a->el_type = SQL_TIMESTAMP;
+				a->el_size = sizeof(ISC_TIMESTAMP);
+				break;
+			case blr_sql_date:
+				a->el_type = SQL_TYPE_DATE;
+				a->el_size = sizeof(ISC_DATE);
+				break;
+			case blr_sql_time:
+				a->el_type = SQL_TYPE_TIME;
+				a->el_size = sizeof(ISC_TIME);
+				break;
 #if FB_API_VER >= 40
-				// These are converted to VARCHAR via isc_dpb_set_bind tag at connect
-				// blr_dec64
-				// blr_dec128
-				// blr_int128
-				case blr_sql_time_tz:
-					a->el_type = SQL_TIME_TZ;
-					a->el_size = sizeof(ISC_TIME_TZ);
-					break;
-				case blr_timestamp_tz:
-					a->el_type = SQL_TIMESTAMP_TZ;
-					a->el_size = sizeof(ISC_TIMESTAMP_TZ);
-					break;
+			// These are converted to VARCHAR via isc_dpb_set_bind tag at connect
+			// blr_dec64
+			// blr_dec128
+			// blr_int128
+			case blr_sql_time_tz:
+				a->el_type = SQL_TIME_TZ;
+				a->el_size = sizeof(ISC_TIME_TZ);
+				break;
+			case blr_timestamp_tz:
+				a->el_type = SQL_TIMESTAMP_TZ;
+				a->el_size = sizeof(ISC_TIMESTAMP_TZ);
+				break;
 #endif
-				case blr_varying:
-				case blr_varying2:
-					/**
-					 * IB has a strange way of handling VARCHAR arrays. It doesn't store
-					 * the length in the first short, as with VARCHAR fields. It does,
-					 * however, expect the extra short to be allocated for each element.
-					 */
-					a->el_type = SQL_TEXT;
-					a->el_size = ar_desc->array_desc_length + sizeof(short);
-					break;
-				case blr_quad:
-				case blr_blob_id:
-				case blr_cstring:
-				case blr_cstring2:
-					/**
-					 * These types are mentioned as array types in the manual, but I
-					 * wouldn't know how to create an array field with any of these
-					 * types. I assume these types are not applicable to arrays, and
-					 * were mentioned erroneously.
-					 */
-				default:
-					_php_ibase_module_error("Unsupported array type %d in relation '%s' column '%s'",
-						ar_desc->array_desc_dtype, var->relname, var->sqlname);
-					efree(ar);
-					return FAILURE;
-			} /* switch array_desc_type */
+			case blr_varying:
+			case blr_varying2:
+				/**
+				 * IB has a strange way of handling VARCHAR arrays. It doesn't store
+				 * the length in the first short, as with VARCHAR fields. It does,
+				 * however, expect the extra short to be allocated for each element.
+				 */
+				a->el_type = SQL_TEXT;
+				a->el_size = ar_desc->array_desc_length + sizeof(short);
+				break;
+			case blr_quad:
+			case blr_blob_id:
+			case blr_cstring:
+			case blr_cstring2:
+				/**
+				 * These types are mentioned as array types in the manual, but I
+				 * wouldn't know how to create an array field with any of these
+				 * types. I assume these types are not applicable to arrays, and
+				 * were mentioned erroneously.
+				 */
+			default:
+				_php_ibase_module_error("Unsupported array type %d in relation '%s' column '%s'",
+					ar_desc->array_desc_dtype, var->relname, var->sqlname);
+				efree(ar);
+				return FAILURE;
+		} /* switch array_desc_type */
 
-			/* calculate elements count */
-			for (dim = 0; dim < ar_desc->array_desc_dimensions; dim++) {
-				ar_size *= 1 + ar_desc->array_desc_bounds[dim].array_bound_upper
-					-ar_desc->array_desc_bounds[dim].array_bound_lower;
-			}
-			a->ar_size = a->el_size * ar_size;
-		} /* if SQL_ARRAY */
+		/* calculate elements count */
+		for (dim = 0; dim < ar_desc->array_desc_dimensions; dim++) {
+			ar_size *= 1 + ar_desc->array_desc_bounds[dim].array_bound_upper
+				-ar_desc->array_desc_bounds[dim].array_bound_lower;
+		}
+		a->ar_size = a->el_size * ar_size;
 	} /* for column */
 	*ib_arrayp = ar;
 	return SUCCESS;
