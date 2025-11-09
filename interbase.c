@@ -29,11 +29,6 @@
 
 #include "php.h"
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-
 #if HAVE_IBASE
 
 #include "php_ini.h"
