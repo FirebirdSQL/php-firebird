@@ -9,6 +9,7 @@ skip_if_fb_gt(3.0);
 <?php
 
 require_once("interbase.inc");
+ibase_connect($test_base);
 
 // FB 2.5, 3.0 identifier len is by byte count not character count
 $MAX_LEN = 31;
