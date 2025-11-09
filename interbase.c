@@ -1206,11 +1206,16 @@ PHP_FUNCTION(ibase_close)
 	}
 
 	/* we have at least 3 additional references to this resource ??? */
-	if (GC_REFCOUNT(link_res) < 4) {
-		zend_list_close(link_res);
-	} else {
-		zend_list_delete(link_res);
-	}
+	// Keep this code for now. In case we decide to put it under a some kind of
+	// legacy flag
+	// if (GC_REFCOUNT(link_res) < 4) {
+	// 	zend_list_close(link_res);
+	// } else {
+	// 	zend_list_delete(link_res);
+	// }
+
+	zend_list_close(link_res);
+
 	RETURN_TRUE;
 }
 /* }}} */
