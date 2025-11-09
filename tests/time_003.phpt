@@ -1,11 +1,11 @@
 --TEST--
-IBASE_UNIXTIME: return negative unix timestamp (old behaviour) for TIME fields
+IBASE_UNIXTIME: ignore IBASE_UNIXTIME flag for TIME fields
 --SKIPIF--
 <?php
 include("skipif.inc");
 
-// See also: tests/time_003.phpt
-skip_if_ext_gte(61);
+// See also: tests/time_001.phpt
+skip_if_ext_lt(61);
 
 ?>
 --FILE--
@@ -30,7 +30,7 @@ array(3) {
   ["ID"]=>
   int(1)
   ["T1"]=>
-  int(-%d)
+  string(8) "15:45:59"
   ["T2"]=>
   int(1762436759)
 }

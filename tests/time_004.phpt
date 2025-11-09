@@ -1,10 +1,10 @@
 --TEST--
-IBASE_UNIXTIME: return negative unix timestamp (old behaviour) for TIME_TZ fields
+IBASE_UNIXTIME: ignore IBASE_UNIXTIME flag for TIME_TZ fields
 --SKIPIF--
 <?php
 include("skipif.inc");
-// See also: tests/time_004.phpt
-skip_if_ext_gte(61);
+// See also: tests/time_002.phpt
+skip_if_ext_lt(61);
 skip_if_fb_lt(4);
 skip_if_fbclient_lt(4);
 ?>
@@ -30,7 +30,7 @@ array(3) {
   ["ID"]=>
   int(1)
   ["T1"]=>
-  int(-%d)
+  string(20) "15:45:59 Europe/Riga"
   ["T2"]=>
   int(1762436759)
 }

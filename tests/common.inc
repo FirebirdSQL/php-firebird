@@ -34,3 +34,28 @@ function test_ibase_trans_014_015() {
 	var_dump(ibase_close());
 	var_dump(ibase_close($x));
 }
+
+function test_time_unixtime(): void {
+	ini_set("ibase.timeformat", "%H:%M:%S");
+	ibase_query("CREATE TABLE TTEST (
+		ID INTEGER,
+		T1 TIME DEFAULT '15:45:59',
+		T2 TIMESTAMP DEFAULT '2025-11-06 15:45:59'
+	)");
+	ibase_commit();
+	ibase_query("INSERT INTO TTEST (ID) VALUES (1)");
+	dump_table_rows("TTEST");
+	dump_table_rows("TTEST", null, IBASE_UNIXTIME);
+}
+
+function test_time_tz_unixtime(): void {
+	ibase_query("CREATE TABLE TTEST (
+		ID INTEGER,
+		T1 TIME WITH TIME ZONE DEFAULT '15:45:59 Europe/Riga',
+		T2 TIMESTAMP WITH TIME ZONE DEFAULT '2025-11-06 15:45:59 Europe/Riga'
+	)");
+	ibase_commit();
+	ibase_query("INSERT INTO TTEST (ID) VALUES (1)");
+	dump_table_rows("TTEST");
+	dump_table_rows("TTEST", null, IBASE_UNIXTIME);
+}

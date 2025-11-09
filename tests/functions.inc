@@ -133,12 +133,12 @@ function skip_if_fb_gte($v) {
 
 /** @var float $v */
 function skip_if_fbclient_lt($v) {
-    if(!function_exists("ibase_get_client_version"))die("skip Unable to determine Firebird client library version");
+    if(!function_exists("ibase_get_client_version"))die("skip Firebird client library version (undefined) < $v");
     if(($cv = ibase_get_client_version()) < $v)die("skip Firebird client library version $cv < $v");
 }
 
 function skip_if_ext_lt(int $v): void {
-    if(!defined('IBASE_VER'))die("Skip IBASE_VER not defined");
+    if(!defined('IBASE_VER'))die("Skip IBASE_VER (not defined) < $v");
     if(IBASE_VER < $v)die("Skip IBASE_VER ".IBASE_VER." < $v");
 }
 
