@@ -12,6 +12,7 @@ skip_if_fb_gt(2.5);
 <?php
 
 require("interbase.inc");
+ibase_connect($test_base);
 
 (function() {
     var_dump($t = ibase_query("SET TRANSACTION"));

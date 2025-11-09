@@ -6,6 +6,7 @@ ibase_trans(): handles
 <?php
 
 require("interbase.inc");
+ibase_connect($test_base);
 
 (function() {
     $t = ibase_query("SET TRANSACTION");

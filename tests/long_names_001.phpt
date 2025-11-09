@@ -9,6 +9,7 @@ skip_if_fb_lt(4.0) || skip_if_fbclient_lt(4.0);
 <?php
 
 require_once("interbase.inc");
+ibase_connect($test_base);
 
 // FB3: The maximum identifier length is 31 bytes
 // FB4: The maximum identifier length is 63 characters character set UTF8 (252 bytes)

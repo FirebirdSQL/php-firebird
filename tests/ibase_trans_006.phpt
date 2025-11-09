@@ -13,6 +13,8 @@ skip_if_fb_lt(3.0);
 
 require("interbase.inc");
 
+ibase_connect($test_base);
+
 (function() {
     var_dump($t = ibase_query("SET TRANSACTION"));
     var_dump(ibase_rollback($t));

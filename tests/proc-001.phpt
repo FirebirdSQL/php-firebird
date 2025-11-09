@@ -6,6 +6,7 @@ Procedures
 <?php
 
 require("interbase.inc");
+ibase_connect($test_base);
 
 (function(){
 	ibase_query(

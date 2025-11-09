@@ -8,6 +8,7 @@ include("skipif.inc");
 <?php
 
 require("interbase.inc");
+ibase_connect($test_base);
 
 (function() {
     $res = ibase_prepare('SELECT * FROM TEST1');

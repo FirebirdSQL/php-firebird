@@ -9,6 +9,7 @@ skip_if_fb_lt(4) || skip_if_fbclient_lt(4);
 <?php
 
 require("interbase.inc");
+ibase_connect($test_base);
 
 (function(){
     ibase_query("CREATE TABLE TTEST (

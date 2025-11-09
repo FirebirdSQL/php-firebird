@@ -16,6 +16,7 @@ if(PHP_MAJOR_VERSION < 8) print "Skip PHP < 8";
 
 require("interbase.inc");
 require("common.inc");
+ibase_connect($test_base);
 
 set_exception_handler("php_ibase_exception_handler");
 

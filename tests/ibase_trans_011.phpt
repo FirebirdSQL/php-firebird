@@ -6,6 +6,7 @@ ibase_trans(): transaction control with SQL - commit explicitly
 <?php
 
 require("interbase.inc");
+ibase_connect($test_base);
 
 (function() {
     var_dump($t = ibase_query("SET TRANSACTION"));

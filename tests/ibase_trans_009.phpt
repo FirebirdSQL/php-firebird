@@ -6,6 +6,7 @@ ibase_trans(): transaction control with SQL
 <?php
 
 require("interbase.inc");
+ibase_connect($test_base);
 
 (function() {
     $queries = [
