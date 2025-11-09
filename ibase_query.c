@@ -57,8 +57,6 @@ typedef struct {
 
 static int le_query;
 
-#define LE_QUERY "Firebird/InterBase query"
-
 static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds);
 static void _php_ibase_free_xsqlda(XSQLDA *sqlda) /* {{{ */
 {
@@ -111,7 +109,7 @@ void php_ibase_query_minit(INIT_FUNC_ARGS) /* {{{ */
 {
 	(void)type;
 	le_query = zend_register_list_destructors_ex(php_ibase_free_query_rsrc, NULL,
-		"interbase query", module_number);
+		LE_QUERY, module_number);
 }
 /* }}} */
 

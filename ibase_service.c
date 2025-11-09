@@ -71,7 +71,7 @@ static void _php_ibase_free_service(zend_resource *rsrc) /* {{{ */
 void php_ibase_service_minit(INIT_FUNC_ARGS) /* {{{ */
 {
 	le_service = zend_register_list_destructors_ex(_php_ibase_free_service, NULL,
-	    "interbase service manager handle", module_number);
+		LE_SCVH, module_number);
 
 	/* backup options */
 	REGISTER_LONG_CONSTANT("IBASE_BKP_IGNORE_CHECKSUMS", isc_spb_bkp_ignore_checksums, CONST_PERSISTENT);

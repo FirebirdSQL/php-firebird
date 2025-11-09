@@ -97,7 +97,7 @@ static void _php_ibase_free_event_rsrc(zend_resource *rsrc) /* {{{ */
 void php_ibase_events_minit(INIT_FUNC_ARGS) /* {{{ */
 {
 	le_event = zend_register_list_destructors_ex(_php_ibase_free_event_rsrc, NULL,
-	    "interbase event", module_number);
+		LE_EVENT, module_number);
 }
 /* }}} */
 
