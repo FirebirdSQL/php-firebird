@@ -1335,7 +1335,7 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 				isc_decode_timestamp(&ts, &t);
 			}
 
-			if (flag & PHP_IBASE_UNIXTIME) {
+			if (((type & ~1) != SQL_TIME_TZ) && (flag & PHP_IBASE_UNIXTIME)) {
 				ZVAL_LONG(val, mktime(&t));
 			} else {
 				char timeBuf[80] = {0};
@@ -1370,7 +1370,7 @@ format_date_time:
 #if HAVE_STRUCT_TM_TM_ZONE
 			t.tm_zone = tzname[0];
 #endif
-			if (flag & PHP_IBASE_UNIXTIME) {
+			if (((type & ~1) != SQL_TYPE_TIME) && (flag & PHP_IBASE_UNIXTIME)) {
 				ZVAL_LONG(val, mktime(&t));
 			} else {
 				l = strftime(string_data, sizeof(string_data), format, &t);
