@@ -1201,6 +1201,10 @@ PHP_FUNCTION(ibase_close)
 		link_res = Z_RES_P(link_arg);
 	}
 
+	if (!zend_fetch_resource2(link_res, LE_LINK, le_link, le_plink)) {
+		RETURN_FALSE;
+	}
+
 	/* we have at least 3 additional references to this resource ??? */
 	if (GC_REFCOUNT(link_res) < 4) {
 		zend_list_close(link_res);
