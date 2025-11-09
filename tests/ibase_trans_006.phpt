@@ -4,15 +4,13 @@ ibase_trans(): handles
 <?php
 include("skipif.inc");
 // On FB2.5 server "invalid transaction handle" happens on fetch.
-// TODO: Further investigation needed.
-// Related to tests/ibase_trans_013.phpt
-skip_if_fb_lt(3.0);
+// See also: tests/ibase_trans_013.phpt
+// skip_if_fb_lt(3.0);
 ?>
 --FILE--
 <?php
 
 require("interbase.inc");
-
 ibase_connect($test_base);
 
 (function() {
