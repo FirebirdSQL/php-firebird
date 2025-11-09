@@ -137,6 +137,27 @@ function skip_if_fbclient_lt($v) {
     if(($cv = ibase_get_client_version()) < $v)die("skip Firebird client library version $cv < $v");
 }
 
+function skip_if_ext_lt(int $v): void {
+    if(!defined('IBASE_VER'))die("Skip IBASE_VER not defined");
+    if(IBASE_VER < $v)die("Skip IBASE_VER ".IBASE_VER." < $v");
+}
+
+function skip_if_ext_gte(int $v): void {
+    if(defined('IBASE_VER')) {
+        if(IBASE_VER >= $v)die("Skip IBASE_VER ".IBASE_VER." >= $v");
+    }
+}
+
+function skip_if_php_lt(float $v): void {
+    $cv = (float)PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;
+    if($cv < $v)die("skip PHP version $cv < $v");
+}
+
+function skip_if_php_gte(float $v): void {
+    $cv = (float)PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;
+    if($cv >= $v)die("skip PHP version $cv >= $v");
+}
+
 function ibase_query_bulk(array $queries, $tr = null) {
     foreach($queries as $q){
         if(is_array($q)){

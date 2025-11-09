@@ -5,8 +5,8 @@ ibase_close(): Basic test
 
 include("skipif.inc");
 
-// See also: tests/ibase_close_004.phpt
-skip_if_ext_gte(61);
+// See also: tests/ibase_close_001.phpt
+skip_if_ext_lt(61);
 
 ?>
 --FILE--
@@ -14,13 +14,14 @@ skip_if_ext_gte(61);
 
 require("interbase.inc");
 
+set_exception_handler("php_ibase_exception_handler");
+
 $x = ibase_connect($test_base);
 var_dump(ibase_close($x));
 var_dump(ibase_close($x));
 var_dump(ibase_close());
 
 ?>
---EXPECTF--
+--EXPECT--
 bool(true)
-bool(true)
-bool(true)
+Fatal error: Uncaught TypeError: ibase_close(): supplied resource is not a valid Firebird/InterBase link resource

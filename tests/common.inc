@@ -24,3 +24,13 @@ function test_use_after_ibase_free_query() {
 		ibase_free_result($r);
 	}
 }
+
+function test_ibase_trans_014_015() {
+	global $test_base;
+
+	$x = ibase_connect($test_base);
+	var_dump(ibase_trans($x));
+	var_dump(ibase_trans(1));
+	var_dump(ibase_close());
+	var_dump(ibase_close($x));
+}
