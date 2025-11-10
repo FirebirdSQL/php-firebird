@@ -800,9 +800,12 @@ static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds) /* 
 	for (i = 0; i < sqlda->sqld; i++) {
 		XSQLVAR *var = &sqlda->sqlvar[i];
 
-        if ((var->sqltype & ~1) == SQL_TEXT) {
-            var->sqltype = SQL_VARYING | (var->sqltype & 1);
-        }
+		// Convert CHAR to VARCHAR to avoid dealiong with padding with
+		// multi character charsets
+
+		if ((var->sqltype & ~1) == SQL_TEXT) {
+			var->sqltype = SQL_VARYING | (var->sqltype & 1);
+		}
 
 		switch (var->sqltype & ~1) {
 			case SQL_TEXT:
@@ -1958,16 +1961,16 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 				s = "QUAD";
 				break;
 #if FB_API_VER >= 40
-			// These are converted to VARCHAR via isc_dpb_set_bind tag at connect and will appear to clients as VARCHAR
-			// TODO: add info regardless
+			// These are converted to VARCHAR via isc_dpb_set_bind tag at
+			// connect and will appear to clients as VARCHAR
 			// case SQL_DEC16:
 			// case SQL_DEC34:
 			// case SQL_INT128:
 			case SQL_TIMESTAMP_TZ:
-				s = "TIMESTAMP_TZ";
+				s = "TIMESTAMP WITH TIME ZONE";
 				break;
 			case SQL_TIME_TZ:
-				s = "TIME_TZ";
+				s = "TIME WITH TIME ZONE";
 				break;
 #endif
 		}

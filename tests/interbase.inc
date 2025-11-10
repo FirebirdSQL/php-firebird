@@ -1,7 +1,7 @@
 <?php
 
-require('config.inc');
-require('functions.inc');
+require_once('config.inc');
+require_once('functions.inc');
 
 /* we need just the generated name, not the file itself */
 unlink($test_base = tempnam(sys_get_temp_dir(),"php_ibase_test"));
