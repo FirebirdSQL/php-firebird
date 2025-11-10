@@ -117,6 +117,8 @@ PHP_FUNCTION(ibase_set_event_handler);
 PHP_FUNCTION(ibase_free_event_handler);
 
 PHP_FUNCTION(ibase_get_client_version);
+PHP_FUNCTION(ibase_get_client_major_version);
+PHP_FUNCTION(ibase_get_client_minor_version);
 
 #else
 

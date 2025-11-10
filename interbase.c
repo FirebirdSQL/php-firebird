@@ -310,6 +310,12 @@ ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(arginfo_ibase_get_client_version, 0)
 ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_ibase_get_client_major_version, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_ibase_get_client_minor_version, 0)
+ZEND_END_ARG_INFO()
 /* }}} */
 
 /* {{{ extension definition structures */
@@ -369,6 +375,8 @@ static const zend_function_entry ibase_functions[] = {
 	PHP_FE(ibase_free_event_handler, 	arginfo_ibase_free_event_handler)
 
 	PHP_FE(ibase_get_client_version, arginfo_ibase_get_client_version)
+	PHP_FE(ibase_get_client_major_version, arginfo_ibase_get_client_major_version)
+	PHP_FE(ibase_get_client_minor_version, arginfo_ibase_get_client_minor_version)
 
 	/**
 	* These aliases are provided in order to maintain forward compatibility. As Firebird
@@ -432,6 +440,8 @@ static const zend_function_entry ibase_functions[] = {
 	PHP_FALIAS(fbird_free_event_handler,	ibase_free_event_handler, arginfo_ibase_free_event_handler)
 
 	PHP_FALIAS(fbird_get_client_version, ibase_get_client_version, arginfo_ibase_get_client_version)
+	PHP_FALIAS(fbird_get_client_major_version, ibase_get_client_major_version, arginfo_ibase_get_client_major_version)
+	PHP_FALIAS(fbird_get_client_minor_version, ibase_get_client_minor_version, arginfo_ibase_get_client_minor_version)
 	PHP_FE_END
 };
 
@@ -486,11 +496,23 @@ PHP_FUNCTION(ibase_errmsg)
    Return client version in form major.minor */
 PHP_FUNCTION(ibase_get_client_version)
 {
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
-
 	RETURN_DOUBLE((double)IBG(client_major_version) + (double)IBG(client_minor_version) / 10);
+}
+/* }}} */
+
+/* {{{ proto int ibase_get_client_major_version(void)
+   Return client major version */
+PHP_FUNCTION(ibase_get_client_major_version)
+{
+	RETURN_LONG(IBG(client_major_version));
+}
+/* }}} */
+
+/* {{{ proto int ibase_get_client_minor_version(void)
+   Return client minor version */
+PHP_FUNCTION(ibase_get_client_minor_version)
+{
+	RETURN_LONG(IBG(client_minor_version));
 }
 /* }}} */
 
@@ -820,7 +842,7 @@ static PHP_GINIT_FUNCTION(ibase)
 	if (ibase_globals->get_master_interface) {
 		ibase_globals->master_instance = ((fb_get_master_interface_t)(ibase_globals->get_master_interface))();
 		ibase_globals->client_version = fb_get_client_version(ibase_globals->master_instance);
-		ibase_globals->client_major_version = ibase_globals->client_version >> 8;
+		ibase_globals->client_major_version = (ibase_globals->client_version >> 8) & 0xFF;
 		ibase_globals->client_minor_version = ibase_globals->client_version & 0xFF;
 	} else {
 		ibase_globals->master_instance = NULL;
