@@ -21,7 +21,7 @@
 #include <firebird/Interface.h>
 #include <cstring>
 #include "php.h"
-#include "pdo_firebird_utils.h"
+#include "firebird_utils.h"
 #include "php_ibase_includes.h"
 
 /* Returns the client version. 0 bytes are minor version, 1 bytes are major version. */

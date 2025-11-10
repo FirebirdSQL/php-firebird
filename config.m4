@@ -60,7 +60,7 @@ if test "$PHP_INTERBASE" != "no"; then
   PHP_REQUIRE_CXX()
   PHP_CXX_COMPILE_STDCXX([11], [mandatory], [PHP_INTERBASE_STDCXX])
 
-  PHP_INTERBASE_CXX_SOURCES="pdo_firebird_utils.cpp"
+  PHP_INTERBASE_CXX_SOURCES="firebird_utils.cpp"
 
   AS_VAR_IF([ext_shared], [no],
     [PHP_ADD_SOURCES([$ext_dir],

@@ -39,7 +39,7 @@
 #include "SAPI.h"
 #include <stdbool.h>
 #include <time.h>
-#include "pdo_firebird_utils.h"
+#include "firebird_utils.h"
 
 #define ROLLBACK    0
 #define COMMIT      1

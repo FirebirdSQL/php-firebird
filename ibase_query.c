@@ -39,7 +39,7 @@
 #include "ext/standard/php_standard.h"
 #include "php_interbase.h"
 #include "php_ibase_includes.h"
-#include "pdo_firebird_utils.h"
+#include "firebird_utils.h"
 
 #define ISC_LONG_MIN    INT_MIN
 #define ISC_LONG_MAX    INT_MAX
