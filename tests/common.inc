@@ -85,3 +85,10 @@ function test_fields40(): void {
 		printf("%s/%s/%d\n", $info["name"], $info["type"], $info["length"]);
 	}
 }
+
+function test_field_data40(): void {
+	ibase_query(file_get_contents(__DIR__."/001-FIELDS40.sql"));
+	ibase_commit();
+	ibase_query("INSERT INTO FIELDS40 (ID) VALUES (1)");
+	dump_table_rows("FIELDS40");
+}
