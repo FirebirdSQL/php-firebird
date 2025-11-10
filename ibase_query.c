@@ -58,6 +58,12 @@ typedef struct {
 static int le_query;
 
 static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds);
+static int _php_ibase_set_query_info(ibase_query *ib_query);
+static int _php_ibase_fetch_query_res(zval *from, ibase_query **ib_query);
+static int _php_ibase_alloc_ht_aliases(ibase_query *ib_query);
+static void _php_ibase_alloc_ht_ind(ibase_query *ib_query);
+static void _php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAMETERS, int as_result);
+
 static void _php_ibase_free_xsqlda(XSQLDA *sqlda) /* {{{ */
 {
 	int i;
@@ -276,9 +282,7 @@ static int _php_ibase_prepare(ibase_query **new_query, ibase_db_link *link, /* {
 		goto _php_ibase_alloc_query_error;
 	}
 
-
-	// TODO: Rename. It also sets statement_type
-	if(_php_ibase_get_vars_count(ib_query)){
+	if(_php_ibase_set_query_info(ib_query)){
 		goto _php_ibase_alloc_query_error;
 	}
 
@@ -2049,7 +2053,7 @@ PHP_FUNCTION(ibase_param_info)
 }
 /* }}} */
 
-static int _php_ibase_get_vars_count(ibase_query *ib_query)
+static int _php_ibase_set_query_info(ibase_query *ib_query)
 {
 	int rv = FAILURE;
 	// size_t buf_size = 128;
