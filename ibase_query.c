@@ -1330,15 +1330,15 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 
 			if((type & ~1) == SQL_TIME_TZ){
 				format = INI_STR("ibase.timeformat");
-				fb_decode_time_tz(IBG(master_instance), (ISC_TIME_TZ *) data, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
-				ISC_TIME time = fb_encode_time(IBG(master_instance), hours, minutes, seconds, fractions);
+				fbu_decode_time_tz(IBG(master_instance), (ISC_TIME_TZ *) data, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
+				ISC_TIME time = fbu_encode_time(IBG(master_instance), hours, minutes, seconds, fractions);
 				isc_decode_sql_time(&time, &t);
 			} else {
 				format = INI_STR("ibase.timestampformat");
-				fb_decode_timestamp_tz(IBG(master_instance), (ISC_TIMESTAMP_TZ *) data, &year, &month, &day, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
+				fbu_decode_timestamp_tz(IBG(master_instance), (ISC_TIMESTAMP_TZ *) data, &year, &month, &day, &hours, &minutes, &seconds, &fractions, sizeof(timeZoneBuffer), timeZoneBuffer);
 				ISC_TIMESTAMP ts;
-				ts.timestamp_date = fb_encode_date(IBG(master_instance), year, month, day);
-				ts.timestamp_time = fb_encode_time(IBG(master_instance), hours, minutes, seconds, fractions);
+				ts.timestamp_date = fbu_encode_date(IBG(master_instance), year, month, day);
+				ts.timestamp_time = fbu_encode_time(IBG(master_instance), hours, minutes, seconds, fractions);
 				isc_decode_timestamp(&ts, &t);
 			}
 
@@ -1868,7 +1868,7 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 			RETURN_FALSE;
 		}
 
-		if(fb_insert_field_info(IBG(master_instance), IB_STATUS, is_outvar, num, return_value, statement)){
+		if(fbu_insert_field_info(IBG(master_instance), IB_STATUS, is_outvar, num, return_value, statement)){
 			_php_ibase_error();
 			RETURN_FALSE;
 		}
@@ -2168,7 +2168,7 @@ static int _php_ibase_alloc_ht_aliases(ibase_query *ib_query)
 			return FAILURE;
 		}
 
-		if(fb_insert_aliases(IBG(master_instance), IB_STATUS, ib_query, statement)){
+		if(fbu_insert_aliases(IBG(master_instance), IB_STATUS, ib_query, statement)){
 			return FAILURE;
 		}
 	} else {

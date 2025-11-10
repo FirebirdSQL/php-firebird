@@ -26,20 +26,20 @@
 extern "C" {
 #endif
 
-unsigned fb_get_client_version(void *master_ptr);
-ISC_TIME fb_encode_time(void *master_ptr, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions);
-ISC_DATE fb_encode_date(void *master_ptr, unsigned year, unsigned month, unsigned day);
+unsigned fbu_get_client_version(void *master_ptr);
+ISC_TIME fbu_encode_time(void *master_ptr, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions);
+ISC_DATE fbu_encode_date(void *master_ptr, unsigned year, unsigned month, unsigned day);
 
-void fb_decode_time_tz(void *master_ptr, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
+void fbu_decode_time_tz(void *master_ptr, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);
 
-void fb_decode_timestamp_tz(void *master_ptr, const ISC_TIMESTAMP_TZ* timestampTz,
+void fbu_decode_timestamp_tz(void *master_ptr, const ISC_TIMESTAMP_TZ* timestampTz,
 	unsigned* year, unsigned* month, unsigned* day,
 	unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);
 
-int fb_insert_aliases(void *master_ptr, ISC_STATUS* st, ibase_query *ib_query, void *statement_ptr);
-int fb_insert_field_info(void *master_ptr, ISC_STATUS* st, int is_outvar, int num, zval *into_array, void *statement_ptr);
+int fbu_insert_aliases(void *master_ptr, ISC_STATUS* st, ibase_query *ib_query, void *statement_ptr);
+int fbu_insert_field_info(void *master_ptr, ISC_STATUS* st, int is_outvar, int num, zval *into_array, void *statement_ptr);
 
 #ifdef __cplusplus
 }

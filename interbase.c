@@ -841,7 +841,7 @@ static PHP_GINIT_FUNCTION(ibase)
 
 	if (ibase_globals->get_master_interface) {
 		ibase_globals->master_instance = ((fb_get_master_interface_t)(ibase_globals->get_master_interface))();
-		ibase_globals->client_version = fb_get_client_version(ibase_globals->master_instance);
+		ibase_globals->client_version = fbu_get_client_version(ibase_globals->master_instance);
 		ibase_globals->client_major_version = (ibase_globals->client_version >> 8) & 0xFF;
 		ibase_globals->client_minor_version = ibase_globals->client_version & 0xFF;
 	} else {
