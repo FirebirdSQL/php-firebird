@@ -997,7 +997,7 @@ int _php_ibase_attach_db(char **args, size_t *len, zend_long *largs, isc_db_hand
 		compat_buf = compat;
 		compat_buf_size = sizeof(compat) - 1;
 	} else {
-		const char compat[] = "INT128 TO VARCHAR;DECFLOAT TO VARCHAR;TIME WITH TIME ZONE TO TIME WITHOUT TIME ZONE;TIMESTAMP WITH TIME ZONE TO TIMESTAMP WITHOUT TIME ZONE";
+		const char compat[] = "INT128 TO VARCHAR;DECFLOAT TO VARCHAR;TIME ZONE TO LEGACY";
 		compat_buf = compat;
 		compat_buf_size = sizeof(compat) - 1;
 	}
