@@ -17,34 +17,41 @@
 #ifndef PDO_FIREBIRD_UTILS_H
 #define PDO_FIREBIRD_UTILS_H
 
-#if FB_API_VER >= 40
-
-#include <ibase.h>
-#include "php_ibase_includes.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+#if FB_API_VER >= 30
+
+#include <ibase.h>
+#include "php_ibase_includes.h"
+
 unsigned fbu_get_client_version(void *master_ptr);
-ISC_TIME fbu_encode_time(void *master_ptr, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions);
+ISC_TIME fbu_encode_time(void *master_ptr, unsigned hours, unsigned minutes,
+  unsigned seconds, unsigned fractions);
 ISC_DATE fbu_encode_date(void *master_ptr, unsigned year, unsigned month, unsigned day);
 
+#endif // FB_API_VER >= 30
+
+
+#if FB_API_VER >= 40
 void fbu_decode_time_tz(void *master_ptr, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);
-
 void fbu_decode_timestamp_tz(void *master_ptr, const ISC_TIMESTAMP_TZ* timestampTz,
 	unsigned* year, unsigned* month, unsigned* day,
 	unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);
+int fbu_insert_field_info(void *master_ptr, ISC_STATUS* st, int is_outvar, int num,
+  zval *into_array, void *statement_ptr);
+int fbu_insert_aliases(void *master_ptr, ISC_STATUS* st, ibase_query *ib_query,
+  void *statement_ptr);
 
-int fbu_insert_aliases(void *master_ptr, ISC_STATUS* st, ibase_query *ib_query, void *statement_ptr);
-int fbu_insert_field_info(void *master_ptr, ISC_STATUS* st, int is_outvar, int num, zval *into_array, void *statement_ptr);
+#endif // FB_API_VER >= 30
+
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif // FB_API_VER >= 40
 
 #endif	/* PDO_FIREBIRD_UTILS_H */

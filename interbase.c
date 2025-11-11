@@ -16,6 +16,7 @@
    |          Andrew Avdeev <andy@simgts.mv.ru>                           |
    |          Ard Biesheuvel <a.k.biesheuvel@its.tudelft.nl>              |
    |          Martin Koeditz <martin.koeditz@it-syn.de>                   |
+   |          Martins Lazdans <marrtins@dqdp.net>                         |
    |          others                                                      |
    +----------------------------------------------------------------------+
    | You'll find history on Github                                        |
@@ -839,17 +840,21 @@ static PHP_GINIT_FUNCTION(ibase)
 	ibase_globals->get_master_interface = _php_ibase_get_fbclient_symbol("fb_get_master_interface");
 	ibase_globals->get_statement_interface = _php_ibase_get_fbclient_symbol("fb_get_statement_interface");
 
+#if FB_API_VER >= 30
 	if (ibase_globals->get_master_interface) {
 		ibase_globals->master_instance = ((fb_get_master_interface_t)(ibase_globals->get_master_interface))();
 		ibase_globals->client_version = fbu_get_client_version(ibase_globals->master_instance);
 		ibase_globals->client_major_version = (ibase_globals->client_version >> 8) & 0xFF;
 		ibase_globals->client_minor_version = ibase_globals->client_version & 0xFF;
 	} else {
+#endif
 		ibase_globals->master_instance = NULL;
 		ibase_globals->client_version = -1;
 		ibase_globals->client_major_version = -1;
 		ibase_globals->client_minor_version = -1;
+#if FB_API_VER >= 30
 	}
+#endif
 }
 
 PHP_MINIT_FUNCTION(ibase)

@@ -17,8 +17,7 @@
 
 #include <ibase.h>
 
-#if FB_API_VER >= 40
-
+#if FB_API_VER >= 30
 #include <firebird/Interface.h>
 #include <cstring>
 #include "php.h"
@@ -57,6 +56,9 @@ static void fbu_copy_status(const ISC_STATUS* from, ISC_STATUS* to, size_t maxLe
 	}
 }
 
+#endif // FB_API_VER >= 30
+
+#if FB_API_VER >= 40
 /* Decodes a time with time zone into its time components. */
 extern "C" void fbu_decode_time_tz(void *master_ptr, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
    unsigned timeZoneBufferLength, char* timeZoneBuffer)
