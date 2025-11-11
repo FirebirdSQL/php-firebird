@@ -996,7 +996,6 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, 
 
 	ib_query->trans->affected_rows = 0;
 
-	// TODO: test INSERT / UPDATE / UPDATE OR INSERT with  ... RETURNING
 	if (ib_query->out_sqlda) { /* output variables in select, select for update */
 		ib_query->has_more_rows = 1;
 		ib_query->is_open = 1;
