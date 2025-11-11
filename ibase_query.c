@@ -498,8 +498,7 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					*(double*) buf = Z_DVAL_P(val);
 					break;
 				case SQL_TIMESTAMP:
-				// TODO:
-				// case SQL_TIMESTAMP_TZ:
+				// TODO: case SQL_TIMESTAMP_TZ:
 					convert_to_string(val);
 #ifdef HAVE_STRPTIME
 					strptime(Z_STRVAL_P(val), INI_STR("ibase.timestampformat"), &t);
@@ -535,8 +534,7 @@ static int _php_ibase_bind_array(zval *val, char *buf, zend_ulong buf_size, /* {
 					isc_encode_sql_date(&t, (ISC_DATE *) buf);
 					break;
 				case SQL_TYPE_TIME:
-				// TODO:
-				// case SQL_TIME_TZ:
+				// TODO: case SQL_TIME_TZ:
 					convert_to_string(val);
 #ifdef HAVE_STRPTIME
 					strptime(Z_STRVAL_P(val), INI_STR("ibase.timeformat"), &t);
@@ -622,9 +620,8 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 			struct tm t;
 
 			case SQL_TIMESTAMP:
-			// TODO:
-			// case SQL_TIMESTAMP_TZ:
-			// case SQL_TIME_TZ:
+			// TODO: case SQL_TIMESTAMP_TZ:
+			// TODO: case SQL_TIME_TZ:
 			case SQL_TYPE_DATE:
 			case SQL_TYPE_TIME:
 				if (Z_TYPE_P(b_var) == IS_LONG) {
@@ -644,8 +641,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 							format = INI_STR("ibase.dateformat");
 							break;
 						case SQL_TYPE_TIME:
-						// TODO:
-						// case SQL_TIME_TZ:
+						// TODO: case SQL_TIME_TZ:
 							format = INI_STR("ibase.timeformat");
 					}
 					if (!strptime(Z_STRVAL_P(b_var), format, &t)) {
@@ -665,8 +661,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						isc_encode_sql_date(&t, &buf[i].val.dtval);
 						break;
 					case SQL_TYPE_TIME:
-					// TODO:
-					// case SQL_TIME_TZ:
+					// TODO: case SQL_TIME_TZ:
 						isc_encode_sql_time(&t, &buf[i].val.tmval);
 						break;
 				}
