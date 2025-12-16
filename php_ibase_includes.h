@@ -171,7 +171,7 @@ typedef struct _ib_query {
 	char *query;
 	ISC_UCHAR statement_type;
 	BIND_BUF *bind_buf;
-	ISC_SHORT *in_nullind, *out_nullind;
+	ISC_SHORT *out_nullind;
 	ISC_SHORT *sql_types;
 	ISC_USHORT in_fields_count, out_fields_count;
 	HashTable *ht_aliases, *ht_ind; // Precomputed for ibase_fetch_*()

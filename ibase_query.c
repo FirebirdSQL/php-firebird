@@ -81,7 +81,6 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 {
 	IBDEBUG("Freeing query...");
 
-	if(ib_query->in_nullind)efree(ib_query->in_nullind);
 	if(ib_query->out_nullind)efree(ib_query->out_nullind);
 	if(ib_query->bind_buf)efree(ib_query->bind_buf);
 	if(ib_query->in_sqlda)efree(ib_query->in_sqlda); // Note to myself: no need for _php_ibase_free_xsqlda()
@@ -326,7 +325,6 @@ static int _php_ibase_prepare(ibase_query **new_query, ibase_db_link *link, /* {
 		assert(ib_query->in_sqlda->sqld == ib_query->in_fields_count);
 
 		ib_query->bind_buf = safe_emalloc(sizeof(BIND_BUF), ib_query->in_sqlda->sqld, 0);
-		ib_query->in_nullind = safe_emalloc(sizeof(*ib_query->in_nullind), ib_query->in_sqlda->sqld, 0);
 		if (FAILURE == _php_ibase_alloc_array(&ib_query->in_array, ib_query->in_sqlda,
 			link->handle, trans->handle, &ib_query->in_array_cnt)) {
 			goto _php_ibase_alloc_query_error;
