@@ -51,11 +51,6 @@
 #define FETCH_ROW       1
 #define FETCH_ARRAY     2
 
-typedef struct {
-	unsigned short vary_length;
-	char vary_string[1];
-} IBVARY;
-
 static int le_query;
 
 static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds);
@@ -96,6 +91,7 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 	if(ib_query->query)efree(ib_query->query);
 	if(ib_query->ht_aliases)zend_array_destroy(ib_query->ht_aliases);
 	if(ib_query->ht_ind)zend_array_destroy(ib_query->ht_ind);
+	if(ib_query->sql_types)efree(ib_query->sql_types);
 
 	efree(ib_query);
 }
@@ -314,10 +310,16 @@ static int _php_ibase_prepare(ibase_query **new_query, ibase_db_link *link, /* {
 		ib_query->in_sqlda->sqln = ib_query->in_fields_count;
 		ib_query->in_sqlda->version = SQLDA_CURRENT_VERSION;
 
+		ib_query->sql_types = emalloc(sizeof(*ib_query->sql_types) * ib_query->in_fields_count);
+
 		if (isc_dsql_describe_bind(IB_STATUS, &ib_query->stmt, SQLDA_CURRENT_VERSION, ib_query->in_sqlda)) {
 			IBDEBUG("isc_dsql_describe_bind() failed\n");
 			_php_ibase_error();
 			goto _php_ibase_alloc_query_error;
+		}
+
+		for (int i = 0; i < ib_query->in_fields_count; i++) {
+			ib_query->sql_types[i] = ib_query->in_sqlda->sqlvar[i].sqltype;
 		}
 
 		assert(ib_query->in_sqlda->sqln == ib_query->in_sqlda->sqld);
@@ -567,9 +569,11 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 	int i, array_cnt = 0, rv = SUCCESS;
 
 	for (i = 0; i < sqlda->sqld; ++i) { /* bound vars */
-
 		zval *b_var = &b_vars[i];
 		XSQLVAR *var = &sqlda->sqlvar[i];
+
+		// We need keep track of original type because XSQLVAR type could get modified
+		var->sqltype = ib_query->sql_types[i];
 
 		var->sqlind = &buf[i].nullind;
 		var->sqldata = (void*)&buf[i].val;
@@ -742,7 +746,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						rv = FAILURE;
 						continue;
 				}
-				var->sqltype = SQL_BOOLEAN;
+				// var->sqltype = SQL_BOOLEAN;
 				continue;
 #endif
 			case SQL_ARRAY:
@@ -781,13 +785,13 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 				}
 				++array_cnt;
 				continue;
-			} /* switch */
+		} /* switch */
 
-			/* we end up here if none of the switch cases handled the field */
-			convert_to_string(b_var);
-			var->sqldata = Z_STRVAL_P(b_var);
-			var->sqllen	 = (ISC_SHORT)Z_STRLEN_P(b_var);
-			var->sqltype = SQL_TEXT;
+		/* we end up here if none of the switch cases handled the field */
+		convert_to_string(b_var);
+		var->sqldata = Z_STRVAL_P(b_var);
+		var->sqllen = (ISC_SHORT)Z_STRLEN_P(b_var);
+		var->sqltype = SQL_TEXT; // Here: sqltype is modfied, can't rely on it for next calls
 	} /* for */
 	return rv;
 }
