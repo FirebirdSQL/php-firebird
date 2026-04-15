@@ -796,7 +796,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 		convert_to_string(b_var);
 		var->sqldata = Z_STRVAL_P(b_var);
 		var->sqllen = (ISC_SHORT)Z_STRLEN_P(b_var);
-		var->sqltype = SQL_TEXT; // Here: sqltype is modfied, can't rely on it for next calls
+		var->sqltype = SQL_TEXT | (var->sqltype & 1); // preserve nullable bit (issue #106)
 
 		// Another way to send string w/o converting base zval
 		// zend_string *str = zval_get_string(b_var);
