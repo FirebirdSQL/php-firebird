@@ -339,6 +339,21 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 					default:
 						goto cast_to_string;
 				}
+
+				/*
+				 * Firebird has no representation for infinity or NaN: every engine operation
+				 * that would produce one raises an arithmetic exception instead, and the engine
+				 * is documented not to let these values escape (FirebirdSQL/firebird#2991,
+				 * #2917, #2992, #1780). Binding the raw IEEE754 bits bypasses all of that -- on
+				 * 2.5 through 5.0 the value reaches the page unchecked, leaving a column the
+				 * engine could never produce itself and where later arithmetic fails far from
+				 * the INSERT responsible. Hand these to Firebird as a string so it rejects them
+				 * the way it always has, with a recoverable error rather than a fatal one.
+				 */
+				if (zend_isinf(Z_DVAL_P(b_var)) || zend_isnan(Z_DVAL_P(b_var))) {
+					goto cast_to_string;
+				}
+
 				break;
 			case SQL_TYPE_DATE:
 			case SQL_TIMESTAMP:
