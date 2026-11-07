@@ -105,6 +105,7 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 	}
 
 	if(ib_query->out_nullind)efree(ib_query->out_nullind);
+	if(ib_query->out_sql_types)efree(ib_query->out_sql_types);
 	if(ib_query->bind_buf)efree(ib_query->bind_buf);
 	if(ib_query->in_sqlda)efree(ib_query->in_sqlda); // Note to myself: no need for _php_ibase_free_xsqlda()
 	if(ib_query->out_sqlda)_php_ibase_free_xsqlda(ib_query->out_sqlda);
@@ -188,6 +189,14 @@ static int _php_ibase_prepare(ibase_query **new_query, ibase_db_link *link, /* {
 		assert(ib_query->out_sqlda->sqld == ib_query->out_fields_count);
 
 		ib_query->out_nullind = safe_emalloc(sizeof(*ib_query->out_nullind), ib_query->out_sqlda->sqld, 0);
+
+		/* Remember what the server said before _php_ibase_alloc_xsqlda_vars() rewrites
+		 * CHAR as VARCHAR, so ibase_field_info() can still report the declared type. */
+		ib_query->out_sql_types = safe_emalloc(sizeof(*ib_query->out_sql_types), ib_query->out_sqlda->sqld, 0);
+		for (int i = 0; i < ib_query->out_sqlda->sqld; i++) {
+			ib_query->out_sql_types[i] = ib_query->out_sqlda->sqlvar[i].sqltype;
+		}
+
 		_php_ibase_alloc_xsqlda_vars(ib_query->out_sqlda, ib_query->out_nullind);
 	}
 
@@ -1693,6 +1702,7 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 	char buf[16], *s = buf;
 	XSQLDA *sqlda;
 	XSQLVAR *var;
+	ISC_SHORT sqltype;
 
 	if(is_outvar){
 		sqlda = ib_query->out_sqlda;
@@ -1713,6 +1723,13 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 	if (!var || num < 0 || num >= sqlda->sqld)RETURN_FALSE;
 
 	var += num;
+
+	/*
+	 * Report the type the server described, not the one we fetch with: output CHAR is
+	 * read as VARCHAR so Firebird itself handles the character padding, see
+	 * _php_ibase_alloc_xsqlda_vars().
+	 */
+	sqltype = (is_outvar && ib_query->out_sql_types) ? ib_query->out_sql_types[num] : var->sqltype;
 
 	array_init(return_value);
 
@@ -1762,7 +1779,7 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 	if (var->sqlscale < 0) {
 		unsigned short precision = 0;
 
-		switch (var->sqltype & ~1) {
+		switch (sqltype & ~1) {
 #ifdef SQL_BOOLEAN
 			case SQL_BOOLEAN:
 				precision = 1;
@@ -1782,7 +1799,7 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 		add_index_stringl(return_value, 4, s, len);
 		add_assoc_stringl(return_value, "type", s, len);
 	} else {
-		switch (var->sqltype & ~1) {
+		switch (sqltype & ~1) {
 			case SQL_TEXT:
 				s = "CHAR";
 				break;

@@ -168,6 +168,9 @@ typedef struct _ib_query {
 	ISC_UCHAR statement_type;
 	BIND_BUF *bind_buf;
 	ISC_SHORT *out_nullind;
+	/* Output sqltypes as the server described them, before CHAR is coerced to VARCHAR for
+	 * the fetch. ibase_field_info() reports from here, so it still says CHAR. */
+	ISC_SHORT *out_sql_types;
 	ISC_SHORT *sql_types;
 	ISC_SHORT *sql_lens;
 	ISC_USHORT in_fields_count, out_fields_count;
