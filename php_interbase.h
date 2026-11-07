@@ -72,8 +72,6 @@ PHP_FUNCTION(ibase_prepare);
 PHP_FUNCTION(ibase_execute);
 PHP_FUNCTION(ibase_free_query);
 
-PHP_FUNCTION(ibase_timefmt);
-
 PHP_FUNCTION(ibase_gen_id);
 PHP_FUNCTION(ibase_num_fields);
 PHP_FUNCTION(ibase_num_params);
