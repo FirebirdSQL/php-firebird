@@ -10,6 +10,7 @@ require("common.inc");
 
 /** @var string $test_base */
 ibase_connect($test_base);
+ini_set('ibase.legacy_flags', IBASE_LEGACY_NONE);
 
 (function() {
     $ts = 1762436759; // 2025-11-06 13:45:59 UTC

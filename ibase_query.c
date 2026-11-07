@@ -359,8 +359,10 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 				break;
 			case SQL_TYPE_DATE:
 			case SQL_TIMESTAMP:
+			case SQL_TYPE_TIME:
 #if FB_API_VER >= 40
 			case SQL_TIMESTAMP_TZ:
+			case SQL_TIME_TZ:
 #endif
 				switch (Z_TYPE_P(b_var))
 				{
@@ -370,16 +372,13 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 							return FAILURE;
 						}
 						break;
+					/* Parsed below against ibase.dateformat and friends, see parse_datetime */
+					case IS_STRING:
+						break;
 					default:
 						goto cast_to_string;
 				}
 				break;
-			case SQL_TYPE_TIME:
-#if FB_API_VER >= 40
-			case SQL_TIME_TZ:
-#endif
-				// TODO: long sec?
-				goto cast_to_string;
 #if FB_API_VER >= 40
 			case SQL_DEC16:
 			case SQL_DEC34:
@@ -480,8 +479,20 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 				}
 				break;
 			case SQL_TYPE_TIME:
-				tformat = INI_STR("ibase.timeformat");
-				goto parse_datetime;
+				switch (Z_TYPE_P(b_var))
+				{
+					/* An integer binds as the time of day of that unix timestamp, as before
+					 * the rewrite: 0 -> 00:00:00, -1 -> 23:59:59 */
+					case IS_LONG:
+						isc_encode_sql_time(&t, &buf->val.tmval);
+						break;
+					case IS_STRING:
+						tformat = INI_STR("ibase.timeformat");
+						goto parse_datetime;
+					default:
+						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
+				}
+				break;
 #if FB_API_VER >= 40
 			case SQL_TIMESTAMP_TZ:
 				switch (Z_TYPE_P(b_var))
@@ -501,8 +512,19 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 				}
 				break;
 			case SQL_TIME_TZ:
-				tformat = INI_STR("ibase.timeformat_tz");
-				goto parse_datetime;
+				switch (Z_TYPE_P(b_var))
+				{
+					case IS_LONG:
+						isc_encode_sql_time(&t, &buf->val.tmval_tz.utc_time);
+						buf->val.tmval_tz.time_zone = 1439; /* GMT: offset ids are minutes + 1439, so 0 means -23:59 */
+						break;
+					case IS_STRING:
+						tformat = INI_STR("ibase.timeformat_tz");
+						goto parse_datetime;
+					default:
+						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
+				}
+				break;
 #endif
 			case SQL_BLOB:
 				convert_to_string(b_var);
@@ -602,14 +624,14 @@ parse_datetime: {
 		obj = Z_PHPDATE_P(&dateo);
 
 		// php_printf("  tformat: %s\n", tformat);
+		/*
+		 * A string that does not match the configured format is handed to Firebird to parse,
+		 * as it was before the rewrite -- it accepts spellings of its own ('2025-11-06' for a
+		 * TIMESTAMP, a trailing time on a DATE) and reports what it cannot read itself.
+		 */
 		if (!php_date_initialize(obj, Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), tformat, NULL, PHP_DATE_INIT_FORMAT)) {
 			zval_ptr_dtor(&dateo);
-
-			_php_ibase_module_error("Argument %d: parse date failed, "
-				"call date_get_last_errors() for more information",
-				i
-			);
-			return FAILURE;
+			goto cast_to_string;
 		}
 
 		switch (sqltype) {
@@ -1215,31 +1237,51 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 
 _set_datetime:
 			fbu_init_date_object(t_zone_buff, &t_dateo);
+
+			/*
+			 * TIME and TIME WITH TIME ZONE carry no date, so IBASE_UNIXTIME has nothing
+			 * sensible to return for them and is ignored. The pre-refactor build converted
+			 * them anyway, with a zero date, giving a negative timestamp in 1969-1970.
+			 */
+			int date_bearing = (sqltype == SQL_TYPE_DATE || sqltype == SQL_TIMESTAMP
+#if FB_API_VER >= 40
+				|| sqltype == SQL_TIMESTAMP_TZ
+#endif
+			);
+			int legacy_unixtime = (IBG(legacy_flags) & PHP_IBASE_LEGACY_UNIXTIMESTAMP) != 0;
+
 			t_date_obj = Z_PHPDATE_P(&t_dateo);
-			t_date_obj->time->y = t_year;
-			t_date_obj->time->m = t_month;
-			t_date_obj->time->d = t_day;
+			/*
+			 * DateTime always holds a date, so a date-less column needs one filled in. Use
+			 * the epoch, as DateTime::createFromFormat('!H:i:s') does, rather than an
+			 * invalid 0000-00-00. t_year/t_month/t_day stay zero so the legacy conversion
+			 * below still reproduces the old negative timestamp.
+			 */
+			t_date_obj->time->y = date_bearing ? t_year : 1970;
+			t_date_obj->time->m = date_bearing ? t_month : 1;
+			t_date_obj->time->d = date_bearing ? t_day : 1;
 			t_date_obj->time->h = t_hours;
 			t_date_obj->time->i = t_minutes;
 			t_date_obj->time->s = t_seconds;
 			t_date_obj->time->us = t_fractions;
 			t_date_obj->time->sse_uptodate = 0;
 
-			if ((flag & PHP_IBASE_UNIXTIME) && (sqltype == SQL_TYPE_DATE || sqltype == SQL_TIMESTAMP
-#if FB_API_VER >= 40
-				|| sqltype == SQL_TIMESTAMP_TZ
-#endif
-			)) {
-				if (IBG(legacy_flags) & PHP_IBASE_LEGACY_UNIXTIMESTAMP) {
+			if ((flag & PHP_IBASE_UNIXTIME) && (date_bearing || legacy_unixtime)) {
+				if (legacy_unixtime) {
 					/*
 					 * Pre-refactor (buggy) behaviour, kept for BC: convert via mktime() against the
 					 * process's system timezone instead of PHP's date.timezone. Reported as buggy
 					 * because the result silently depends on the server OS timezone configuration.
 					 */
 					struct tm legacy_tm = {0};
-					legacy_tm.tm_year = (int) t_year - 1900;
-					legacy_tm.tm_mon = (int) t_month - 1;
-					legacy_tm.tm_mday = (int) t_day;
+					if (date_bearing) {
+						legacy_tm.tm_year = (int) t_year - 1900;
+						legacy_tm.tm_mon = (int) t_month - 1;
+						legacy_tm.tm_mday = (int) t_day;
+					}
+					/* A date-less column left the old build's struct tm zeroed, which mktime()
+					 * reads as day 0 of January 1900, i.e. 1899-12-31. Keep that, don't
+					 * subtract from a zero date and land in year 0 instead. */
 					legacy_tm.tm_hour = (int) t_hours;
 					legacy_tm.tm_min = (int) t_minutes;
 					legacy_tm.tm_sec = (int) t_seconds;

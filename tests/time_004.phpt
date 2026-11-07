@@ -14,6 +14,7 @@ skip_if_fbclient_lt(4);
 require("interbase.inc");
 require("common.inc");
 ibase_connect($test_base);
+ini_set('ibase.legacy_flags', IBASE_LEGACY_NONE);
 test_time_tz_unixtime();
 
 ?>

@@ -16,6 +16,7 @@ require("common.inc");
 
 /** @var string $test_base */
 ibase_connect($test_base);
+ini_set('ibase.legacy_flags', IBASE_LEGACY_NONE);
 test_time_unixtime();
 
 ?>

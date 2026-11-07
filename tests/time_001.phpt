@@ -1,11 +1,10 @@
 --TEST--
-IBASE_UNIXTIME: return negative unix timestamp (old behaviour) for TIME fields
+IBASE_UNIXTIME: return negative unix timestamp (IBASE_LEGACY_UNIXTIMESTAMP) for TIME fields
 --SKIPIF--
 <?php
 include("skipif.inc");
 
 // See also: tests/time_003.phpt
-skip_if_ext_gte(61);
 
 ?>
 --FILE--
@@ -14,6 +13,7 @@ skip_if_ext_gte(61);
 require("interbase.inc");
 require("common.inc");
 ibase_connect($test_base);
+ini_set('ibase.legacy_flags', IBASE_LEGACY_UNIXTIMESTAMP);
 test_time_unixtime();
 
 ?>

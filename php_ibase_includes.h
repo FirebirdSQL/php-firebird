@@ -208,7 +208,9 @@ enum php_interbase_fetch_option {
 
 enum php_interbase_legacy_option {
 	PHP_IBASE_LEGACY_NONE          = 0,
-	/* IBASE_UNIXTIME via mktime(): the server's system timezone, not date.timezone */
+	/* IBASE_UNIXTIME as it was: converted via mktime(), so the server's system timezone
+	 * rather than date.timezone, and applied to TIME columns too, where a date-less value
+	 * comes back as a negative timestamp in 1969-1970 */
 	PHP_IBASE_LEGACY_UNIXTIMESTAMP = 1,
 };
 
