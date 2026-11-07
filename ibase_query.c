@@ -296,10 +296,16 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 				switch (Z_TYPE_P(b_var))
 				{
 					case IS_DOUBLE: break;
-					case IS_STRING:
 					case IS_LONG:
 						convert_to_double(b_var);
 						break;
+					case IS_STRING:
+						/*
+						 * convert_to_double() would silently yield 0.0 for a non-numeric
+						 * string, storing garbage instead of reporting it. Let Firebird
+						 * parse the string and raise a conversion error, as before.
+						 */
+						goto cast_to_string;
 					default:
 						goto cast_to_string;
 				}
