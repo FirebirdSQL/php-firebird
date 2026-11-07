@@ -331,6 +331,16 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 				if (! force_null) break;
 
 			case IS_NULL:
+				/*
+				 * The null indicator only exists for a nullable parameter: describe_bind
+				 * clears the low bit of sqltype otherwise, and Firebird then ignores
+				 * sqlind and reads sqldata literally -- which here is an unwritten slot,
+				 * so the row would silently get whatever was on the heap. Refuse instead.
+				 */
+				if (!(var->sqltype & 1)) {
+					_php_ibase_module_error("Parameter %d: cannot bind NULL to a NOT NULL column", i+1);
+					return FAILURE;
+				}
 				*var->sqlind = -1;
 				continue;
 		}
