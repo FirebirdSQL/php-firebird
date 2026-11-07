@@ -1269,7 +1269,7 @@ _set_datetime:
 				|| sqltype == SQL_TIMESTAMP_TZ
 #endif
 			);
-			int legacy_unixtime = (IBG(legacy_flags) & PHP_IBASE_LEGACY_UNIXTIMESTAMP) != 0;
+			int legacy_unixtime = (IBG(legacy_flags) & PHP_IBASE_LEGACY_UNIXTIME) != 0;
 
 			t_date_obj = Z_PHPDATE_P(&t_dateo);
 			/*

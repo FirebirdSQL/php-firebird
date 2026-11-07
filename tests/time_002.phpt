@@ -1,5 +1,5 @@
 --TEST--
-IBASE_UNIXTIME: return negative unix timestamp (IBASE_LEGACY_UNIXTIMESTAMP) for TIME_TZ fields
+IBASE_UNIXTIME: return negative unix timestamp (IBASE_LEGACY_UNIXTIME) for TIME_TZ fields
 --SKIPIF--
 <?php
 include("skipif.inc");
@@ -13,7 +13,7 @@ skip_if_fbserver_lt(40);
 require("interbase.inc");
 require("common.inc");
 ibase_connect($test_base);
-ini_set('ibase.legacy_flags', IBASE_LEGACY_UNIXTIMESTAMP);
+ini_set('ibase.legacy_flags', IBASE_LEGACY_UNIXTIME);
 test_time_tz_unixtime();
 
 ?>

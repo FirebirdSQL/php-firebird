@@ -9,10 +9,10 @@ ibase.legacy_flags defaults to every legacy behaviour being enabled
 // rest of the suite: this checks the value the extension actually ships with.
 var_dump(ini_get('ibase.legacy_flags'));
 
-var_dump(IBASE_LEGACY_NONE, IBASE_LEGACY_ALL, IBASE_LEGACY_UNIXTIMESTAMP);
+var_dump(IBASE_LEGACY_NONE, IBASE_LEGACY_ALL, IBASE_LEGACY_UNIXTIME);
 
 // Every flag must read as set under the default
-var_dump((int)ini_get('ibase.legacy_flags') & IBASE_LEGACY_UNIXTIMESTAMP ? true : false);
+var_dump((int)ini_get('ibase.legacy_flags') & IBASE_LEGACY_UNIXTIME ? true : false);
 
 ?>
 --EXPECT--

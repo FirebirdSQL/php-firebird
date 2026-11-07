@@ -214,7 +214,7 @@ enum php_interbase_legacy_option {
 	/* IBASE_UNIXTIME as it was: converted via mktime(), so the server's system timezone
 	 * rather than date.timezone, and applied to TIME columns too, where a date-less value
 	 * comes back as a negative timestamp in 1969-1970 */
-	PHP_IBASE_LEGACY_UNIXTIMESTAMP = 1,
+	PHP_IBASE_LEGACY_UNIXTIME = 1,
 };
 
 enum php_interbase_query_option {

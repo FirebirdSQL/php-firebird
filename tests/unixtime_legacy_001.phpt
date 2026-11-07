@@ -1,5 +1,5 @@
 --TEST--
-IBASE_LEGACY_UNIXTIMESTAMP: ibase.legacy_flags restores pre-refactor mktime()-based (system timezone) conversion for IBASE_UNIXTIME
+IBASE_LEGACY_UNIXTIME: ibase.legacy_flags restores pre-refactor mktime()-based (system timezone) conversion for IBASE_UNIXTIME
 --SKIPIF--
 <?php
 include("skipif.inc");
@@ -43,7 +43,7 @@ ibase_connect($test_base);
 
     // Legacy behaviour: mktime() against the process's system timezone, exactly like
     // versions before the DateTime-based rewrite -- ignoring date.timezone.
-    ini_set('ibase.legacy_flags', IBASE_LEGACY_UNIXTIMESTAMP);
+    ini_set('ibase.legacy_flags', IBASE_LEGACY_UNIXTIME);
     $res = ibase_query("SELECT TS FROM TTEST");
     $row = ibase_fetch_assoc($res, IBASE_UNIXTIME);
     var_dump($row['TS'] === $ts - 14 * 3600);
