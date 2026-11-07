@@ -1182,16 +1182,6 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 			}
 			break;
 		case SQL_FLOAT:
-			// Experiments with trimming
-			// https://firebirdsql.org/file/documentation/html/en/refdocs/fblangref50/firebird-50-language-reference.html#fblangref50-datatypes-floattypes
-			// The FLOAT data type defaults to a 32-bit single precision
-			// floating-point type with an approximate precision of 7 decimal
-			// digits after the decimal point (24 binary digits). To ensure the
-			// safety of storage, rely on 6 decimal digits of precision.
-			// char _fbfloat_buf[32] = {0};
-			// php_gcvt(*(float *) data, 7, '.', 'e', _fbfloat_buf);
-			// php_printf("float: %f, converted to: %s\n", *(float *) data, _fbfloat_buf);
-			// ZVAL_DOUBLE(val, zend_strtod(_fbfloat_buf, NULL));
 			ZVAL_DOUBLE(val, *(float *) data);
 			break;
 		case SQL_DOUBLE:
