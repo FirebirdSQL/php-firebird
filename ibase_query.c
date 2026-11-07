@@ -1343,27 +1343,22 @@ void _php_ibase_insert_alias(HashTable *ht, const char *alias)
 {
 	char buf[METADATALENGTH + 3 + 1]; // _00 + \0
 	zval t2;
-	int i = 0;
+	int i = 0, n;
 	char const *base = "FIELD"; /* use 'FIELD' if name is empty */
 
 	size_t alias_len = strlen(alias);
-	size_t alias_len_w_suff = alias_len + 3;
 
 	switch (*alias) {
-		void *p;
-
 		default:
 			i = 1;
 			base = alias;
 
-			while ((p = zend_symtable_str_find_ptr(
-					ht, alias, alias_len)) != NULL) {
+			while (zend_hash_str_exists(ht, alias, alias_len)) {
 
 		case '\0':
-				// TODO: i > 99?
-				snprintf(buf, sizeof(buf), "%s_%02d", base, i++);
+				n = snprintf(buf, sizeof(buf), "%s_%02d", base, i++);
 				alias = buf;
-				alias_len = alias_len_w_suff;
+				alias_len = (n > 0 && (size_t) n < sizeof(buf)) ? (size_t) n : sizeof(buf) - 1;
 			}
 	}
 
