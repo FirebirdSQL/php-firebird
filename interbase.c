@@ -796,6 +796,9 @@ static PHP_INI_DISP(php_ibase_trans_displayer)
 /* {{{ startup, shutdown and info functions */
 PHP_INI_BEGIN()
 	PHP_INI_ENTRY_EX("ibase.allow_persistent", "1", PHP_INI_SYSTEM, NULL, zend_ini_boolean_displayer_cb)
+	/* On: ibase_connect() with arguments it has seen before returns the existing link
+	 * instead of attaching again, as it always has. Off: every call gets its own. */
+	PHP_INI_ENTRY_EX("ibase.reuse_connections", "1", PHP_INI_ALL, NULL, zend_ini_boolean_displayer_cb)
 	PHP_INI_ENTRY_EX("ibase.max_persistent", "-1", PHP_INI_SYSTEM, NULL, display_link_numbers)
 	PHP_INI_ENTRY_EX("ibase.max_links", "-1", PHP_INI_SYSTEM, NULL, display_link_numbers)
 	PHP_INI_ENTRY("ibase.default_db", NULL, PHP_INI_SYSTEM, NULL)
@@ -1058,6 +1061,7 @@ static void _php_ibase_connect(INTERNAL_FUNCTION_PARAMETERS, zend_long persisten
 	int i;
 	size_t len[] = { 0, 0, 0, 0, 0 };
 	zend_long largs[] = { 0, 0, 0 };
+	int reuse;
 	PHP_MD5_CTX hash_context;
 	zend_resource new_index_ptr, *le;
 	isc_db_handle db_handle = 0;
@@ -1100,8 +1104,18 @@ static void _php_ibase_connect(INTERNAL_FUNCTION_PARAMETERS, zend_long persisten
 	}
 	PHP_MD5Final((unsigned char*)hash, &hash_context);
 
+	reuse = INI_BOOL("ibase.reuse_connections");
+
+	/*
+	 * A pooled connection is a shared one by definition, so there is nothing to hand out
+	 * privately: fall back to a normal link, as the max_persistent path below already does.
+	 */
+	if (!reuse) {
+		persistent = 0;
+	}
+
 	/* try to reuse a connection */
-	if ((le = zend_hash_str_find_ptr(&EG(regular_list), hash, sizeof(hash)-1)) != NULL) {
+	if (reuse && (le = zend_hash_str_find_ptr(&EG(regular_list), hash, sizeof(hash)-1)) != NULL) {
 		zend_resource *xlink;
 
 		if (le->type != le_index_ptr) {
@@ -1131,7 +1145,7 @@ static void _php_ibase_connect(INTERNAL_FUNCTION_PARAMETERS, zend_long persisten
 		char result[8];
 		ISC_STATUS status[20];
 
-		if ((le = zend_hash_str_find_ptr(&EG(persistent_list), hash, sizeof(hash)-1)) != NULL) {
+		if (reuse && (le = zend_hash_str_find_ptr(&EG(persistent_list), hash, sizeof(hash)-1)) != NULL) {
 			if (le->type != le_plink) {
 				RETURN_FALSE;
 			}
@@ -1182,11 +1196,13 @@ static void _php_ibase_connect(INTERNAL_FUNCTION_PARAMETERS, zend_long persisten
 		++IBG(num_links);
 	} while (0);
 
-	/* add it to the hash */
-	new_index_ptr.ptr = (void *) Z_RES_P(return_value);
-	new_index_ptr.type = le_index_ptr;
-	zend_hash_str_update_mem(&EG(regular_list), hash, sizeof(hash)-1,
-			(void *) &new_index_ptr, sizeof(zend_resource));
+	/* add it to the hash, so a later call with the same arguments finds it */
+	if (reuse) {
+		new_index_ptr.ptr = (void *) Z_RES_P(return_value);
+		new_index_ptr.type = le_index_ptr;
+		zend_hash_str_update_mem(&EG(regular_list), hash, sizeof(hash)-1,
+				(void *) &new_index_ptr, sizeof(zend_resource));
+	}
 	if (IBG(default_link)) {
 		zend_list_delete(IBG(default_link));
 	}
