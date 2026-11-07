@@ -245,6 +245,11 @@ extern "C" ISC_STATUS fbu_insert_field_info(void *master_ptr, ISC_STATUS* st, in
 
 #endif // FB_API_VER >= 40
 
+/*
+ * Unused, kept for reference. Parses a decimal string into the scaled integer a
+ * NUMERIC/DECIMAL column carries on the wire ("22.33" scale -2 -> 2233).
+ */
+#if 0
 #ifdef _MSC_VER
 #include <intrin.h>
 static int u64_mul10_gt(uint64_t r, uint64_t digit, uint64_t max, uint64_t *out)
@@ -272,62 +277,97 @@ static int u64_mul10_gt(uint64_t r, uint64_t digit, uint64_t max, uint64_t *out)
 }
 #endif
 
-// Parse NUMERIC() to signed int representation
-// Currently not used, bet keep it around. Useful when converting NUMERIC fields
-// in integers. Might be usefult in the future.
+/*
+ * Parse a decimal string straight into the scaled integer that a NUMERIC/DECIMAL column
+ * carries on the wire, so that binding such a parameter needs no string round-trip:
+ * "22.33" with scale -2 yields sign=1, res=2233.
+ *
+ * `scale` is the column's sqlscale (negative), `max` the largest magnitude the target
+ * integer type can hold as a positive value; the extra headroom of the negative range
+ * (-32768 vs 32767) is accounted for internally.
+ *
+ * Returns STRNUM_PARSE_OK with *res already scaled to `scale`, or:
+ *   STRNUM_PARSE_OVERFLOW - the value does not fit the target type
+ *   STRNUM_PARSE_ERROR    - not a plain decimal literal this function can convert
+ *                           exactly (exponent notation, whitespace, stray characters)
+ *
+ * Callers must treat both failures as "hand the original string to Firebird" rather than
+ * as a user error: Firebird accepts more spellings than this parser does (' 5 ', '5e3',
+ * '1e-2'), and reproducing its full numeric grammar here would buy nothing.
+ *
+ * A literal carrying more fraction digits than the column keeps ('22.335' into
+ * NUMERIC(x,2)) is deliberately refused rather than rounded here. Firebird rounds half
+ * away from zero and then enforces the column's *declared* precision, which XSQLVAR does
+ * not expose -- rounding '99.999' into NUMERIC(4,2) has to fail, and only Firebird knows
+ * that. Such literals are rare as bound parameters; letting Firebird handle them keeps
+ * behaviour identical while the common exact-literal case still binds natively.
+ */
 extern "C" int fbu_string_to_numeric(const char *s, size_t slen, int scale, uint64_t max,
 	int *sign, int *exp, uint64_t *res)
 {
 	const char* p = s;
 	const char *end = s + slen;
 
-	*sign = *exp = 0;
+	*sign = 1;
+	*exp = scale;
 	*res = 0;
 
-	if (!slen) return STRNUM_PARSE_OK;
+	if (!slen) return STRNUM_PARSE_ERROR;
 
 	if (*p == '-') {
 		*sign = -1;
 		p++;
 	} else if (*p == '+') {
-		*sign = 1;
 		p++;
-	} else {
-		*sign = 1;
 	}
 
+	if (p == end) return STRNUM_PARSE_ERROR; /* sign with no digits */
+
+	/* The negative range holds one more than the positive one */
 	if (*sign == -1) max += 1;
 
-	int fraction = 0;
-	uint64_t r = *res;
+	/* Number of fraction digits the column actually stores */
+	int want_frac = scale < 0 ? -scale : 0;
+
+	uint64_t r = 0;
+	int digits = 0, frac_digits = 0, seen_dot = 0;
+
 	while (p < end) {
-		if (*p >= '0' && *p <= '9') {
-			if (u64_mul10_gt(r, *p - '0', max, &r)) return STRNUM_PARSE_OVERFLOW;
-			p++;
-			if (fraction) {
-				scale++;
-				--*exp;
-			}
-		} else if (*p == '.') {
-			if (fraction) return STRNUM_PARSE_ERROR;
-			fraction = 1;
-			p++;
+		char c = *p++;
+
+		if (c == '.') {
+			if (seen_dot) return STRNUM_PARSE_ERROR;
+			seen_dot = 1;
 			continue;
-		} else {
-			return STRNUM_PARSE_ERROR;
 		}
+
+		if (c < '0' || c > '9') return STRNUM_PARSE_ERROR;
+
+		digits++;
+
+		/* More decimals than the column keeps: needs rounding, which only Firebird can
+		 * do safely here (see above) */
+		if (seen_dot && frac_digits >= want_frac) return STRNUM_PARSE_ERROR;
+
+		if (u64_mul10_gt(r, (uint64_t)(c - '0'), max, &r)) return STRNUM_PARSE_OVERFLOW;
+
+		if (seen_dot) frac_digits++;
 	}
 
-	while (scale < 0) {
+	if (!digits) return STRNUM_PARSE_ERROR; /* "." alone */
+
+	/* Pad to the column's scale: "22.3" into NUMERIC(x,2) is 2230, not 223 */
+	while (frac_digits < want_frac) {
 		if (u64_mul10_gt(r, 0, max, &r)) return STRNUM_PARSE_OVERFLOW;
-		scale++;
-		--*exp;
+		frac_digits++;
 	}
 
 	*res = r;
 
 	return STRNUM_PARSE_OK;
 }
+
+#endif // unused: fbu_string_to_numeric()
 
 // +-----------+------------------------+---------------------+
 // | Precision | Data type              | Dialect 3           |

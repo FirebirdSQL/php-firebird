@@ -227,6 +227,36 @@ _php_ibase_alloc_query_error:
 }
 /* }}} */
 
+/*
+ * Scale a plain integer up to the representation a NUMERIC/DECIMAL column expects on the
+ * wire: with sqlscale -2, the value 5 becomes 500 so that it reads back as 5.00. Returns
+ * FAILURE if the scaled value would not fit the target integer type, in which case the
+ * caller should fall back to letting Firebird parse and report on the value.
+ */
+static int _php_ibase_apply_scale(zend_long *val, int sqlscale, int64_t min, int64_t max) /* {{{ */
+{
+	if (sqlscale >= 0) {
+		return SUCCESS;
+	}
+
+	int negative = (*val < 0);
+	/* Magnitude of the limit on the side we are on; the negative range holds one more */
+	uint64_t max_mag = negative ? (uint64_t)(-(min + 1)) + 1 : (uint64_t)max;
+	uint64_t mag = negative ? 0 - (uint64_t)*val : (uint64_t)*val;
+
+	for (int i = sqlscale; i < 0; i++) {
+		if (mag > max_mag / 10) {
+			return FAILURE;
+		}
+		mag *= 10;
+	}
+
+	*val = negative ? (zend_long)(0 - mag) : (zend_long)mag;
+
+	return SUCCESS;
+}
+/* }}} */
+
 static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 {
 	zend_long long_val;
@@ -341,29 +371,23 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 			case SQL_SHORT:
 			case SQL_LONG:
 			case SQL_INT64:
+				if (sqltype == SQL_SHORT) {
+					long_min = INT16_MIN;
+					long_max = INT16_MAX;
+				} else if (sqltype == SQL_LONG) {
+					long_min = INT32_MIN;
+					long_max = INT32_MAX;
+				} else if (sqltype == SQL_INT64) {
+					long_min = INT64_MIN;
+					long_max = INT64_MAX;
+				} else {
+					// Unreachable
+				}
+
 				switch (Z_TYPE_P(b_var))
 				{
 					case IS_LONG:
-						if (sqltype == SQL_SHORT) {
-							long_min = INT16_MIN;
-							long_max = INT16_MAX;
-						} else if (sqltype == SQL_LONG) {
-							long_min = INT32_MIN;
-							long_max = INT32_MAX;
-						} else if (sqltype == SQL_INT64) {
-							long_min = INT64_MIN;
-							long_max = INT64_MAX;
-						} else {
-							// Unreachable
-						}
-
 						long_val = Z_LVAL_P(b_var);
-
-						// Let firebird handle overflows
-						if (long_val < long_min || long_val > long_max) {
-							goto cast_to_string;
-						}
-
 						break;
 					case IS_TRUE:
 						long_val = 1;
@@ -373,6 +397,19 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						break;
 					default:
 						goto cast_to_string;
+				}
+
+				/*
+				 * NUMERIC/DECIMAL are described as SQL_SHORT/LONG/INT64 with a negative sqlscale
+				 * and travel as a *scaled* integer: NUMERIC(10,2) value 5.00 is sent as 500.
+				 */
+				if (_php_ibase_apply_scale(&long_val, var->sqlscale, long_min, long_max) == FAILURE) {
+					goto cast_to_string;
+				}
+
+				// Let firebird handle overflows
+				if (long_val < long_min || long_val > long_max) {
+					goto cast_to_string;
 				}
 				break;
 		}

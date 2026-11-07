@@ -56,8 +56,9 @@ ISC_STATUS fbu_insert_aliases(void *master_ptr, ISC_STATUS* st, ibase_query *ib_
 void fbu_release_statement(void *statement_ptr);
 #endif // FB_API_VER >= 4
 
+/* Unused; see the note on the definition in firebird_utils.cpp before reviving it.
 int fbu_string_to_numeric(const char *s, size_t slen, int scale, uint64_t max,
-	int *sign, int *exp, uint64_t *res);
+	int *sign, int *exp, uint64_t *res); */
 const char* fbu_get_sql_type_name(XSQLVAR *var, char *buf, size_t buf_size);
 void fbu_init_date_object(const char *tzbuff, zval *o);
 
