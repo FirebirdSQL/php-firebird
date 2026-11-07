@@ -3,8 +3,8 @@ DATA: fields introduced with FB 4.0
 --SKIPIF--
 <?php
 include("skipif.inc");
-skip_if_fb_lt(4);
-skip_if_fbclient_lt(4);
+skip_if_fbeffective_lt(40);
+skip_if_fbserver_lt(40);
 ?>
 --FILE--
 <?php

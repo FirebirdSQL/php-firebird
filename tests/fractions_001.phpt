@@ -1,7 +1,12 @@
 --TEST--
 Sub-second precision survives both binding and fetching
 --SKIPIF--
-<?php include("skipif.inc"); ?>
+<?php
+include("skipif.inc");
+// Sub-second precision needs IUtil::decodeTime(). Without it -- headers older than 3.0,
+// or a runtime client with no OO API -- the isc_* fallback has no field for it.
+skip_if_fbeffective_lt(30);
+?>
 --FILE--
 <?php
 

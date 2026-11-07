@@ -5,8 +5,8 @@ IBASE_UNIXTIME: ignore IBASE_UNIXTIME flag for TIME_TZ fields
 include("skipif.inc");
 // See also: tests/time_002.phpt
 skip_if_ext_lt(61);
-skip_if_fb_lt(4);
-skip_if_fbclient_lt(4);
+skip_if_fbeffective_lt(40);
+skip_if_fbserver_lt(40);
 ?>
 --FILE--
 <?php

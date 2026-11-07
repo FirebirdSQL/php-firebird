@@ -3,8 +3,8 @@ ibase.timeformat_tz / timestampformat_tz round-trip TIME and TIMESTAMP WITH TIME
 --SKIPIF--
 <?php
 include("skipif.inc");
-skip_if_fb_lt(4);
-skip_if_fbclient_lt(4);
+skip_if_fbeffective_lt(40);
+skip_if_fbserver_lt(40);
 ?>
 --FILE--
 <?php

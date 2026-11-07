@@ -116,30 +116,49 @@ function insert_into($table, $data, $tr = null) {
     return ibase_query(...array_merge($args, array_values($data)));
 }
 
-/** @var float $v */
-function skip_if_fb_lt($v) {
-    if(($cv = get_fb_version()) < $v)die("skip Firebird server version $cv < $v");
+/**
+ * Firebird versions below are all on the FB_API_VER scale: 2.5 is 25, 5.0 is 50.
+ *
+ * A feature needs three things to have it, and there is one family per thing:
+ *   fbapi       what the extension was built against  (FB_API_VER)
+ *   fbclient    the client library loaded right now   (ibase_get_client_version())
+ *   fbserver    the server on the other end           (get_fb_version())
+ *   fbeffective the lower of fbapi and fbclient       (IBASE_EFFECTIVE_VER)
+ *
+ * Normally a test wants skip_if_fbeffective_lt() plus skip_if_fbserver_lt(), because the
+ * first two questions are really one. Reach for skip_if_fbapi_lt() only when a test pairs
+ * a new binary with an old client on purpose, so the resolved value is low by design.
+ */
+function skip_if_fbapi_lt(int $v): void {
+    if(FB_API_VER < $v)die("skip built against FB_API_VER " . FB_API_VER . " < $v");
 }
 
-/** @var float $v */
-function skip_if_fb_gt($v) {
-    if(($cv = get_fb_version()) > $v)die("skip Firebird server version $cv > $v");
+function skip_if_fbeffective_lt(int $v): void {
+    if(IBASE_EFFECTIVE_VER < $v)die("skip effective version " . IBASE_EFFECTIVE_VER
+        . " < $v (built against " . FB_API_VER . ", client " . ibase_get_client_version() . ")");
 }
 
-/** @var float $v */
-function skip_if_fb_gte($v) {
-    if(($cv = get_fb_version()) >= $v)die("skip Firebird server version $cv >= $v");
-}
-
-function skip_if_fbclient_lt(float $v): void {
+function skip_if_fbclient_lt(int $v): void {
     if(!function_exists("ibase_get_client_version"))die("skip Firebird client library version (undefined) < $v");
     if(($cv = ibase_get_client_version()) < $v)die("skip Firebird client library version $cv < $v");
 }
 
-function skip_if_fbclient_gte(float $v): void {
+function skip_if_fbclient_gte(int $v): void {
     if(function_exists("ibase_get_client_version")) {
         if(($cv = ibase_get_client_version()) >= $v)die("skip Firebird client library version $cv >= $v");
     }
+}
+
+function skip_if_fbserver_lt(int $v): void {
+    if(($cv = get_fb_version()) < $v)die("skip Firebird server version $cv < $v");
+}
+
+function skip_if_fbserver_gt(int $v): void {
+    if(($cv = get_fb_version()) > $v)die("skip Firebird server version $cv > $v");
+}
+
+function skip_if_fbserver_gte(int $v): void {
+    if(($cv = get_fb_version()) >= $v)die("skip Firebird server version $cv >= $v");
 }
 
 function skip_if_ext_lt(int $v): void {

@@ -4,8 +4,8 @@ IBASE_UNIXTIME: return negative unix timestamp (IBASE_LEGACY_UNIXTIMESTAMP) for 
 <?php
 include("skipif.inc");
 // See also: tests/time_004.phpt
-skip_if_fb_lt(4);
-skip_if_fbclient_lt(4);
+skip_if_fbeffective_lt(40);
+skip_if_fbserver_lt(40);
 ?>
 --FILE--
 <?php

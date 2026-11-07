@@ -24,6 +24,54 @@ extern "C" {
 #include "zend_interfaces.h"
 }
 
+/*
+ * These use only the isc_* API, which every client version exports, so they stay compiled
+ * whatever headers we build against. They are the fallback for when the runtime fbclient
+ * is older than those headers and has no OO API at all -- fb_get_master_interface() is
+ * missing from fbclient 2.5, so master_ptr arrives NULL and must not be dereferenced.
+ * Sub-second precision is lost, which is correct: the legacy API has no field for it.
+ */
+static ISC_TIME fbu_encode_time_legacy(unsigned hours, unsigned minutes, unsigned seconds)
+{
+	struct tm t = {};
+	t.tm_hour = (int)hours;
+	t.tm_min  = (int)minutes;
+	t.tm_sec  = (int)seconds;
+	ISC_TIME result;
+	isc_encode_sql_time(&t, &result);
+	return result;
+}
+
+static ISC_DATE fbu_encode_date_legacy(unsigned year, unsigned month, unsigned day)
+{
+	struct tm t = {};
+	t.tm_year = (int)year - 1900;
+	t.tm_mon  = (int)month - 1;
+	t.tm_mday = (int)day;
+	ISC_DATE result;
+	isc_encode_sql_date(&t, &result);
+	return result;
+}
+
+static void fbu_decode_time_legacy(ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions)
+{
+	struct tm t = {};
+	isc_decode_sql_time(&time, &t);
+	*hours     = (unsigned)t.tm_hour;
+	*minutes   = (unsigned)t.tm_min;
+	*seconds   = (unsigned)t.tm_sec;
+	*fractions = 0;
+}
+
+static void fbu_decode_date_legacy(ISC_DATE date, unsigned* year, unsigned* month, unsigned* day)
+{
+	struct tm t = {};
+	isc_decode_sql_date(&date, &t);
+	*year  = (unsigned)(t.tm_year + 1900);
+	*month = (unsigned)(t.tm_mon + 1);
+	*day   = (unsigned)t.tm_mday;
+}
+
 #if FB_API_VER >= 30
 #include <firebird/Interface.h>
 #include <cstring>
@@ -38,6 +86,7 @@ extern "C" unsigned fbu_get_client_version(void *master_ptr)
 
 extern "C" ISC_TIME fbu_encode_time(void *master_ptr, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions)
 {
+	if (!master_ptr) return fbu_encode_time_legacy(hours, minutes, seconds);
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
 	return util->encodeTime(hours, minutes, seconds, fractions);
@@ -45,6 +94,7 @@ extern "C" ISC_TIME fbu_encode_time(void *master_ptr, unsigned hours, unsigned m
 
 extern "C" ISC_DATE fbu_encode_date(void *master_ptr, unsigned year, unsigned month, unsigned day)
 {
+	if (!master_ptr) return fbu_encode_date_legacy(year, month, day);
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
 	return util->encodeDate(year, month, day);
@@ -52,6 +102,7 @@ extern "C" ISC_DATE fbu_encode_date(void *master_ptr, unsigned year, unsigned mo
 
 extern "C" void fbu_decode_time(void *master_ptr, ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions)
 {
+	if (!master_ptr) { fbu_decode_time_legacy(time, hours, minutes, seconds, fractions); return; }
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
 	util->decodeTime(time, hours, minutes, seconds, fractions);
@@ -59,6 +110,7 @@ extern "C" void fbu_decode_time(void *master_ptr, ISC_TIME time, unsigned* hours
 
 extern "C" void fbu_decode_date(void *master_ptr, ISC_DATE date, unsigned* year, unsigned* month, unsigned* day)
 {
+	if (!master_ptr) { fbu_decode_date_legacy(date, year, month, day); return; }
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
 	util->decodeDate(date, year, month, day);
@@ -66,45 +118,26 @@ extern "C" void fbu_decode_date(void *master_ptr, ISC_DATE date, unsigned* year,
 
 #else
 
+/* No OO API in these headers at all, so master_ptr is never usable. */
+
 extern "C" ISC_TIME fbu_encode_time(void *master_ptr, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions)
 {
-	struct tm t = {};
-	t.tm_hour = (int)hours;
-	t.tm_min  = (int)minutes;
-	t.tm_sec  = (int)seconds;
-	ISC_TIME result;
-	isc_encode_sql_time(&t, &result);
-	return result;
+	return fbu_encode_time_legacy(hours, minutes, seconds);
 }
 
 extern "C" ISC_DATE fbu_encode_date(void *master_ptr, unsigned year, unsigned month, unsigned day)
 {
-	struct tm t = {};
-	t.tm_year = (int)year - 1900;
-	t.tm_mon  = (int)month - 1;
-	t.tm_mday = (int)day;
-	ISC_DATE result;
-	isc_encode_sql_date(&t, &result);
-	return result;
+	return fbu_encode_date_legacy(year, month, day);
 }
 
 extern "C" void fbu_decode_time(void *master_ptr, ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions)
 {
-	struct tm t = {};
-	isc_decode_sql_time(&time, &t);
-	*hours    = (unsigned)t.tm_hour;
-	*minutes  = (unsigned)t.tm_min;
-	*seconds  = (unsigned)t.tm_sec;
-	*fractions = 0;
+	fbu_decode_time_legacy(time, hours, minutes, seconds, fractions);
 }
 
 extern "C" void fbu_decode_date(void *master_ptr, ISC_DATE date, unsigned* year, unsigned* month, unsigned* day)
 {
-	struct tm t = {};
-	isc_decode_sql_date(&date, &t);
-	*year  = (unsigned)(t.tm_year + 1900);
-	*month = (unsigned)(t.tm_mon + 1);
-	*day   = (unsigned)t.tm_mday;
+	fbu_decode_date_legacy(date, year, month, day);
 }
 
 #endif // FB_API_VER >= 30

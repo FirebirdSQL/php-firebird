@@ -35,7 +35,9 @@ function cleanup_db()
 	}
 }
 
-function get_fb_version(): float
+/* Server version on the FB_API_VER scale, the same one FB_API_VER,
+   ibase_get_client_version() and IBASE_EFFECTIVE_VER use: 2.5 is 25, 5.0 is 50. */
+function get_fb_version(): int
 {
 	global $host, $user, $password, $fb_version, $fb_version_str;
 
@@ -44,9 +46,8 @@ function get_fb_version(): float
 	if($se = ibase_service_attach($host ? $host : "localhost", $user, $password)) {
 		$fb_version_str = ibase_server_info($se, IBASE_SVC_SERVER_VERSION);
 		if($fb_version_str === false)die("skip cannot ibase_server_info()");
-		$server_version  = explode(" ", $fb_version_str);
-		$vers = (float)$server_version[count($server_version) - 1];
-		return $fb_version = $vers;
+		if(!preg_match('/(\d+)\.(\d+)/', $fb_version_str, $m))die("skip cannot read server version from '$fb_version_str'");
+		return $fb_version = (int)$m[1] * 10 + (int)$m[2];
 	} else {
 		die("skip: cannot connect");
 	}

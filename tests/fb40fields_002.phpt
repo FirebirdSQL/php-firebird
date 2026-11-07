@@ -3,8 +3,9 @@ Test data for fields introduced in FB 4.0, with older client
 --SKIPIF--
 <?php
 include("skipif.inc");
-skip_if_fb_lt(4);
-skip_if_fbclient_gte(4);
+skip_if_fbapi_lt(40);
+skip_if_fbserver_lt(40);
+skip_if_fbclient_gte(40);
 ?>
 --FILE--
 <?php

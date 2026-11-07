@@ -3,7 +3,8 @@ Long names: Firebird 4.0 or newer
 --SKIPIF--
 <?php
 require_once("skipif.inc");
-skip_if_fb_lt(4.0) || skip_if_fbclient_lt(4.0);
+skip_if_fbeffective_lt(40);
+skip_if_fbserver_lt(40);
 ?>
 --FILE--
 <?php

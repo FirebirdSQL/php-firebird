@@ -3,9 +3,8 @@ Check for data type INT128 (Firebird 4.0 or above)
 --SKIPIF--
 <?php
 include("skipif.inc");
-// TODO: should also check if compiled against fblient >= 4.0. Perhaps runtime
-// client lib checking also needed.
-skip_if_fb_lt(4.0);
+skip_if_fbeffective_lt(40);
+skip_if_fbserver_lt(40);
 ?>
 --FILE--
 <?php

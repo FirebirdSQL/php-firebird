@@ -493,11 +493,20 @@ PHP_FUNCTION(ibase_errmsg)
 }
 /* }}} */
 
-/* {{{ proto float ibase_get_client_version(void)
-   Return client version in form major.minor */
+/* The runtime client on the same scale FB_API_VER uses: major * 10 + minor. A client with
+ * no OO API cannot report itself and leaves both at -1, which comes out negative here --
+ * below every real version, so comparisons still answer correctly without guessing at
+ * which old version it actually is. */
+static zend_long fbp_client_api_ver(void)
+{
+	return (zend_long)IBG(client_major_version) * 10 + IBG(client_minor_version);
+}
+
+/* {{{ proto int ibase_get_client_version(void)
+   Return client version on the FB_API_VER scale: 2.5 is 25, 5.0 is 50 */
 PHP_FUNCTION(ibase_get_client_version)
 {
-	RETURN_DOUBLE((double)IBG(client_major_version) + (double)IBG(client_minor_version) / 10);
+	RETURN_LONG(fbp_client_api_ver());
 }
 /* }}} */
 
@@ -879,6 +888,14 @@ PHP_MINIT_FUNCTION(ibase)
 	REGISTER_LONG_CONSTANT("IBASE_UNIXTIME", PHP_IBASE_UNIXTIME, CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("IBASE_PHPDATE", PHP_IBASE_PHPDATE, CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("IBASE_VER", PHP_INTERBASE_VER, CONST_PERSISTENT);
+
+	/* Firebird's own FB_API_VER, from the headers this was built against: 25, 30, 40, 50.
+	 * ibase_get_client_version() is the other half -- what it is talking to now. A feature
+	 * needs both, so IBASE_EFFECTIVE_VER is the lower of the two and is what callers
+	 * should test. The server is a third thing, and is not known until you connect. */
+	REGISTER_LONG_CONSTANT("FB_API_VER", FB_API_VER, CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("IBASE_EFFECTIVE_VER",
+		FB_API_VER < fbp_client_api_ver() ? FB_API_VER : fbp_client_api_ver(), CONST_PERSISTENT);
 
 	/* legacy/BC flags, combined via the ibase.legacy_flags ini setting; all on by default.
 	 * e.g. ini_set('ibase.legacy_flags', IBASE_LEGACY_NONE) to opt into every fixed behaviour. */

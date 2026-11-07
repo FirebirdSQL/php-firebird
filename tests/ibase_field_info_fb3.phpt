@@ -3,8 +3,8 @@ ibase_field_info(): fields introduced in FB 3.0
 --SKIPIF--
 <?php
 include("skipif.inc");
-skip_if_fb_lt(3);
-skip_if_fbclient_lt(3);
+skip_if_fbserver_lt(30);
+skip_if_fbeffective_lt(30);
 ?>
 --FILE--
 <?php
