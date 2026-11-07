@@ -3,6 +3,7 @@ DATA: basic fields
 --SKIPIF--
 <?php
 include("skipif.inc");
+if (PHP_INT_SIZE < 8) print "skip: only for 64-bit PHP";
 ?>
 --FILE--
 <?php

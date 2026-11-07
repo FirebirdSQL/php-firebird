@@ -13,12 +13,12 @@ ibase_query('INSERT INTO test1 VALUES (100, 2)');
 ibase_query('INSERT INTO test1 VALUES (100, 2)');
 ibase_query('INSERT INTO test1 VALUES (100, 2)');
 
-$rs = ibase_query('SELECT COUNT(*) FROM test1 WHERE i = 100');
+$rs = ibase_query('SELECT CAST(COUNT(*) AS INTEGER) FROM test1 WHERE i = 100');
 var_dump(ibase_fetch_row($rs));
 
 var_dump(ibase_rollback($x));
 
-$rs = ibase_query('SELECT COUNT(*) FROM test1 WHERE i = 100');
+$rs = ibase_query('SELECT CAST(COUNT(*) AS INTEGER) FROM test1 WHERE i = 100');
 var_dump(ibase_fetch_row($rs));
 
 var_dump(ibase_rollback($x));

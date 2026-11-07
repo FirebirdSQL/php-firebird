@@ -69,6 +69,18 @@
 #	define PHP_DATE_INIT_FORMAT 0x02
 #endif
 
+/*
+ * php_date_initialize()'s last argument changed meaning in PHP 8.0. Before that it is a
+ * plain `int ctor` whose only effect is whether a failed parse warns -- parsing against a
+ * format is selected by passing a non-NULL format, not by a flag. Passing the 8.x flag
+ * there would warn on every parse we deliberately let fail.
+ */
+#if PHP_VERSION_ID >= 80000
+#	define FBP_DATE_INIT_FORMAT PHP_DATE_INIT_FORMAT
+#else
+#	define FBP_DATE_INIT_FORMAT 0
+#endif
+
 static int le_query;
 
 static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds);
@@ -638,7 +650,7 @@ parse_datetime: {
 		 * as it was before the rewrite -- it accepts spellings of its own ('2025-11-06' for a
 		 * TIMESTAMP, a trailing time on a DATE) and reports what it cannot read itself.
 		 */
-		if (!php_date_initialize(obj, Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), tformat, NULL, PHP_DATE_INIT_FORMAT)) {
+		if (!php_date_initialize(obj, Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), tformat, NULL, FBP_DATE_INIT_FORMAT)) {
 			zval_ptr_dtor(&dateo);
 			goto cast_to_string;
 		}

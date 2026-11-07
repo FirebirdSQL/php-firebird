@@ -24,7 +24,7 @@ ibase_connect($test_base);
 
     // Matches neither the format nor anything Firebird understands
     var_dump(@ibase_query("INSERT INTO TTEST (D) VALUES (?)", "garbage"));
-    var_dump(str_contains(ibase_errmsg(), "conversion error from string"));
+    var_dump(strpos(ibase_errmsg(), "conversion error from string") !== false);
 })();
 
 ?>
