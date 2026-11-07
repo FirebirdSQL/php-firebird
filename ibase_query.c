@@ -1223,16 +1223,33 @@ _set_datetime:
 				|| sqltype == SQL_TIMESTAMP_TZ
 #endif
 			)) {
-				// ZVAL_LONG(val, mktime(&t));
-				zval retval;
+				if (IBG(legacy_flags) & PHP_IBASE_LEGACY_UNIXTIMESTAMP) {
+					/*
+					 * Pre-refactor (buggy) behaviour, kept for BC: convert via mktime() against the
+					 * process's system timezone instead of PHP's date.timezone. Reported as buggy
+					 * because the result silently depends on the server OS timezone configuration.
+					 */
+					struct tm legacy_tm = {0};
+					legacy_tm.tm_year = (int) t_year - 1900;
+					legacy_tm.tm_mon = (int) t_month - 1;
+					legacy_tm.tm_mday = (int) t_day;
+					legacy_tm.tm_hour = (int) t_hours;
+					legacy_tm.tm_min = (int) t_minutes;
+					legacy_tm.tm_sec = (int) t_seconds;
+					legacy_tm.tm_isdst = -1;
 
-				#if PHP_MAJOR_VERSION >= 8
-					zend_call_method_with_0_params(Z_OBJ(t_dateo), php_date_get_date_ce(), NULL, "getTimestamp", &retval);
-				#else
-					zend_call_method_with_0_params(&t_dateo, NULL, NULL, "getTimestamp", &retval);
-				#endif
+					ZVAL_LONG(val, (zend_long) mktime(&legacy_tm));
+				} else {
+					zval retval;
 
-				ZVAL_LONG(val, Z_LVAL(retval));
+					#if PHP_MAJOR_VERSION >= 8
+						zend_call_method_with_0_params(Z_OBJ(t_dateo), php_date_get_date_ce(), NULL, "getTimestamp", &retval);
+					#else
+						zend_call_method_with_0_params(&t_dateo, NULL, NULL, "getTimestamp", &retval);
+					#endif
+
+					ZVAL_LONG(val, Z_LVAL(retval));
+				}
 			} else {
 				if (flag & PHP_IBASE_PHPDATE) {
 					ZVAL_COPY(val, &t_dateo);

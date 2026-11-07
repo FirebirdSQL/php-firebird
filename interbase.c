@@ -809,6 +809,8 @@ PHP_INI_BEGIN()
 	PHP_INI_ENTRY("ibase.timeformat_tz", IB_DEF_TIME_FMT " e", PHP_INI_ALL, NULL)
 	STD_PHP_INI_ENTRY_EX("ibase.default_trans_params", "0", PHP_INI_ALL, OnUpdateLongGEZero, default_trans_params, zend_ibase_globals, ibase_globals, php_ibase_trans_displayer)
 	STD_PHP_INI_ENTRY_EX("ibase.default_lock_timeout", "0", PHP_INI_ALL, OnUpdateLongGEZero, default_lock_timeout, zend_ibase_globals, ibase_globals, display_link_numbers)
+	/* -1 = every legacy behaviour, including any added later; 0 = none. See php_ibase_includes.h */
+	STD_PHP_INI_ENTRY("ibase.legacy_flags", "-1", PHP_INI_ALL, OnUpdateLong, legacy_flags, zend_ibase_globals, ibase_globals)
 PHP_INI_END()
 
 #ifdef __GNUC__
@@ -874,6 +876,12 @@ PHP_MINIT_FUNCTION(ibase)
 	REGISTER_LONG_CONSTANT("IBASE_UNIXTIME", PHP_IBASE_UNIXTIME, CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("IBASE_PHPDATE", PHP_IBASE_PHPDATE, CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("IBASE_VER", PHP_INTERBASE_VER, CONST_PERSISTENT);
+
+	/* legacy/BC flags, combined via the ibase.legacy_flags ini setting; all on by default.
+	 * e.g. ini_set('ibase.legacy_flags', IBASE_LEGACY_NONE) to opt into every fixed behaviour. */
+	REGISTER_LONG_CONSTANT("IBASE_LEGACY_NONE", PHP_IBASE_LEGACY_NONE, CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("IBASE_LEGACY_ALL", PHP_IBASE_LEGACY_ALL, CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("IBASE_LEGACY_UNIXTIMESTAMP", PHP_IBASE_LEGACY_UNIXTIMESTAMP, CONST_PERSISTENT);
 
 	/* transactions */
 	REGISTER_LONG_CONSTANT("IBASE_WRITE", PHP_IBASE_WRITE, CONST_PERSISTENT);

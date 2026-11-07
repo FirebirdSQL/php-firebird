@@ -78,6 +78,7 @@ ZEND_BEGIN_MODULE_GLOBALS(ibase)
 	zend_long sql_code;
 	zend_long default_trans_params;
 	zend_long default_lock_timeout; // only used togetger with trans_param IBASE_LOCK_TIMEOUT
+	zend_long legacy_flags; // bitmask of php_interbase_legacy_option
 	void *get_master_interface;
 	void *master_instance;
 	void *get_statement_interface;
@@ -196,6 +197,19 @@ enum php_interbase_fetch_option {
 	PHP_IBASE_FETCH_BLOBS        = 1,
 	PHP_IBASE_UNIXTIME           = 4,
 	PHP_IBASE_PHPDATE            = 8,
+};
+
+/*
+ * ibase.legacy_flags: which pre-rewrite behaviours to keep. All on by default (-1, so
+ * flags added later are on too); set LEGACY_NONE for the fixed behaviour. php.ini needs a
+ * number, not these names -- they are registered in MINIT, after php.ini is parsed.
+ */
+#define PHP_IBASE_LEGACY_ALL (-1)
+
+enum php_interbase_legacy_option {
+	PHP_IBASE_LEGACY_NONE          = 0,
+	/* IBASE_UNIXTIME via mktime(): the server's system timezone, not date.timezone */
+	PHP_IBASE_LEGACY_UNIXTIMESTAMP = 1,
 };
 
 enum php_interbase_query_option {
