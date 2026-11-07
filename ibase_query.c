@@ -327,6 +327,8 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 				{
 					case IS_DOUBLE: break;
 					case IS_LONG:
+					case IS_TRUE:
+					case IS_FALSE:
 						convert_to_double(b_var);
 						break;
 					case IS_STRING:
