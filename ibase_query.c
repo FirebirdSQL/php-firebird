@@ -364,7 +364,8 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 				{
 					case IS_LONG:
 						if (!php_gmtime_r(&Z_LVAL_P(b_var), &t)) {
-							fbp_fatal("Argument %d: could not parse timestamp", i);
+							_php_ibase_module_error("Argument %d: could not parse timestamp", i);
+							return FAILURE;
 						}
 						break;
 					default:
@@ -559,13 +560,15 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 								} else if (!zend_binary_strncasecmp(Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), "false", 5, 5)) {
 									buf->val.bval = FB_FALSE;
 								} else {
-									fbp_fatal("Parameter %d: cannot convert string to boolean", i+1);
+									_php_ibase_module_error("Parameter %d: cannot convert string to boolean", i+1);
+									return FAILURE;
 								}
 						}
 						break;
 					}
 					default:
-						fbp_fatal("Parameter %d: must be boolean", i+1);
+						_php_ibase_module_error("Parameter %d: must be boolean", i+1);
+						return FAILURE;
 				}
 				break;
 #endif
@@ -578,7 +581,8 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 cast_to_string:
 				convert_to_string(b_var);
 				if (Z_STRLEN_P(b_var) > SHRT_MAX - 2) {
-					fbp_fatal("Parameter %d: string buffer overflow (%zu bytes, max %d)", i+1, Z_STRLEN_P(b_var), SHRT_MAX - 2);
+					_php_ibase_module_error("Parameter %d: string buffer overflow (%zu bytes, max %d)", i+1, Z_STRLEN_P(b_var), SHRT_MAX - 2);
+					return FAILURE;
 				}
 				var->sqltype = SQL_TEXT | (var->sqltype & 1);
 				var->sqldata = Z_STRVAL_P(b_var);
@@ -599,10 +603,11 @@ parse_datetime: {
 		if (!php_date_initialize(obj, Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), tformat, NULL, PHP_DATE_INIT_FORMAT)) {
 			zval_ptr_dtor(&dateo);
 
-			fbp_fatal("Argument %d: parse date failed, "
+			_php_ibase_module_error("Argument %d: parse date failed, "
 				"call date_get_last_errors() for more information",
 				i
 			);
+			return FAILURE;
 		}
 
 		switch (sqltype) {

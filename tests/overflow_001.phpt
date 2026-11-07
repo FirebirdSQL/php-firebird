@@ -31,11 +31,12 @@ ibase_connect($test_base);
 
     // Overflowing ISC_SHORT
     $data = str_repeat("!", 2**15);
-    ibase_query("INSERT INTO TTEST (VARV) VALUES (?)", $data) or die("ibase_query failed");
+    var_dump(ibase_query("INSERT INTO TTEST (VARV) VALUES (?)", $data));
 })();
 
 ?>
 --EXPECTF--
 Got back 32765 bytes
 
-Fatal error: Parameter 1: string buffer overflow (32768 bytes, max 32765) %a
+Warning: ibase_query(): Parameter 1: string buffer overflow (32768 bytes, max 32765) in %s on line %d
+bool(false)
