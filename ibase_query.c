@@ -636,7 +636,7 @@ parse_datetime: {
 
 		switch (sqltype) {
 			case SQL_TYPE_TIME:
-				buf->val.tmval = fbu_encode_time(IBG(master_instance), (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, (unsigned)obj->time->us);
+				buf->val.tmval = fbu_encode_time(IBG(master_instance), (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us));
 				break;
 			case SQL_TYPE_DATE:
 				buf->val.dtval = fbu_encode_date(IBG(master_instance), (unsigned)obj->time->y, (unsigned)obj->time->m, (unsigned)obj->time->d);
@@ -644,16 +644,16 @@ parse_datetime: {
 			case SQL_TIMESTAMP:
 				ISC_TIMESTAMP *ts = &buf->val.tsval;
 				ts->timestamp_date = fbu_encode_date(IBG(master_instance), (unsigned)obj->time->y, (unsigned)obj->time->m, (unsigned)obj->time->d);
-				ts->timestamp_time = fbu_encode_time(IBG(master_instance), (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, (unsigned)obj->time->us);
+				ts->timestamp_time = fbu_encode_time(IBG(master_instance), (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us));
 				break;
 #if FB_API_VER >= 40
 			case SQL_TIME_TZ:
-				fbu_encode_time_tz(IBG(master_instance), &buf->val.tmval_tz, (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, (unsigned)obj->time->us, obj->time->tz_info->name);
+				fbu_encode_time_tz(IBG(master_instance), &buf->val.tmval_tz, (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us), obj->time->tz_info->name);
 				break;
 			case SQL_TIMESTAMP_TZ:
 				fbu_encode_timestamp_tz(IBG(master_instance), &buf->val.tsval_tz,
 					(unsigned)obj->time->y, (unsigned)obj->time->m, (unsigned)obj->time->d,
-					(unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, (unsigned)obj->time->us,
+					(unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us),
 					obj->time->tz_info->name
 				);
 				break;
@@ -1253,7 +1253,7 @@ _set_datetime:
 			t_date_obj->time->h = t_hours;
 			t_date_obj->time->i = t_minutes;
 			t_date_obj->time->s = t_seconds;
-			t_date_obj->time->us = t_fractions;
+			t_date_obj->time->us = FB_FRACTIONS_TO_USEC(t_fractions);
 			t_date_obj->time->sse_uptodate = 0;
 
 			if ((flag & PHP_IBASE_UNIXTIME) && (date_bearing || legacy_unixtime)) {

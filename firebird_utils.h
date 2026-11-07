@@ -22,6 +22,14 @@
 #define STRNUM_PARSE_ERROR    1
 #define STRNUM_PARSE_OVERFLOW 2
 
+/*
+ * The 'fractions' of fbu_encode_time()/fbu_decode_time() and friends are Firebird's
+ * ISC_TIME sub-second unit, 1/10000 s (0..9999). PHP's DateTime counts microseconds,
+ * so every value crossing between the two needs scaling by 100.
+ */
+#define FB_FRACTIONS_TO_USEC(f) ((unsigned)(f) * 100)
+#define FB_USEC_TO_FRACTIONS(u) ((unsigned)(u) / 100)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
