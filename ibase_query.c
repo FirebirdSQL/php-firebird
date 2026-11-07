@@ -458,7 +458,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						tformat = INI_STR("ibase.dateformat");
 						goto parse_datetime;
 					default:
-						fbp_fatal("BUG: unreachable");
+						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
 				}
 				break;
 			case SQL_TIMESTAMP:
@@ -474,7 +474,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						tformat = INI_STR("ibase.timestampformat");
 						goto parse_datetime;
 					default:
-						fbp_fatal("BUG: unreachable");
+						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
 				}
 				break;
 			case SQL_TYPE_TIME:
@@ -495,7 +495,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						tformat = INI_STR("ibase.timestampformat_tz");
 						goto parse_datetime;
 					default:
-						fbp_fatal("BUG: unreachable");
+						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
 				}
 				break;
 			case SQL_TIME_TZ:
@@ -634,7 +634,7 @@ parse_datetime: {
 				);
 				break;
 #endif
-			default: fbp_fatal("BUG: unreachable");
+			default: fbp_fatal("BUG: unreachable - only date/time sqltypes goto parse_datetime");
 		}
 		zval_ptr_dtor(&dateo);
 } // parse_datetime:
