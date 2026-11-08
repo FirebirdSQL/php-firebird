@@ -1,6 +1,6 @@
 @echo off
 
-set "phps="php-7.4.13 vc15" "php-8.0.30 vs16" "php-8.1.33 vs16" "php-8.2.29 vs16" "php-8.3.26 vs16" "php-8.4.13 vs17" "php-8.5.5 vs17""
+set "phps="php-7.4.13 vc15" "php-8.0.30 vs16" "php-8.1.33 vs16" "php-8.2.29 vs16" "php-8.3.26 vs16" "php-8.4.13 vs17" "php-8.5.5 vs17" "php-8.6.0RC5 vs18""
 
 setlocal enabledelayedexpansion
 for %%p in (%phps%) do (

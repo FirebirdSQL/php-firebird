@@ -32,6 +32,16 @@ extern zend_module_entry ibase_module_entry;
 
 #include "ibase.h"
 
+/* PHP 8.6 removed these macros */
+#ifndef WRONG_PARAM_COUNT
+# define WRONG_PARAM_COUNT { zend_wrong_param_count(); RETURN_THROWS(); }
+#endif
+#ifndef INI_STR
+# define INI_STR(name)  ((char *) zend_ini_string_literal(name))
+# define INI_INT(name)  zend_ini_long_literal(name)
+# define INI_BOOL(name) zend_ini_bool_literal(name)
+#endif
+
 #define TO_STRING_(x) #x
 #define TO_STRING(x) TO_STRING_(x)
 
