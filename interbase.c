@@ -1188,7 +1188,7 @@ static void _php_ibase_connect(INTERNAL_FUNCTION_PARAMETERS, zend_long persisten
 		}
 
 		/* use non-persistent if allowed number of persistent links is exceeded */
-		if (!persistent || ((l = INI_INT("ibase.max_persistent") != -1) && IBG(num_persistent) >= l)) {
+		if (!persistent || ((l = INI_INT("ibase.max_persistent")) != -1 && IBG(num_persistent) >= l)) {
 			ib_link = (ibase_db_link *) emalloc(sizeof(ibase_db_link));
 			RETVAL_RES(zend_register_resource(ib_link, le_link));
 		} else {
