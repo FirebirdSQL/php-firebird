@@ -1672,7 +1672,7 @@ PHP_FUNCTION(ibase_execute)
 
 	RETVAL_FALSE;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r*", &query, &args, &bind_n)) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r*", &query, &args, &bind_n)) {
 		return;
 	}
 
