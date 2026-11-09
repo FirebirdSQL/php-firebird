@@ -379,6 +379,17 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 					goto cast_to_string;
 				}
 
+				/*
+				 * A double larger than FLT_MAX would silently become infinity in the
+				 * cast below, slipping past the guard above. Let Firebird report it.
+				 */
+				if (sqltype == SQL_FLOAT) {
+					double d_val = Z_DVAL_P(b_var);
+					if (d_val > (double)FLT_MAX || d_val < -(double)FLT_MAX) {
+						goto cast_to_string;
+					}
+				}
+
 				break;
 			case SQL_TYPE_DATE:
 			case SQL_TIMESTAMP:
