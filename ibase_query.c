@@ -654,6 +654,15 @@ parse_datetime: {
 		zval dateo;
 		php_date_obj *obj;
 
+		/*
+		 * No format configured for this type: don't try to parse at all, just hand
+		 * the string to Firebird, which accepts its own spellings and reports what
+		 * it cannot read.
+		 */
+		if (tformat == NULL || *tformat == '\0') {
+			goto cast_to_string;
+		}
+
 		php_date_instantiate(php_date_get_date_ce(), &dateo);
 		obj = Z_PHPDATE_P(&dateo);
 
