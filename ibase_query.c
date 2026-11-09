@@ -533,7 +533,8 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						ISC_TIMESTAMP_TZ *ts = &buf->val.tsval_tz;
 						isc_encode_sql_date(&t, &ts->utc_timestamp.timestamp_date);
 						isc_encode_sql_time(&t, &ts->utc_timestamp.timestamp_time);
-						ts->time_zone = 0;
+						/* GMT: Firebird offset ids are minutes + 1439, so 0 means -23:59 */
+						ts->time_zone = 1439;
 					} break;
 					case IS_STRING:
 						tformat = INI_STR("ibase.timestampformat_tz");
