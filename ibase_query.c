@@ -573,6 +573,8 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 					}
 
 					if (_php_ibase_blob_add(b_var, &ib_blob) != SUCCESS) {
+						ISC_STATUS_ARRAY cancel_status;
+						isc_cancel_blob(cancel_status, &ib_blob.bl_handle);
 						return FAILURE;
 					}
 
