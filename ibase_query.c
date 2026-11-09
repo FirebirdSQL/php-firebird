@@ -28,14 +28,6 @@
 // #pragma GCC diagnostic error "-Wall"
 // #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 
-// TODO: add to docs
-// Breaking changes: date/time format
-// Breaking changes: PHP_IBASE_UNIXTIME depends on PHP date.timezone ini settings not system timezone
-// Breaking changes: connection/query/prepare get auto destroyed once they go out of scope
-// Breaking changes: multiple calls to ibase_close() will fail
-
-// TODO: SQL_TIME_TZ_EX, SQL_TIMESTAMP_TZ_EX
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
