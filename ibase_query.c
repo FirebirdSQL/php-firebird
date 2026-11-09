@@ -246,7 +246,7 @@ _php_ibase_alloc_query_error:
  * FAILURE if the scaled value would not fit the target integer type, in which case the
  * caller should fall back to letting Firebird parse and report on the value.
  */
-static int _php_ibase_apply_scale(zend_long *val, int sqlscale, int64_t min, int64_t max) /* {{{ */
+static int _php_ibase_apply_scale(int64_t *val, int sqlscale, int64_t min, int64_t max) /* {{{ */
 {
 	if (sqlscale >= 0) {
 		return SUCCESS;
@@ -264,7 +264,7 @@ static int _php_ibase_apply_scale(zend_long *val, int sqlscale, int64_t min, int
 		mag *= 10;
 	}
 
-	*val = negative ? (zend_long)(0 - mag) : (zend_long)mag;
+	*val = negative ? (int64_t)(0 - mag) : (int64_t)mag;
 
 	return SUCCESS;
 }
@@ -272,7 +272,7 @@ static int _php_ibase_apply_scale(zend_long *val, int sqlscale, int64_t min, int
 
 static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 {
-	zend_long long_val;
+	int64_t long_val;
 	struct tm t;
 	const char *tformat = NULL;
 	int64_t long_min, long_max;
