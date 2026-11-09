@@ -116,6 +116,7 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 	if(ib_query->query)efree(ib_query->query);
 	if(ib_query->ht_aliases)zend_array_destroy(ib_query->ht_aliases);
 	if(ib_query->ht_ind)zend_array_destroy(ib_query->ht_ind);
+	if(ib_query->date_scratch)OBJ_RELEASE(ib_query->date_scratch);
 	if(ib_query->sql_types)efree(ib_query->sql_types);
 	if(ib_query->sql_lens)efree(ib_query->sql_lens);
 
@@ -400,12 +401,16 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 #endif
 				switch (Z_TYPE_P(b_var))
 				{
-					case IS_LONG:
-						if (!php_gmtime_r(&Z_LVAL_P(b_var), &t)) {
-							_php_ibase_module_error("Argument %d: could not parse timestamp", i);
+					case IS_LONG: {
+						/* zend_long and time_t differ in width on 32-bit builds, so
+						 * copy rather than aliasing the zval's storage. */
+						time_t t_sec = (time_t) Z_LVAL_P(b_var);
+						if (!php_gmtime_r(&t_sec, &t)) {
+							_php_ibase_module_error("Argument %d: could not parse timestamp", i+1);
 							return FAILURE;
 						}
 						break;
+					}
 					/* Parsed below against ibase.dateformat and friends, see parse_datetime */
 					case IS_STRING:
 						break;
@@ -1138,7 +1143,7 @@ PHP_FUNCTION(ibase_affected_rows)
 }
 /* }}} */
 
-static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ */
+static int _php_ibase_var_zval(ibase_query *ib_query, zval *val, void *data, int type, int len, /* {{{ */
 	int scale, size_t flag)
 {
 	static ISC_INT64 const scales[] = { 1, 10, 100, 1000,
@@ -1159,11 +1164,11 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 		LL_LIT(1000000000000000000)
 	};
 
-	const char *t_format;
+	const char *t_format = NULL;
 	unsigned t_year, t_month, t_day, t_hours, t_minutes, t_seconds, t_fractions;
 	char t_zone_buff[40] = "UTC";
-	zval t_dateo;
 	php_date_obj *t_date_obj;
+	int date_bearing, legacy_unixtime;
 	ISC_SHORT sqltype = type & ~1;
 
 	switch (sqltype) {
@@ -1272,26 +1277,103 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 #endif
 
 _set_datetime:
-			fbu_init_date_object(t_zone_buff, &t_dateo);
-
 			/*
 			 * TIME and TIME WITH TIME ZONE carry no date, so IBASE_UNIXTIME has nothing
 			 * sensible to return for them and is ignored. The pre-refactor build converted
 			 * them anyway, with a zero date, giving a negative timestamp in 1969-1970.
 			 */
-			int date_bearing = (sqltype == SQL_TYPE_DATE || sqltype == SQL_TIMESTAMP
+			date_bearing = (sqltype == SQL_TYPE_DATE || sqltype == SQL_TIMESTAMP
 #if FB_API_VER >= 40
 				|| sqltype == SQL_TIMESTAMP_TZ
 #endif
 			);
-			int legacy_unixtime = (IBG(legacy_flags) & PHP_IBASE_LEGACY_UNIXTIME) != 0;
+			legacy_unixtime = (IBG(legacy_flags) & PHP_IBASE_LEGACY_UNIXTIME) != 0;
 
-			t_date_obj = Z_PHPDATE_P(&t_dateo);
+			if ((flag & PHP_IBASE_UNIXTIME) && legacy_unixtime) {
+				/*
+				 * Pre-refactor (buggy) behaviour, kept for BC: convert via mktime() against the
+				 * process's system timezone instead of PHP's date.timezone. Reported as buggy
+				 * because the result silently depends on the server OS timezone configuration.
+				 *
+				 * No PHP date object is read on this path, so none is built.
+				 */
+				struct tm legacy_tm = {0};
+
+				if (date_bearing) {
+					legacy_tm.tm_year = (int) t_year - 1900;
+					legacy_tm.tm_mon = (int) t_month - 1;
+					legacy_tm.tm_mday = (int) t_day;
+				}
+				/* A date-less column left the old build's struct tm zeroed, which mktime()
+				 * reads as day 0 of January 1900, i.e. 1899-12-31. Keep that, don't
+				 * subtract from a zero date and land in year 0 instead. */
+				legacy_tm.tm_hour = (int) t_hours;
+				legacy_tm.tm_min = (int) t_minutes;
+				legacy_tm.tm_sec = (int) t_seconds;
+				legacy_tm.tm_isdst = -1;
+
+				ZVAL_LONG(val, (zend_long) mktime(&legacy_tm));
+				break;
+			}
+
+#if SIZEOF_ZEND_LONG >= 8
+			if ((flag & PHP_IBASE_UNIXTIME) && date_bearing) {
+				/*
+				 * Straight from the wire: ISC_DATE counts days from 1858-11-17, so day
+				 * 40587 is 1970-01-01, and ISC_TIME counts ten-thousandths of a second.
+				 * The zoned type carries its instant as UTC already. No object, no
+				 * method call, and the decode above was not even needed.
+				 *
+				 * 32-bit builds are excluded on purpose: a PHP integer cannot hold an
+				 * epoch outside 1901..2038 there, and getTimestamp() reports that as a
+				 * DateRangeError. Silently wrapping would be worse than slow, so those
+				 * builds take the object path below.
+				 */
+				ISC_DATE w_date;
+				ISC_TIME w_time;
+
+				switch (sqltype) {
+					case SQL_TYPE_DATE:
+						w_date = *(ISC_DATE *) data;
+						w_time = 0;
+						break;
+#if FB_API_VER >= 40
+					case SQL_TIMESTAMP_TZ:
+						w_date = ((ISC_TIMESTAMP_TZ *) data)->utc_timestamp.timestamp_date;
+						w_time = ((ISC_TIMESTAMP_TZ *) data)->utc_timestamp.timestamp_time;
+						break;
+#endif
+					default: /* SQL_TIMESTAMP */
+						w_date = ((ISC_TIMESTAMP *) data)->timestamp_date;
+						w_time = ((ISC_TIMESTAMP *) data)->timestamp_time;
+				}
+
+				ZVAL_LONG(val, ((zend_long) w_date - 40587) * 86400 + (zend_long) (w_time / 10000));
+				break;
+			}
+#endif
+
+			/*
+			 * Everything below needs a DateTime. Building one costs a DateTimeZone
+			 * construction and a parse of "now", so one is kept per result and reused;
+			 * only a zoned column that changes zone between rows rebuilds it.
+			 */
+			if (!ib_query->date_scratch || strcmp(ib_query->date_scratch_zone, t_zone_buff) != 0) {
+				zval scratch;
+
+				if (ib_query->date_scratch) {
+					OBJ_RELEASE(ib_query->date_scratch);
+				}
+				fbu_init_date_object(t_zone_buff, &scratch);
+				ib_query->date_scratch = Z_OBJ(scratch);
+				strlcpy(ib_query->date_scratch_zone, t_zone_buff, sizeof(ib_query->date_scratch_zone));
+			}
+			t_date_obj = php_date_obj_from_obj(ib_query->date_scratch);
+
 			/*
 			 * DateTime always holds a date, so a date-less column needs one filled in. Use
 			 * the epoch, as DateTime::createFromFormat('!H:i:s') does, rather than an
-			 * invalid 0000-00-00. t_year/t_month/t_day stay zero so the legacy conversion
-			 * below still reproduces the old negative timestamp.
+			 * invalid 0000-00-00.
 			 */
 			t_date_obj->time->y = date_bearing ? t_year : 1970;
 			t_date_obj->time->m = date_bearing ? t_month : 1;
@@ -1302,59 +1384,64 @@ _set_datetime:
 			t_date_obj->time->us = FB_FRACTIONS_TO_USEC(t_fractions);
 			t_date_obj->time->sse_uptodate = 0;
 
-			if ((flag & PHP_IBASE_UNIXTIME) && (date_bearing || legacy_unixtime)) {
-				if (legacy_unixtime) {
-					/*
-					 * Pre-refactor (buggy) behaviour, kept for BC: convert via mktime() against the
-					 * process's system timezone instead of PHP's date.timezone. Reported as buggy
-					 * because the result silently depends on the server OS timezone configuration.
-					 */
-					struct tm legacy_tm = {0};
-					if (date_bearing) {
-						legacy_tm.tm_year = (int) t_year - 1900;
-						legacy_tm.tm_mon = (int) t_month - 1;
-						legacy_tm.tm_mday = (int) t_day;
-					}
-					/* A date-less column left the old build's struct tm zeroed, which mktime()
-					 * reads as day 0 of January 1900, i.e. 1899-12-31. Keep that, don't
-					 * subtract from a zero date and land in year 0 instead. */
-					legacy_tm.tm_hour = (int) t_hours;
-					legacy_tm.tm_min = (int) t_minutes;
-					legacy_tm.tm_sec = (int) t_seconds;
-					legacy_tm.tm_isdst = -1;
+			if (flag & PHP_IBASE_PHPDATE) {
+				/* The object escapes to the caller, so it cannot be the shared scratch.
+				 * Cloning it still beats re-running the zone construction and the parse. */
+				#if PHP_MAJOR_VERSION >= 8
+					ZVAL_OBJ(val, t_date_obj->std.handlers->clone_obj(&t_date_obj->std));
+				#else
+					zval scratch_zv;
+					ZVAL_OBJ(&scratch_zv, &t_date_obj->std);
+					ZVAL_OBJ(val, Z_OBJ_HT(scratch_zv)->clone_obj(&scratch_zv));
+				#endif
+#if SIZEOF_ZEND_LONG < 8
+			} else if ((flag & PHP_IBASE_UNIXTIME) && date_bearing) {
+				/* 32-bit only, see the shortcut above. Date-less columns ignore the
+				 * flag, as they always have. */
+				zval scratch_zv, retval;
 
-					ZVAL_LONG(val, (zend_long) mktime(&legacy_tm));
-				} else {
-					zval retval;
+				ZVAL_OBJ(&scratch_zv, &t_date_obj->std);
+				GC_ADDREF(&t_date_obj->std);
 
-					#if PHP_MAJOR_VERSION >= 8
-						zend_call_method_with_0_params(Z_OBJ(t_dateo), php_date_get_date_ce(), NULL, "getTimestamp", &retval);
-					#else
-						zend_call_method_with_0_params(&t_dateo, NULL, NULL, "getTimestamp", &retval);
-					#endif
+				#if PHP_MAJOR_VERSION >= 8
+					zend_call_method_with_0_params(Z_OBJ(scratch_zv), php_date_get_date_ce(), NULL, "getTimestamp", &retval);
+				#else
+					zend_call_method_with_0_params(&scratch_zv, NULL, NULL, "getTimestamp", &retval);
+				#endif
 
+				/* getTimestamp() throws DateRangeError when the epoch does not fit a
+				 * PHP integer, which happens on 32-bit builds outside 1901..2038.
+				 * retval is then undefined, so check before reading it. */
+				if (Z_TYPE(retval) == IS_LONG) {
 					ZVAL_LONG(val, Z_LVAL(retval));
-				}
-			} else {
-				if (flag & PHP_IBASE_PHPDATE) {
-					ZVAL_COPY(val, &t_dateo);
 				} else {
-					#if PHP_VERSION_ID >= 80400
-						ZVAL_STR(val, php_format_date_obj(t_format, strlen(t_format), t_date_obj));
-					#else
-						zval format_zval, retval;
-						ZVAL_STRING(&format_zval, t_format);
-						#if PHP_MAJOR_VERSION >= 8
-							zend_call_method_with_1_params(Z_OBJ(t_dateo), php_date_get_date_ce(), NULL, "format", &retval, &format_zval);
-						#else
-							zend_call_method_with_1_params(&t_dateo, php_date_get_date_ce(), NULL, "format", &retval, &format_zval);
-						#endif
-						zval_ptr_dtor(&format_zval);
-						ZVAL_STR(val, Z_STR(retval));
-					#endif
+					zval_ptr_dtor(&retval);
+					ZVAL_NULL(val);
 				}
+				zval_ptr_dtor(&scratch_zv);
+#endif
+			} else if (!t_format) {
+				/* no format configured for this type */
+				ZVAL_EMPTY_STRING(val);
+			} else {
+				#if PHP_VERSION_ID >= 80400
+					ZVAL_STR(val, php_format_date_obj(t_format, strlen(t_format), t_date_obj));
+				#else
+					zval scratch_zv, format_zval, retval;
+
+					ZVAL_OBJ(&scratch_zv, &t_date_obj->std);
+					GC_ADDREF(&t_date_obj->std);
+					ZVAL_STRING(&format_zval, t_format);
+					#if PHP_MAJOR_VERSION >= 8
+						zend_call_method_with_1_params(Z_OBJ(scratch_zv), php_date_get_date_ce(), NULL, "format", &retval, &format_zval);
+					#else
+						zend_call_method_with_1_params(&scratch_zv, php_date_get_date_ce(), NULL, "format", &retval, &format_zval);
+					#endif
+					zval_ptr_dtor(&format_zval);
+					zval_ptr_dtor(&scratch_zv);
+					ZVAL_STR(val, Z_STR(retval));
+				#endif
 			}
-			zval_ptr_dtor(&t_dateo);
 			break;
 
 		default:
@@ -1465,7 +1552,7 @@ static void _php_ibase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int fetch_type) 
 		switch (var->sqltype & ~1) {
 
 			default:
-				_php_ibase_var_zval(result, var->sqldata, var->sqltype, var->sqllen,
+				_php_ibase_var_zval(ib_query, result, var->sqldata, var->sqltype, var->sqllen,
 					var->sqlscale, flag);
 				break;
 			case SQL_BLOB:

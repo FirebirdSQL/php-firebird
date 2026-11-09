@@ -175,6 +175,11 @@ typedef struct _ib_query {
 	ISC_SHORT *sql_lens;
 	ISC_USHORT in_fields_count, out_fields_count;
 	HashTable *ht_aliases, *ht_ind; // Precomputed for ibase_fetch_*()
+	/* One DateTime reused for every date/time cell of this result, see _set_datetime in
+	 * _php_ibase_var_zval(). Built on first use, rebuilt only when a zoned column
+	 * changes zone, freed with the query. */
+	zend_object *date_scratch;
+	char date_scratch_zone[40];
 	int was_result_once;
 } ibase_query;
 
