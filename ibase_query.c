@@ -2002,7 +2002,7 @@ static int _php_ibase_set_query_info(ibase_query *ib_query)
 	}
 
 	int ctx = 0;
-	while((buf[pos] != isc_info_end) && (pos < buf_size))
+	while((pos < buf_size) && (buf[pos] != isc_info_end))
 	{
 		const ISC_UCHAR tag = buf[pos++];
 		switch(tag) {
