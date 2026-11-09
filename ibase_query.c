@@ -1433,6 +1433,8 @@ static void _php_ibase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int fetch_type) 
 	assert(ib_query->out_fields_count == ib_query->out_sqlda->sqld);
 
 	HashTable *ht_ret;
+	ibase_blob blob_handle = { 0 };
+
 	if(!(fetch_type & FETCH_ROW)) {
 		if(!ib_query->ht_aliases){
 			if(_php_ibase_alloc_ht_aliases(ib_query)){
@@ -1466,7 +1468,6 @@ static void _php_ibase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int fetch_type) 
 			case SQL_BLOB:
 				if (flag & PHP_IBASE_FETCH_BLOBS) { /* fetch blob contents into hash */
 
-					ibase_blob blob_handle;
 					zend_ulong max_len = 0;
 					static char bl_items[] = {isc_info_blob_total_length};
 					char bl_info[20];
@@ -1529,6 +1530,11 @@ static void _php_ibase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int fetch_type) 
 			case SQL_ARRAY:
 				fbp_fatal("SQL_ARRAY type is not supported");
 			_php_ibase_fetch_error:
+				if (blob_handle.bl_handle) {
+					ISC_STATUS_ARRAY close_status;
+					isc_close_blob(close_status, &blob_handle.bl_handle);
+				}
+				zend_array_destroy(ht_ret);
 				RETURN_FALSE;
 		} /* switch */
 
