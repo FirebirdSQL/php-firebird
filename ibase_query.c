@@ -1773,14 +1773,16 @@ PHP_FUNCTION(ibase_execute)
 	// was do {
 		_php_ibase_exec(INTERNAL_FUNCTION_PARAM_PASSTHRU, ib_query, args, bind_n);
 
-		if (Z_TYPE_P(return_value) == IS_RESOURCE) {
-			Z_TRY_ADDREF_P(return_value);
-		}
-
-		/* free the query if trans handle was released */
-		// if (ib_query->trans->handle == 0) {
-		// 	zend_list_delete(Z_RES_P(query));
-		// }
+		/*
+		 * No addref here: _php_ibase_exec() already took the reference that the
+		 * returned result owns. The query resource arrives holding one reference of
+		 * its own (the caller's $q from ibase_prepare), so after exec the count is
+		 * 2 -- one per live variable -- which is what lets the statement be dropped
+		 * when both go out of scope. Taking a third one here left it permanently at
+		 * 1, so the destructor never ran and the statement stayed open until request
+		 * shutdown. ibase_query() differs: it owns the resource itself and releases
+		 * that reference with zend_list_delete() once exec has taken its own.
+		 */
 	// } while (0);
 }
 /* }}} */
