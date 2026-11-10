@@ -645,7 +645,22 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 			case SQL_TEXT:
 			case SQL_VARYING:
 cast_to_string:
-				convert_to_string(b_var);
+				if (Z_TYPE_P(b_var) == IS_DOUBLE) {
+					/*
+					 * convert_to_string() formats with the `precision` ini -- 14 significant
+					 * digits by default -- which silently drops digits the column could
+					 * hold: 1234567.891234567 into NUMERIC(18,9) arrived as
+					 * 1234567.891234600. Format with `serialize_precision` instead, the
+					 * same call var_export() and json_encode() make; its default of -1
+					 * selects the shortest text that reads back as the identical double.
+					 * Firebird then rounds to the column's own scale.
+					 */
+					char dbuf[PHP_DOUBLE_MAX_LENGTH];
+					php_gcvt(Z_DVAL_P(b_var), (int)PG(serialize_precision), '.', 'E', dbuf);
+					ZVAL_STRING(b_var, dbuf);
+				} else {
+					convert_to_string(b_var);
+				}
 				if (Z_STRLEN_P(b_var) > SHRT_MAX - 2) {
 					_php_ibase_module_error("Parameter %d: string buffer overflow (%zu bytes, max %d)", i+1, Z_STRLEN_P(b_var), SHRT_MAX - 2);
 					return FAILURE;
