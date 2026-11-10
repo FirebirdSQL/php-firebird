@@ -495,7 +495,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						isc_encode_sql_date(&t, &buf->val.dtval);
 						break;
 					case IS_STRING:
-						tformat = INI_STR("ibase.dateformat");
+						tformat = IBG(dateformat);
 						goto parse_datetime;
 					default:
 						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
@@ -511,7 +511,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						isc_encode_sql_time(&t, &ts->timestamp_time);
 					} break;
 					case IS_STRING:
-						tformat = INI_STR("ibase.timestampformat");
+						tformat = IBG(timestampformat);
 						goto parse_datetime;
 					default:
 						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
@@ -526,7 +526,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						isc_encode_sql_time(&t, &buf->val.tmval);
 						break;
 					case IS_STRING:
-						tformat = INI_STR("ibase.timeformat");
+						tformat = IBG(timeformat);
 						goto parse_datetime;
 					default:
 						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
@@ -545,7 +545,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						ts->time_zone = 1439;
 					} break;
 					case IS_STRING:
-						tformat = INI_STR("ibase.timestampformat_tz");
+						tformat = IBG(timestampformat_tz);
 						goto parse_datetime;
 					default:
 						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
@@ -559,7 +559,7 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 						buf->val.tmval_tz.time_zone = 1439; /* GMT: offset ids are minutes + 1439, so 0 means -23:59 */
 						break;
 					case IS_STRING:
-						tformat = INI_STR("ibase.timeformat_tz");
+						tformat = IBG(timeformat_tz);
 						goto parse_datetime;
 					default:
 						fbp_fatal("BUG: unreachable - other zval types already went to cast_to_string");
@@ -1254,18 +1254,18 @@ static int _php_ibase_var_zval(ibase_query *ib_query, zval *val, void *data, int
 			ZVAL_DOUBLE(val, *(double *) data);
 			break;
 		case SQL_TYPE_DATE: {
-			t_format = INI_STR("ibase.dateformat");
+			t_format = IBG(dateformat);
 			t_hours = t_minutes = t_seconds = t_fractions = 0;
 			fbu_decode_date(IBG(master_instance), *(ISC_DATE *)data, &t_year, &t_month, &t_day);
 			goto _set_datetime;
 		}
 		case SQL_TYPE_TIME:
-			t_format = INI_STR("ibase.timeformat");
+			t_format = IBG(timeformat);
 			t_year = t_month = t_day = 0;
 			fbu_decode_time(IBG(master_instance), *(ISC_TIME *)data, &t_hours, &t_minutes, &t_seconds, &t_fractions);
 			goto _set_datetime;
 		case SQL_TIMESTAMP: {
-			t_format = INI_STR("ibase.timestampformat");
+			t_format = IBG(timestampformat);
 			ISC_TIMESTAMP *ts = (ISC_TIMESTAMP *) data;
 			fbu_decode_date(IBG(master_instance), ts->timestamp_date, &t_year, &t_month, &t_day);
 			fbu_decode_time(IBG(master_instance), ts->timestamp_time, &t_hours, &t_minutes, &t_seconds, &t_fractions);
@@ -1279,13 +1279,13 @@ static int _php_ibase_var_zval(ibase_query *ib_query, zval *val, void *data, int
 		// case SQL_DEC34:
 		// case SQL_INT128:
 		case SQL_TIME_TZ:
-			t_format = INI_STR("ibase.timeformat_tz");
+			t_format = IBG(timeformat_tz);
 			t_year = t_month = t_day = 0;
 			fbu_decode_time_tz(IBG(master_instance), (ISC_TIME_TZ *)data, &t_hours, &t_minutes, &t_seconds, &t_fractions, sizeof(t_zone_buff), t_zone_buff);
 			goto _set_datetime;
 
 		case SQL_TIMESTAMP_TZ:
-			t_format = INI_STR("ibase.timestampformat_tz");
+			t_format = IBG(timestampformat_tz);
 			fbu_decode_timestamp_tz(IBG(master_instance), (ISC_TIMESTAMP_TZ *)data, &t_year, &t_month, &t_day, &t_hours,
 				&t_minutes, &t_seconds, &t_fractions, sizeof(t_zone_buff), t_zone_buff);
 			goto _set_datetime;

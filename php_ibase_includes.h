@@ -79,6 +79,13 @@ ZEND_BEGIN_MODULE_GLOBALS(ibase)
 	zend_long default_trans_params;
 	zend_long default_lock_timeout; // only used togetger with trans_param IBASE_LOCK_TIMEOUT
 	zend_long legacy_flags; // bitmask of php_interbase_legacy_option
+	/* The five ibase.*format strings, held here so the per-cell and per-parameter
+	 * paths read a pointer instead of doing an ini hash lookup for every value. */
+	char *dateformat;
+	char *timeformat;
+	char *timestampformat;
+	char *timeformat_tz;
+	char *timestampformat_tz;
 	void *get_master_interface;
 	void *master_instance;
 	void *get_statement_interface;
