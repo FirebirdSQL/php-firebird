@@ -813,6 +813,30 @@ static void _php_ibase_alloc_xsqlda_vars(XSQLDA *sqlda, ISC_SHORT *nullinds) /* 
 }
 /* }}} */
 
+/* Close the open cursor, if any, but keep the prepared statement so it can be
+ * executed again. Exec procedure has no cursor: its single row sits in out_sqlda,
+ * so only the flags are reset. */
+static int _php_ibase_close_cursor(ibase_query *ib_query) /* {{{ */
+{
+	if (!ib_query->is_open) {
+		return SUCCESS;
+	}
+
+	ib_query->is_open = 0;
+	ib_query->has_more_rows = 0;
+
+	if (ib_query->statement_type != isc_info_sql_stmt_exec_procedure) {
+		IBDEBUG("Closing a cursor");
+		if (isc_dsql_free_statement(IB_STATUS, &ib_query->stmt, DSQL_close)) {
+			_php_ibase_error();
+			return FAILURE;
+		}
+	}
+
+	return SUCCESS;
+}
+/* }}} */
+
 static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, zval *args, int bind_n) /* {{{ */
 {
 	int i, rv = FAILURE;
@@ -835,16 +859,10 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, 
 		}
 	}
 
-	/* Have we used this cursor before and it's still open (exec proc has no cursor) ? */
-	if (ib_query->is_open && ib_query->statement_type != isc_info_sql_stmt_exec_procedure) {
-		IBDEBUG("Implicitly closing a cursor");
-		// TODO: ini configurable warning
-		// php_error_docref(NULL, E_NOTICE, "Implicitly closing a cursor");
-		if (isc_dsql_free_statement(IB_STATUS, &ib_query->stmt, DSQL_close)) {
-			_php_ibase_error();
-			return FAILURE;
-		}
-		ib_query->is_open = 0;
+	/* Have we used this cursor before and it's still open? */
+	// TODO: ini configurable warning when a cursor is closed implicitly
+	if (FAILURE == _php_ibase_close_cursor(ib_query)) {
+		return FAILURE;
 	}
 
 	for (i = 0; i < argc; ++i) {
@@ -2243,8 +2261,13 @@ static void _php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAMETERS, int as_resu
 		RETURN_FALSE;
 	}
 
+	/* ibase_query() results are not reachable as a prepared query, so free them
+	 * completely. A result from ibase_execute() is the prepared query itself: close
+	 * only its cursor so the query can be executed again. */
 	if(!as_result || ib_query->was_result_once) {
 		zend_list_close(Z_RES_P(query_arg));
+	} else if (FAILURE == _php_ibase_close_cursor(ib_query)) {
+		RETURN_FALSE;
 	}
 
 	RETURN_TRUE;
