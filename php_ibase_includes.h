@@ -227,6 +227,12 @@ enum php_interbase_legacy_option {
 	 * rather than date.timezone, and applied to TIME columns too, where a date-less value
 	 * comes back as a negative timestamp in 1969-1970 */
 	PHP_IBASE_LEGACY_UNIXTIME = 1,
+	/* ibase_query() / ibase_execute() return the number of affected rows (or true when
+	 * 0) for INSERT / UPDATE / DELETE / EXECUTE PROCEDURE without output, and store it
+	 * for ibase_affected_rows(). Reading the count costs a round trip per statement.
+	 * Off: they return the query handle for every statement, the count is not read, and
+	 * ibase_query_affected_rows() asks for it on demand. */
+	PHP_IBASE_LEGACY_QUERY_RESULT = 2,
 };
 
 enum php_interbase_query_option {

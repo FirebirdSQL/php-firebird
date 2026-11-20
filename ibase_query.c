@@ -983,14 +983,15 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, 
 
 	ib_query->trans->affected_rows = 0;
 
-	switch (ib_query->statement_type) {
+	if (IBG(legacy_flags) & PHP_IBASE_LEGACY_QUERY_RESULT) {
+		int needs_affected_rows =
+			ib_query->statement_type == isc_info_sql_stmt_insert ||
+			ib_query->statement_type == isc_info_sql_stmt_update ||
+			ib_query->statement_type == isc_info_sql_stmt_delete ||
+			ib_query->statement_type == isc_info_sql_stmt_exec_procedure;
 
-		unsigned long affected_rows;
-
-		case isc_info_sql_stmt_insert:
-		case isc_info_sql_stmt_update:
-		case isc_info_sql_stmt_delete:
-		case isc_info_sql_stmt_exec_procedure:
+		if (needs_affected_rows) {
+			unsigned long affected_rows;
 
 			if (_php_ibase_stmt_affected_rows(&ib_query->stmt, &affected_rows)) {
 				_php_ibase_error();
@@ -998,27 +999,24 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, 
 			}
 
 			ib_query->trans->affected_rows = affected_rows;
+		}
 
-			if (!ib_query->out_sqlda) { /* no result set is being returned */
-				if (affected_rows) {
-					RETVAL_LONG(affected_rows);
-				} else {
-					RETVAL_TRUE;
-				}
-				break;
-			}
-		default:
+		if (ib_query->out_sqlda) {
+			RETVAL_RES(ib_query->res);
+			Z_TRY_ADDREF_P(return_value);
+		} else if (ib_query->trans->affected_rows) {
+			RETVAL_LONG(ib_query->trans->affected_rows);
+		} else {
 			RETVAL_TRUE;
+		}
+	} else {
+		RETVAL_RES(ib_query->res);
+		Z_TRY_ADDREF_P(return_value);
 	}
 
 	if (ib_query->out_sqlda) { /* output variables in select, select for update */
 		ib_query->has_more_rows = 1;
 		ib_query->is_open = 1;
-
-		RETVAL_RES(ib_query->res);
-		Z_TRY_ADDREF_P(return_value);
-
-		return SUCCESS;
 	}
 
 	rv = SUCCESS;
@@ -1164,6 +1162,11 @@ PHP_FUNCTION(ibase_affected_rows)
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r", &arg) == FAILURE) {
 		return;
+	}
+
+	/* Without the legacy flag the count is not read; use ibase_query_affected_rows() */
+	if (!(IBG(legacy_flags) & PHP_IBASE_LEGACY_QUERY_RESULT)) {
+		RETURN_FALSE;
 	}
 
 	if (!arg) {
