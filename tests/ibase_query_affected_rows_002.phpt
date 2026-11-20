@@ -59,6 +59,29 @@ $c = ibase_connect($test_base);
 		echo "    returned: ", json_encode($row), "\n";
 	}
 
+	echo "MERGE ... RETURNING\n";
+	$r = ibase_query($t, <<<'SQL'
+		MERGE INTO PROBE
+		USING (SELECT 1 ID FROM RDB$DATABASE UNION ALL SELECT 4 FROM RDB$DATABASE) S
+		ON PROBE.ID = S.ID
+		WHEN MATCHED THEN UPDATE SET NAME = NAME || 'm'
+		WHEN NOT MATCHED THEN INSERT (ID, NAME) VALUES (S.ID, 'd')
+		RETURNING PROBE.ID, PROBE.NAME
+		SQL);
+	echo "    trans: ", ibase_affected_rows($t), "\n";
+	echo "    query: ", ibase_query_affected_rows($r), "\n";
+	while ($row = ibase_fetch_assoc($r)) {
+		echo "    returned: ", json_encode($row), "\n";
+	}
+
+	echo "INSERT ... SELECT ... RETURNING\n";
+	$r = ibase_query($t, "INSERT INTO PROBE SELECT ID + 10, NAME FROM PROBE ORDER BY ID RETURNING ID, NAME");
+	echo "    trans: ", ibase_affected_rows($t), "\n";
+	echo "    query: ", ibase_query_affected_rows($r), "\n";
+	while ($row = ibase_fetch_assoc($r)) {
+		echo "    returned: ", json_encode($row), "\n";
+	}
+
 	$r = ibase_query($t, "SELECT ID, NAME FROM PROBE ORDER BY ID");
 	while ($row = ibase_fetch_assoc($r)) {
 		echo "left: ", json_encode($row), "\n";
@@ -93,4 +116,17 @@ DELETE ... RETURNING
     query: 2
     returned: {"ID":2}
     returned: {"ID":3}
-left: {"ID":1,"NAME":"axyy"}
+MERGE ... RETURNING
+    trans: 0
+    query: 2
+    returned: {"ID":1,"NAME":"axyym"}
+    returned: {"ID":4,"NAME":"d"}
+INSERT ... SELECT ... RETURNING
+    trans: 0
+    query: 2
+    returned: {"ID":11,"NAME":"axyym"}
+    returned: {"ID":14,"NAME":"d"}
+left: {"ID":1,"NAME":"axyym"}
+left: {"ID":4,"NAME":"d"}
+left: {"ID":11,"NAME":"axyym"}
+left: {"ID":14,"NAME":"d"}

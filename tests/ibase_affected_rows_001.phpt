@@ -22,6 +22,13 @@ var_dump(ibase_affected_rows($x));
 ibase_query($x, 'UPDATE test1 SET i =');
 var_dump(ibase_affected_rows($x));
 
+var_dump(ibase_query($x, <<<'SQL'
+	INSERT INTO test1 (i, c)
+	SELECT 1, 'a' FROM RDB$DATABASE
+	UNION ALL SELECT 2, 'b' FROM RDB$DATABASE
+	UNION ALL SELECT 3, 'c' FROM RDB$DATABASE
+	SQL));
+var_dump(ibase_affected_rows($x));
 
 ?>
 --EXPECTF--
@@ -30,3 +37,5 @@ int(0)
 
 Warning: ibase_query(): Dynamic SQL Error SQL error code = -104 %s on line %d
 int(0)
+int(3)
+int(3)

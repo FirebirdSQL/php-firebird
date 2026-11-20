@@ -1,5 +1,5 @@
 --TEST--
-ibase_query_affected_rows(): single-row INSERT / UPDATE / DELETE ... RETURNING
+ibase_query_affected_rows(): single-row ... RETURNING
 --SKIPIF--
 <?php
 include("skipif.inc");

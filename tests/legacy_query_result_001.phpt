@@ -26,6 +26,14 @@ $c = ibase_connect($test_base);
 		"UPDATE PROBE SET NAME = NAME || 'x'",
 		"UPDATE PROBE SET NAME = 'y' WHERE ID = 99",
 		"DELETE FROM PROBE WHERE ID = 2",
+		<<<'SQL'
+			MERGE INTO PROBE
+			USING (SELECT 1 ID FROM RDB$DATABASE UNION ALL SELECT 3 FROM RDB$DATABASE) S
+			ON PROBE.ID = S.ID
+			WHEN MATCHED THEN UPDATE SET NAME = 'm'
+			WHEN NOT MATCHED THEN INSERT (ID, NAME) VALUES (S.ID, 'n')
+			SQL,
+		"UPDATE OR INSERT INTO PROBE (ID, NAME) VALUES (5, 'u') MATCHING (ID)",
 	];
 	foreach ($statements as $sql) {
 		echo $sql, "\n";
@@ -85,10 +93,28 @@ DELETE FROM PROBE WHERE ID = 2
     trans affected: false
     fetch: false
     free: true
+MERGE INTO PROBE
+USING (SELECT 1 ID FROM RDB$DATABASE UNION ALL SELECT 3 FROM RDB$DATABASE) S
+ON PROBE.ID = S.ID
+WHEN MATCHED THEN UPDATE SET NAME = 'm'
+WHEN NOT MATCHED THEN INSERT (ID, NAME) VALUES (S.ID, 'n')
+    returned: Firebird/InterBase query
+    query affected: 2
+    trans affected: false
+    fetch: false
+    free: true
+UPDATE OR INSERT INTO PROBE (ID, NAME) VALUES (5, 'u') MATCHING (ID)
+    returned: Firebird/InterBase query
+    query affected: 1
+    trans affected: false
+    fetch: false
+    free: true
 prepared UPDATE
     returned the query: true
     query affected: 1
 SELECT
     query affected: 0
     row: {"ID":1,"NAME":"z"}
+    row: {"ID":3,"NAME":"n"}
+    row: {"ID":5,"NAME":"u"}
 COMMIT as SQL: true

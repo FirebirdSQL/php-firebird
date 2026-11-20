@@ -1,12 +1,12 @@
 --TEST--
-ibase_affected_rows(): after multi-row UPDATE / DELETE ... RETURNING (Firebird 5+)
+ibase_affected_rows(): after multi-row ... RETURNING (Firebird 5+)
 --SKIPIF--
 <?php
 include("skipif.inc");
 if (get_fb_version() < 50) die("skip multi-row RETURNING needs Firebird 5.0 or newer");
 ?>
 --XFAIL--
-Firebird 5 describes UPDATE / DELETE ... RETURNING as isc_info_sql_stmt_select
+Firebird 5 describes ... RETURNING statements as isc_info_sql_stmt_select
 (see doc/sql.extensions/README.returning, note 3), whether they change one row or many.
 The extension only reads the row count for insert / update / delete / exec_procedure
 statements, so ibase_affected_rows() returns 0 here. Asking the server for the count on
@@ -31,6 +31,15 @@ $c = ibase_connect($test_base);
 	$statements = [
 		"UPDATE PROBE SET NAME = NAME || 'x' RETURNING ID, NAME",
 		"DELETE FROM PROBE WHERE ID > 1 RETURNING ID",
+		<<<'SQL'
+			MERGE INTO PROBE
+			USING (SELECT 1 ID FROM RDB$DATABASE UNION ALL SELECT 4 FROM RDB$DATABASE) S
+			ON PROBE.ID = S.ID
+			WHEN MATCHED THEN UPDATE SET NAME = NAME || 'm'
+			WHEN NOT MATCHED THEN INSERT (ID, NAME) VALUES (S.ID, 'd')
+			RETURNING PROBE.ID, PROBE.NAME
+			SQL,
+		"INSERT INTO PROBE SELECT ID + 10, NAME FROM PROBE ORDER BY ID RETURNING ID, NAME",
 	];
 	foreach ($statements as $sql) {
 		echo $sql, "\n";
@@ -59,4 +68,20 @@ DELETE FROM PROBE WHERE ID > 1 RETURNING ID
     affected: 2
     returned: {"ID":2}
     returned: {"ID":3}
-left: {"ID":1,"NAME":"ax"}
+MERGE INTO PROBE
+USING (SELECT 1 ID FROM RDB$DATABASE UNION ALL SELECT 4 FROM RDB$DATABASE) S
+ON PROBE.ID = S.ID
+WHEN MATCHED THEN UPDATE SET NAME = NAME || 'm'
+WHEN NOT MATCHED THEN INSERT (ID, NAME) VALUES (S.ID, 'd')
+RETURNING PROBE.ID, PROBE.NAME
+    affected: 2
+    returned: {"ID":1,"NAME":"axm"}
+    returned: {"ID":4,"NAME":"d"}
+INSERT INTO PROBE SELECT ID + 10, NAME FROM PROBE ORDER BY ID RETURNING ID, NAME
+    affected: 2
+    returned: {"ID":11,"NAME":"axm"}
+    returned: {"ID":14,"NAME":"d"}
+left: {"ID":1,"NAME":"axm"}
+left: {"ID":4,"NAME":"d"}
+left: {"ID":11,"NAME":"axm"}
+left: {"ID":14,"NAME":"d"}

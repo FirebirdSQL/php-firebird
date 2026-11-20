@@ -1,16 +1,16 @@
 --TEST--
-ibase_affected_rows(): after single-row INSERT / UPDATE / DELETE ... RETURNING
+ibase_affected_rows(): after single-row ... RETURNING
 --SKIPIF--
 <?php
 include("skipif.inc");
 /*
- * Firebird 5 describes UPDATE / DELETE ... RETURNING as isc_info_sql_stmt_select
+ * Firebird 5 describes ... RETURNING statements as isc_info_sql_stmt_select
  * (see doc/sql.extensions/README.returning, note 3). The extension only reads the
  * row count for insert / update / delete / exec_procedure statements, so
  * ibase_affected_rows() returns 0 for them there. Asking the server for the count on
  * every SELECT would cost a round trip each; use ibase_query_affected_rows() to get it.
  */
-if (get_fb_version() >= 50) echo "xfail Firebird 5 describes UPDATE / DELETE ... RETURNING as SELECT";
+if (get_fb_version() >= 50) echo "xfail Firebird 5 describes ... RETURNING as SELECT";
 ?>
 --FILE--
 <?php
