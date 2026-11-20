@@ -86,6 +86,7 @@ PHP_FUNCTION(ibase_gen_id);
 PHP_FUNCTION(ibase_num_fields);
 PHP_FUNCTION(ibase_num_params);
 PHP_FUNCTION(ibase_affected_rows);
+PHP_FUNCTION(ibase_query_affected_rows);
 PHP_FUNCTION(ibase_field_info);
 PHP_FUNCTION(ibase_param_info);
 

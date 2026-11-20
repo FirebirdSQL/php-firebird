@@ -837,11 +837,38 @@ static int _php_ibase_close_cursor(ibase_query *ib_query) /* {{{ */
 }
 /* }}} */
 
+/* Ask the server how many rows the statement's last execution inserted, updated or
+ * deleted. Rows that were only read are left out. This is a network round trip. */
+static int _php_ibase_stmt_affected_rows(isc_stmt_handle *stmt, unsigned long *affected_rows) /* {{{ */
+{
+	static char info_count[] = { isc_info_sql_records };
+	char result[64];
+
+	*affected_rows = 0;
+
+	if (isc_dsql_sql_info(IB_STATUS, stmt, sizeof(info_count), info_count, sizeof(result), result)) {
+		return FAILURE;
+	}
+
+	if (result[0] == isc_info_sql_records) {
+		unsigned i = 3, result_size = isc_vax_integer(&result[1],2);
+
+		while (result[i] != isc_info_end && i < result_size) {
+			short len = (short)isc_vax_integer(&result[i+1],2);
+			if (result[i] != isc_info_req_select_count) {
+				*affected_rows += isc_vax_integer(&result[i+3],len);
+			}
+			i += len+3;
+		}
+	}
+
+	return SUCCESS;
+}
+/* }}} */
+
 static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, zval *args, int bind_n) /* {{{ */
 {
 	int i, rv = FAILURE;
-	static char info_count[] = { isc_info_sql_records };
-	char result[64];
 	ISC_STATUS isc_result;
 	int argc = ib_query->in_fields_count;
 
@@ -956,16 +983,6 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, 
 
 	ib_query->trans->affected_rows = 0;
 
-	if (ib_query->out_sqlda) { /* output variables in select, select for update */
-		ib_query->has_more_rows = 1;
-		ib_query->is_open = 1;
-
-		RETVAL_RES(ib_query->res);
-		Z_TRY_ADDREF_P(return_value);
-
-		return SUCCESS;
-	}
-
 	switch (ib_query->statement_type) {
 
 		unsigned long affected_rows;
@@ -975,24 +992,9 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, 
 		case isc_info_sql_stmt_delete:
 		case isc_info_sql_stmt_exec_procedure:
 
-			if (isc_dsql_sql_info(IB_STATUS, &ib_query->stmt, sizeof(info_count),
-					info_count, sizeof(result), result)) {
+			if (_php_ibase_stmt_affected_rows(&ib_query->stmt, &affected_rows)) {
 				_php_ibase_error();
 				goto _php_ibase_ex_error;
-			}
-
-			affected_rows = 0;
-
-			if (result[0] == isc_info_sql_records) {
-				unsigned i = 3, result_size = isc_vax_integer(&result[1],2);
-
-				while (result[i] != isc_info_end && i < result_size) {
-					short len = (short)isc_vax_integer(&result[i+1],2);
-					if (result[i] != isc_info_req_select_count) {
-						affected_rows += isc_vax_integer(&result[i+3],len);
-					}
-					i += len+3;
-				}
 			}
 
 			ib_query->trans->affected_rows = affected_rows;
@@ -1007,6 +1009,16 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, 
 			}
 		default:
 			RETVAL_TRUE;
+	}
+
+	if (ib_query->out_sqlda) { /* output variables in select, select for update */
+		ib_query->has_more_rows = 1;
+		ib_query->is_open = 1;
+
+		RETVAL_RES(ib_query->res);
+		Z_TRY_ADDREF_P(return_value);
+
+		return SUCCESS;
 	}
 
 	rv = SUCCESS;
@@ -1173,6 +1185,39 @@ PHP_FUNCTION(ibase_affected_rows)
 		}
 	}
 	RETURN_LONG(trans->affected_rows);
+}
+/* }}} */
+
+/* {{{ proto int ibase_query_affected_rows(resource query)
+   Returns the number of rows inserted, updated or deleted by the last execution of the query.
+   Unlike ibase_affected_rows() this asks the server each time, so it also counts statements
+   Firebird 5 describes as SELECT, such as UPDATE ... RETURNING. */
+PHP_FUNCTION(ibase_query_affected_rows)
+{
+	zval *query_arg;
+	ibase_query *ib_query;
+	unsigned long affected_rows;
+
+	RESET_ERRMSG;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r", &query_arg) == FAILURE) {
+		return;
+	}
+
+	if (_php_ibase_fetch_query_res(query_arg, &ib_query)) {
+		RETURN_FALSE;
+	}
+
+	if (!ib_query->stmt) {
+		RETURN_LONG(0);
+	}
+
+	if (_php_ibase_stmt_affected_rows(&ib_query->stmt, &affected_rows)) {
+		_php_ibase_error();
+		RETURN_FALSE;
+	}
+
+	RETURN_LONG(affected_rows);
 }
 /* }}} */
 
