@@ -163,7 +163,7 @@ void _php_ibase_error(void) /* {{{ */
 
 	IBG(sql_code) = isc_sqlcode(IB_STATUS);
 
-	while ((s - IBG(errmsg)) < MAX_ERRMSG && fb_interpret(s, MAX_ERRMSG - strlen(IBG(errmsg)) - 1, &statusp)) {
+	while ((s - IBG(errmsg)) < MAX_ERRMSG && fb_interpret(s, (unsigned int)(MAX_ERRMSG - strlen(IBG(errmsg)) - 1), &statusp)) {
 		strcat(IBG(errmsg), " ");
 		s = IBG(errmsg) + strlen(IBG(errmsg));
 	}
