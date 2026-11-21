@@ -160,6 +160,7 @@ extern "C" void fbu_encode_time_tz(void *master_ptr, ISC_TIME_TZ* timeTz, unsign
 	Firebird::IStatus* status = master->getStatus();
 	Firebird::CheckStatusWrapper st(status);
 	util->encodeTimeTz(&st, timeTz, hours, minutes, seconds, fractions, timeZone);
+	status->dispose();
 }
 
 extern "C" void fbu_encode_timestamp_tz(void *master_ptr, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone)
@@ -169,6 +170,7 @@ extern "C" void fbu_encode_timestamp_tz(void *master_ptr, ISC_TIMESTAMP_TZ* time
 	Firebird::IStatus* status = master->getStatus();
 	Firebird::CheckStatusWrapper st(status);
 	util->encodeTimeStampTz(&st, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZone);
+	status->dispose();
 }
 
 /* Decodes a time with time zone into its time components. */
@@ -181,6 +183,7 @@ extern "C" void fbu_decode_time_tz(void *master_ptr, const ISC_TIME_TZ* timeTz, 
 	Firebird::CheckStatusWrapper st(status);
 	util->decodeTimeTz(&st, timeTz, hours, minutes, seconds, fractions,
 						timeZoneBufferLength, timeZoneBuffer);
+	status->dispose();
 }
 
 /* Decodes a timestamp with time zone into its date and time components */
@@ -196,6 +199,7 @@ extern "C" void fbu_decode_timestamp_tz(void *master_ptr, const ISC_TIMESTAMP_TZ
 	util->decodeTimeStampTz(&st, timestampTz, year, month, day,
 							hours, minutes, seconds, fractions,
 							timeZoneBufferLength, timeZoneBuffer);
+	status->dispose();
 }
 
 extern "C" void fbu_release_statement(void *statement_ptr)
