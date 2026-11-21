@@ -277,6 +277,8 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 	struct tm t;
 	const char *tformat = NULL;
 	int64_t long_min, long_max;
+	zval dateo;
+	php_date_obj *obj;
 
 	assert(ib_query->in_fields_count > 0);
 
@@ -414,6 +416,11 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 					/* Parsed below against ibase.dateformat and friends, see parse_datetime */
 					case IS_STRING:
 						break;
+					case IS_OBJECT:
+						if (instanceof_function(Z_OBJCE_P(b_var), php_date_get_interface_ce())) {
+							goto bind_datetime_obj;
+						}
+						goto cast_to_string;
 					default:
 						goto cast_to_string;
 				}
@@ -673,10 +680,7 @@ cast_to_string:
 
 		continue;
 
-parse_datetime: {
-		zval dateo;
-		php_date_obj *obj;
-
+parse_datetime:
 		/*
 		 * No format configured for this type: don't try to parse at all, just hand
 		 * the string to Firebird, which accepts its own spellings and reports what
@@ -698,6 +702,38 @@ parse_datetime: {
 		if (!php_date_initialize(obj, Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), tformat, NULL, FBP_DATE_INIT_FORMAT)) {
 			zval_ptr_dtor(&dateo);
 			goto cast_to_string;
+		}
+		goto encode_datetime;
+
+bind_datetime_obj:
+		/*
+		 * A DateTime or DateTimeImmutable binds its own date, time and zone as they
+		 * are: no format, no string round trip.
+		 */
+		ZVAL_UNDEF(&dateo);
+		obj = Z_PHPDATE_P(b_var);
+		if (!obj->time) {
+			_php_ibase_module_error("Parameter %d: DateTime object is not initialized", i+1);
+			return FAILURE;
+		}
+
+encode_datetime:
+		/*
+		 * Firebird's encode functions and the server don't check the year: one outside
+		 * 1..9999 is stored as garbage. A string goes to Firebird as text instead, which
+		 * rejects it as before; an object can't, so report it here.
+		 */
+		if (sqltype != SQL_TYPE_TIME
+#if FB_API_VER >= 40
+			&& sqltype != SQL_TIME_TZ
+#endif
+			&& (obj->time->y < 1 || obj->time->y > 9999)) {
+			if (Z_TYPE(dateo) != IS_UNDEF) {
+				zval_ptr_dtor(&dateo);
+				goto cast_to_string;
+			}
+			_php_ibase_module_error("Parameter %d: year %lld is out of range 1..9999", i+1, (long long)obj->time->y);
+			return FAILURE;
 		}
 
 		switch (sqltype) {
@@ -752,10 +788,10 @@ parse_datetime: {
 				}
 			} break;
 #endif
-			default: fbp_fatal("BUG: unreachable - only date/time sqltypes goto parse_datetime");
+			default: fbp_fatal("BUG: unreachable - only date/time sqltypes goto encode_datetime");
 		}
+		/* Owned only when parsed from a string; UNDEF for a bound object */
 		zval_ptr_dtor(&dateo);
-} // parse_datetime:
 	} /* for */
 
 	return SUCCESS;
