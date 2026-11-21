@@ -232,7 +232,7 @@ PHP_FUNCTION(ibase_blob_create)
 
 	RESET_ERRMSG;
 
-	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "|r", &link)) {
+	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "|r!", &link)) {
 		RETURN_FALSE;
 	}
 

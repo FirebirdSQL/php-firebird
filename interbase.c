@@ -52,411 +52,18 @@ ZEND_DECLARE_MODULE_GLOBALS(ibase)
 static PHP_GINIT_FUNCTION(ibase);
 static PHP_GSHUTDOWN_FUNCTION(ibase);
 
-/* {{{ arginfo */
-ZEND_BEGIN_ARG_INFO(arginfo_ibase_errmsg, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_ibase_errcode, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_connect, 0, 0, 0)
-	ZEND_ARG_INFO(0, database)
-	ZEND_ARG_INFO(0, username)
-	ZEND_ARG_INFO(0, password)
-	ZEND_ARG_INFO(0, charset)
-	ZEND_ARG_INFO(0, buffers)
-	ZEND_ARG_INFO(0, dialect)
-	ZEND_ARG_INFO(0, role)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_pconnect, 0, 0, 0)
-	ZEND_ARG_INFO(0, database)
-	ZEND_ARG_INFO(0, username)
-	ZEND_ARG_INFO(0, password)
-	ZEND_ARG_INFO(0, charset)
-	ZEND_ARG_INFO(0, buffers)
-	ZEND_ARG_INFO(0, dialect)
-	ZEND_ARG_INFO(0, role)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_close, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_drop_db, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_trans, 0, 0, 0)
-	ZEND_ARG_VARIADIC_INFO(0, trans_args)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_commit, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_rollback, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_commit_ret, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_rollback_ret, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_gen_id, 0, 0, 1)
-	ZEND_ARG_INFO(0, generator)
-	ZEND_ARG_INFO(0, increment)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_blob_create, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_blob_open, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-	ZEND_ARG_INFO(0, blob_id)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_blob_add, 0, 0, 2)
-	ZEND_ARG_INFO(0, blob_handle)
-	ZEND_ARG_INFO(0, data)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_blob_get, 0, 0, 2)
-	ZEND_ARG_INFO(0, blob_handle)
-	ZEND_ARG_INFO(0, len)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_blob_close, 0, 0, 1)
-	ZEND_ARG_INFO(0, blob_handle)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_blob_cancel, 0, 0, 1)
-	ZEND_ARG_INFO(0, blob_handle)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_blob_info, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-	ZEND_ARG_INFO(0, blob_id)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_blob_echo, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-	ZEND_ARG_INFO(0, blob_id)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_blob_import, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-	ZEND_ARG_INFO(0, file)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_query, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-	ZEND_ARG_INFO(0, query)
-	ZEND_ARG_VARIADIC_INFO(0, bind_arg)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_affected_rows, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_query_affected_rows, 0, 0, 1)
-	ZEND_ARG_INFO(0, query)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_fetch_row, 0, 0, 1)
-	ZEND_ARG_INFO(0, result)
-	ZEND_ARG_INFO(0, fetch_flags)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_fetch_assoc, 0, 0, 1)
-	ZEND_ARG_INFO(0, result)
-	ZEND_ARG_INFO(0, fetch_flags)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_fetch_object, 0, 0, 1)
-	ZEND_ARG_INFO(0, result)
-	ZEND_ARG_INFO(0, fetch_flags)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_name_result, 0, 0, 2)
-	ZEND_ARG_INFO(0, result)
-	ZEND_ARG_INFO(0, name)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_free_result, 0, 0, 1)
-	ZEND_ARG_INFO(0, result)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_prepare, 0, 0, 0)
-	ZEND_ARG_INFO(0, link_identifier)
-	ZEND_ARG_INFO(0, query)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_execute, 0, 0, 1)
-	ZEND_ARG_INFO(0, query)
-	ZEND_ARG_VARIADIC_INFO(0, bind_arg)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_free_query, 0, 0, 1)
-	ZEND_ARG_INFO(0, query)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_num_fields, 0, 0, 1)
-	ZEND_ARG_INFO(0, query_result)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_field_info, 0, 0, 2)
-	ZEND_ARG_INFO(0, query_result)
-	ZEND_ARG_INFO(0, field_number)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_num_params, 0, 0, 1)
-	ZEND_ARG_INFO(0, query)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_param_info, 0, 0, 2)
-	ZEND_ARG_INFO(0, query)
-	ZEND_ARG_INFO(0, field_number)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_add_user, 0, 0, 3)
-	ZEND_ARG_INFO(0, service_handle)
-	ZEND_ARG_INFO(0, user_name)
-	ZEND_ARG_INFO(0, password)
-	ZEND_ARG_INFO(0, first_name)
-	ZEND_ARG_INFO(0, middle_name)
-	ZEND_ARG_INFO(0, last_name)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_modify_user, 0, 0, 3)
-	ZEND_ARG_INFO(0, service_handle)
-	ZEND_ARG_INFO(0, user_name)
-	ZEND_ARG_INFO(0, password)
-	ZEND_ARG_INFO(0, first_name)
-	ZEND_ARG_INFO(0, middle_name)
-	ZEND_ARG_INFO(0, last_name)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_delete_user, 0, 0, 3)
-	ZEND_ARG_INFO(0, service_handle)
-	ZEND_ARG_INFO(0, user_name)
-	ZEND_ARG_INFO(0, password)
-	ZEND_ARG_INFO(0, first_name)
-	ZEND_ARG_INFO(0, middle_name)
-	ZEND_ARG_INFO(0, last_name)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_service_attach, 0, 0, 0)
-	ZEND_ARG_INFO(0, host)
-	ZEND_ARG_INFO(0, dba_username)
-	ZEND_ARG_INFO(0, dba_password)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_service_detach, 0, 0, 1)
-	ZEND_ARG_INFO(0, service_handle)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_backup, 0, 0, 3)
-	ZEND_ARG_INFO(0, service_handle)
-	ZEND_ARG_INFO(0, source_db)
-	ZEND_ARG_INFO(0, dest_file)
-	ZEND_ARG_INFO(0, options)
-	ZEND_ARG_INFO(0, verbose)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_restore, 0, 0, 3)
-	ZEND_ARG_INFO(0, service_handle)
-	ZEND_ARG_INFO(0, source_file)
-	ZEND_ARG_INFO(0, dest_db)
-	ZEND_ARG_INFO(0, options)
-	ZEND_ARG_INFO(0, verbose)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_maintain_db, 0, 0, 3)
-	ZEND_ARG_INFO(0, service_handle)
-	ZEND_ARG_INFO(0, db)
-	ZEND_ARG_INFO(0, action)
-	ZEND_ARG_INFO(0, argument)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_db_info, 0, 0, 3)
-	ZEND_ARG_INFO(0, service_handle)
-	ZEND_ARG_INFO(0, db)
-	ZEND_ARG_INFO(0, action)
-	ZEND_ARG_INFO(0, argument)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_server_info, 0, 0, 2)
-	ZEND_ARG_INFO(0, service_handle)
-	ZEND_ARG_INFO(0, action)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_wait_event, 0, 0, 1)
-	ZEND_ARG_INFO(0, link_identifier)
-	ZEND_ARG_INFO(0, event)
-	ZEND_ARG_INFO(0, event2)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_set_event_handler, 0, 0, 2)
-	ZEND_ARG_INFO(0, link_identifier)
-	ZEND_ARG_INFO(0, handler)
-	ZEND_ARG_INFO(0, event)
-	ZEND_ARG_INFO(0, event2)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_ibase_free_event_handler, 0, 0, 1)
-	ZEND_ARG_INFO(0, event)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_ibase_get_client_version, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_ibase_get_client_major_version, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_ibase_get_client_minor_version, 0)
-ZEND_END_ARG_INFO()
-/* }}} */
+/* Generated from interbase.stub.php by build/gen_stub.php */
+#if PHP_VERSION_ID >= 80000
+# include "interbase_arginfo.h"
+#else
+# include "interbase_legacy_arginfo.h"
+#endif
 
 /* {{{ extension definition structures */
-static const zend_function_entry ibase_functions[] = {
-	PHP_FE(ibase_connect, 		arginfo_ibase_connect)
-	PHP_FE(ibase_pconnect, 		arginfo_ibase_pconnect)
-	PHP_FE(ibase_close, 		arginfo_ibase_close)
-	PHP_FE(ibase_drop_db, 		arginfo_ibase_drop_db)
-	PHP_FE(ibase_query, 		arginfo_ibase_query)
-	PHP_FE(ibase_fetch_row, 	arginfo_ibase_fetch_row)
-	PHP_FE(ibase_fetch_assoc, 	arginfo_ibase_fetch_assoc)
-	PHP_FE(ibase_fetch_object, 	arginfo_ibase_fetch_object)
-	PHP_FE(ibase_free_result, 	arginfo_ibase_free_result)
-	PHP_FE(ibase_name_result, 	arginfo_ibase_name_result)
-	PHP_FE(ibase_prepare, 		arginfo_ibase_prepare)
-	PHP_FE(ibase_execute, 		arginfo_ibase_execute)
-	PHP_FE(ibase_free_query, 	arginfo_ibase_free_query)
-	PHP_FE(ibase_gen_id, 		arginfo_ibase_gen_id)
-	PHP_FE(ibase_num_fields, 	arginfo_ibase_num_fields)
-	PHP_FE(ibase_num_params, 	arginfo_ibase_num_params)
-	PHP_FE(ibase_affected_rows, arginfo_ibase_affected_rows)
-	PHP_FE(ibase_query_affected_rows, arginfo_ibase_query_affected_rows)
-	PHP_FE(ibase_field_info, 	arginfo_ibase_field_info)
-	PHP_FE(ibase_param_info, 	arginfo_ibase_param_info)
-
-	PHP_FE(ibase_trans, 		arginfo_ibase_trans)
-	PHP_FE(ibase_commit, 		arginfo_ibase_commit)
-	PHP_FE(ibase_rollback, 		arginfo_ibase_rollback)
-	PHP_FE(ibase_commit_ret, 	arginfo_ibase_commit_ret)
-	PHP_FE(ibase_rollback_ret, 	arginfo_ibase_rollback_ret)
-
-	PHP_FE(ibase_blob_info, 	arginfo_ibase_blob_info)
-	PHP_FE(ibase_blob_create, 	arginfo_ibase_blob_create)
-	PHP_FE(ibase_blob_add, 		arginfo_ibase_blob_add)
-	PHP_FE(ibase_blob_cancel, 	arginfo_ibase_blob_cancel)
-	PHP_FE(ibase_blob_close, 	arginfo_ibase_blob_close)
-	PHP_FE(ibase_blob_open, 	arginfo_ibase_blob_open)
-	PHP_FE(ibase_blob_get, 		arginfo_ibase_blob_get)
-	PHP_FE(ibase_blob_echo, 	arginfo_ibase_blob_echo)
-	PHP_FE(ibase_blob_import, 	arginfo_ibase_blob_import)
-	PHP_FE(ibase_errmsg, 		arginfo_ibase_errmsg)
-	PHP_FE(ibase_errcode, 		arginfo_ibase_errcode)
-
-	PHP_FE(ibase_add_user, 		arginfo_ibase_add_user)
-	PHP_FE(ibase_modify_user, 	arginfo_ibase_modify_user)
-	PHP_FE(ibase_delete_user, 	arginfo_ibase_delete_user)
-
-	PHP_FE(ibase_service_attach, arginfo_ibase_service_attach)
-	PHP_FE(ibase_service_detach, arginfo_ibase_service_detach)
-	PHP_FE(ibase_backup, 		arginfo_ibase_backup)
-	PHP_FE(ibase_restore, 		arginfo_ibase_restore)
-	PHP_FE(ibase_maintain_db, 	arginfo_ibase_maintain_db)
-	PHP_FE(ibase_db_info, 		arginfo_ibase_db_info)
-	PHP_FE(ibase_server_info, 	arginfo_ibase_server_info)
-
-	PHP_FE(ibase_wait_event, 			arginfo_ibase_wait_event)
-	PHP_FE(ibase_set_event_handler, 	arginfo_ibase_set_event_handler)
-	PHP_FE(ibase_free_event_handler, 	arginfo_ibase_free_event_handler)
-
-	PHP_FE(ibase_get_client_version, arginfo_ibase_get_client_version)
-	PHP_FE(ibase_get_client_major_version, arginfo_ibase_get_client_major_version)
-	PHP_FE(ibase_get_client_minor_version, arginfo_ibase_get_client_minor_version)
-
-	/**
-	* These aliases are provided in order to maintain forward compatibility. As Firebird
-	* and InterBase are developed independently, functionality might be different between
-	* the two branches in future versions.
-	* Firebird users should use the aliases, so future InterBase-specific changes will
-	* not affect their code
-	*/
-	PHP_FALIAS(fbird_connect,		ibase_connect, 		arginfo_ibase_connect)
-	PHP_FALIAS(fbird_pconnect,		ibase_pconnect, 	arginfo_ibase_pconnect)
-	PHP_FALIAS(fbird_close,			ibase_close, 		arginfo_ibase_close)
-	PHP_FALIAS(fbird_drop_db,		ibase_drop_db, 		arginfo_ibase_drop_db)
-	PHP_FALIAS(fbird_query,			ibase_query, 		arginfo_ibase_query)
-	PHP_FALIAS(fbird_fetch_row,		ibase_fetch_row, 	arginfo_ibase_fetch_row)
-	PHP_FALIAS(fbird_fetch_assoc,	ibase_fetch_assoc, 	arginfo_ibase_fetch_assoc)
-	PHP_FALIAS(fbird_fetch_object,	ibase_fetch_object, arginfo_ibase_fetch_object)
-	PHP_FALIAS(fbird_free_result,	ibase_free_result, 	arginfo_ibase_free_result)
-	PHP_FALIAS(fbird_name_result,	ibase_name_result, 	arginfo_ibase_name_result)
-	PHP_FALIAS(fbird_prepare,		ibase_prepare, 		arginfo_ibase_prepare)
-	PHP_FALIAS(fbird_execute,		ibase_execute, 		arginfo_ibase_execute)
-	PHP_FALIAS(fbird_free_query,	ibase_free_query, 	arginfo_ibase_free_query)
-	PHP_FALIAS(fbird_gen_id,		ibase_gen_id, 		arginfo_ibase_gen_id)
-	PHP_FALIAS(fbird_num_fields,	ibase_num_fields, 	arginfo_ibase_num_fields)
-	PHP_FALIAS(fbird_num_params,	ibase_num_params, 	arginfo_ibase_num_params)
-	PHP_FALIAS(fbird_affected_rows,	ibase_affected_rows, arginfo_ibase_affected_rows)
-	PHP_FALIAS(fbird_query_affected_rows,	ibase_query_affected_rows, arginfo_ibase_query_affected_rows)
-	PHP_FALIAS(fbird_field_info,	ibase_field_info, 	arginfo_ibase_field_info)
-	PHP_FALIAS(fbird_param_info,	ibase_param_info, 	arginfo_ibase_param_info)
-
-	PHP_FALIAS(fbird_trans,			ibase_trans, 		arginfo_ibase_trans)
-	PHP_FALIAS(fbird_commit,		ibase_commit, 		arginfo_ibase_commit)
-	PHP_FALIAS(fbird_rollback,		ibase_rollback, 	arginfo_ibase_rollback)
-	PHP_FALIAS(fbird_commit_ret,	ibase_commit_ret, 	arginfo_ibase_commit_ret)
-	PHP_FALIAS(fbird_rollback_ret,	ibase_rollback_ret, arginfo_ibase_rollback_ret)
-
-	PHP_FALIAS(fbird_blob_info,		ibase_blob_info, 	arginfo_ibase_blob_info)
-	PHP_FALIAS(fbird_blob_create,	ibase_blob_create, 	arginfo_ibase_blob_create)
-	PHP_FALIAS(fbird_blob_add,		ibase_blob_add, 	arginfo_ibase_blob_add)
-	PHP_FALIAS(fbird_blob_cancel,	ibase_blob_cancel, 	arginfo_ibase_blob_cancel)
-	PHP_FALIAS(fbird_blob_close,	ibase_blob_close, 	arginfo_ibase_blob_close)
-	PHP_FALIAS(fbird_blob_open,		ibase_blob_open, 	arginfo_ibase_blob_open)
-	PHP_FALIAS(fbird_blob_get,		ibase_blob_get, 	arginfo_ibase_blob_get)
-	PHP_FALIAS(fbird_blob_echo,		ibase_blob_echo, 	arginfo_ibase_blob_echo)
-	PHP_FALIAS(fbird_blob_import,	ibase_blob_import, 	arginfo_ibase_blob_import)
-	PHP_FALIAS(fbird_errmsg,		ibase_errmsg, 		arginfo_ibase_errmsg)
-	PHP_FALIAS(fbird_errcode,		ibase_errcode, 		arginfo_ibase_errcode)
-
-	PHP_FALIAS(fbird_add_user,		ibase_add_user, 	arginfo_ibase_add_user)
-	PHP_FALIAS(fbird_modify_user,	ibase_modify_user, 	arginfo_ibase_modify_user)
-	PHP_FALIAS(fbird_delete_user,	ibase_delete_user, 	arginfo_ibase_delete_user)
-
-	PHP_FALIAS(fbird_service_attach,	ibase_service_attach, arginfo_ibase_service_attach)
-	PHP_FALIAS(fbird_service_detach,	ibase_service_detach, arginfo_ibase_service_detach)
-	PHP_FALIAS(fbird_backup,		ibase_backup, 		arginfo_ibase_backup)
-	PHP_FALIAS(fbird_restore,		ibase_restore, 		arginfo_ibase_restore)
-	PHP_FALIAS(fbird_maintain_db,	ibase_maintain_db, 	arginfo_ibase_maintain_db)
-	PHP_FALIAS(fbird_db_info,		ibase_db_info, 		arginfo_ibase_db_info)
-	PHP_FALIAS(fbird_server_info,	ibase_server_info, 	arginfo_ibase_server_info)
-
-	PHP_FALIAS(fbird_wait_event,	ibase_wait_event, 	arginfo_ibase_wait_event)
-	PHP_FALIAS(fbird_set_event_handler,	ibase_set_event_handler, 	arginfo_ibase_set_event_handler)
-	PHP_FALIAS(fbird_free_event_handler,	ibase_free_event_handler, arginfo_ibase_free_event_handler)
-
-	PHP_FALIAS(fbird_get_client_version, ibase_get_client_version, arginfo_ibase_get_client_version)
-	PHP_FALIAS(fbird_get_client_major_version, ibase_get_client_major_version, arginfo_ibase_get_client_major_version)
-	PHP_FALIAS(fbird_get_client_minor_version, ibase_get_client_minor_version, arginfo_ibase_get_client_minor_version)
-	PHP_FE_END
-};
-
 zend_module_entry ibase_module_entry = {
 	STANDARD_MODULE_HEADER,
 	"interbase",
-	ibase_functions,
+	ext_functions,
 	PHP_MINIT(ibase),
 	PHP_MSHUTDOWN(ibase),
 	NULL,
@@ -1274,11 +881,11 @@ PHP_FUNCTION(ibase_close)
 
 	RESET_ERRMSG;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r", &link_arg) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r!", &link_arg) == FAILURE) {
 		return;
 	}
 
-	if (ZEND_NUM_ARGS() == 0) {
+	if (link_arg == NULL) {
 		link_res = IBG(default_link);
 		CHECK_LINK(link_res);
 		IBG(default_link) = NULL;
@@ -1316,11 +923,11 @@ PHP_FUNCTION(ibase_drop_db)
 
 	RESET_ERRMSG;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r", &link_arg) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r!", &link_arg) == FAILURE) {
 		return;
 	}
 
-	if (ZEND_NUM_ARGS() == 0) {
+	if (link_arg == NULL) {
 		link_res = IBG(default_link);
 		CHECK_LINK(link_res);
 		IBG(default_link) = NULL;
@@ -1592,11 +1199,11 @@ static void _php_ibase_trans_end(INTERNAL_FUNCTION_PARAMETERS, int commit) /* {{
 
 	RESET_ERRMSG;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r", &arg) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r!", &arg) == FAILURE) {
 		return;
 	}
 
-	if (ZEND_NUM_ARGS() == 0) {
+	if (arg == NULL) {
 		ib_link = (ibase_db_link *)zend_fetch_resource2(IBG(default_link), LE_LINK, le_link, le_plink);
 		if (ib_link->tr_list == NULL || ib_link->tr_list->trans == NULL) {
 			/* this link doesn't have a default transaction */
@@ -1696,7 +1303,7 @@ PHP_FUNCTION(ibase_gen_id)
 
 	RESET_ERRMSG;
 
-	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "s|lr", &generator, &gen_len,
+	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "s|lr!", &generator, &gen_len,
 			&inc, &link)) {
 		RETURN_FALSE;
 	}

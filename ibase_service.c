@@ -152,7 +152,7 @@ static void _php_ibase_user(INTERNAL_FUNCTION_PARAMETERS, char operation) /* {{{
 	RESET_ERRMSG;
 
 	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(),
-			(operation == isc_action_svc_delete_user) ? "rs" : "rss|sss",
+			(operation == isc_action_svc_delete_user) ? "rs" : "rss|s!s!s!",
 			&res, &args[0], &args_len[0], &args[1], &args_len[1], &args[2], &args_len[2],
 			&args[3], &args_len[3], &args[4], &args_len[4])) {
 		RETURN_FALSE;

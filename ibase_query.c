@@ -1224,7 +1224,7 @@ PHP_FUNCTION(ibase_affected_rows)
 
 	RESET_ERRMSG;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r", &arg) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|r!", &arg) == FAILURE) {
 		return;
 	}
 
