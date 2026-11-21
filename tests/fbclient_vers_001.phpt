@@ -3,7 +3,6 @@ Get fbclient version
 --SKIPIF--
 <?php
 include("skipif.inc");
-skip_if_ext_lt(61);
 ?>
 --FILE--
 <?php

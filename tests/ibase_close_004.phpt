@@ -5,8 +5,6 @@ ibase_close(): Basic test
 
 include(__DIR__."/skipif.inc");
 
-// See also: tests/ibase_close_001.phpt
-skip_if_ext_lt(61);
 skip_if_php_lt(8);
 
 ?>

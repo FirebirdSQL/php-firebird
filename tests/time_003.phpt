@@ -5,7 +5,6 @@ IBASE_UNIXTIME: ignore IBASE_UNIXTIME flag for TIME fields
 include("skipif.inc");
 
 // See also: tests/time_001.phpt
-skip_if_ext_lt(61);
 
 ?>
 --FILE--

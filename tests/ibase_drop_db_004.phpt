@@ -26,4 +26,5 @@ var_dump(ibase_drop_db(NULL));
 resource(%d) of type (Firebird/InterBase link)
 bool(true)
 
-Fatal error: Uncaught TypeError: ibase_drop_db(): Argument #1 ($link_identifier) must be of type resource, null given in %a
+Warning: ibase_drop_db(): invalid database handle (no active connection) %s
+bool(false)

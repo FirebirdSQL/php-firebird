@@ -26,4 +26,4 @@ var_dump(ibase_drop_db(1));
 resource(%d) of type (Firebird/InterBase link)
 bool(true)
 
-Fatal error: Uncaught TypeError: ibase_drop_db(): Argument #1 ($link_identifier) must be of type resource, int given in %a
+Fatal error: Uncaught TypeError: ibase_drop_db(): Argument #1 ($link_identifier) must be of type resource or null, int given in %a

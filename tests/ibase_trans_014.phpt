@@ -5,9 +5,7 @@ ibase_trans(): Basic test
 
 include("skipif.inc");
 
-// See also tests/ibase_trans_001.phpt
 // See also tests/ibase_trans_015.phpt
-skip_if_ext_lt(61);
 skip_if_php_lt(8);
 
 ?>
