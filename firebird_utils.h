@@ -50,8 +50,8 @@ unsigned fbu_get_client_version(void *master_ptr);
 
 
 #if FB_API_VER >= 40
-void fbu_encode_time_tz(void *master_ptr, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone);
-void fbu_encode_timestamp_tz(void *master_ptr, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions,
+ISC_STATUS fbu_encode_time_tz(void *master_ptr, ISC_STATUS* isc_status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone);
+ISC_STATUS fbu_encode_timestamp_tz(void *master_ptr, ISC_STATUS* isc_status, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions,
 	const char* timeZone);
 void fbu_decode_time_tz(void *master_ptr, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
 	unsigned timeZoneBufferLength, char* timeZoneBuffer);

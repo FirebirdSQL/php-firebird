@@ -713,14 +713,22 @@ parse_datetime: {
 				break;
 #if FB_API_VER >= 40
 			case SQL_TIME_TZ:
-				fbu_encode_time_tz(IBG(master_instance), &buf->val.tmval_tz, (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us), obj->time->tz_info->name);
+				if (fbu_encode_time_tz(IBG(master_instance), IB_STATUS, &buf->val.tmval_tz, (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us), obj->time->tz_info->name)) {
+					zval_ptr_dtor(&dateo);
+					_php_ibase_error();
+					return FAILURE;
+				}
 				break;
 			case SQL_TIMESTAMP_TZ:
-				fbu_encode_timestamp_tz(IBG(master_instance), &buf->val.tsval_tz,
+				if (fbu_encode_timestamp_tz(IBG(master_instance), IB_STATUS, &buf->val.tsval_tz,
 					(unsigned)obj->time->y, (unsigned)obj->time->m, (unsigned)obj->time->d,
 					(unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us),
 					obj->time->tz_info->name
-				);
+				)) {
+					zval_ptr_dtor(&dateo);
+					_php_ibase_error();
+					return FAILURE;
+				}
 				break;
 #endif
 			default: fbp_fatal("BUG: unreachable - only date/time sqltypes goto parse_datetime");

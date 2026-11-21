@@ -153,24 +153,39 @@ static void fbu_copy_status(const ISC_STATUS* from, ISC_STATUS* to, size_t maxLe
 	}
 }
 
-extern "C" void fbu_encode_time_tz(void *master_ptr, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone)
+/*
+ * The encoders return non-zero on error, with the error copied into isc_status.
+ * The copied message strings point into the status object, so on error it is
+ * deliberately not disposed: the caller still has to read them.
+ */
+static ISC_STATUS fbu_encode_result(Firebird::IStatus* status, ISC_STATUS* isc_status)
+{
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS) {
+		fbu_copy_status((const ISC_STATUS*)status->getErrors(), isc_status, 20);
+		return isc_status[1];
+	}
+	status->dispose();
+	return 0;
+}
+
+extern "C" ISC_STATUS fbu_encode_time_tz(void *master_ptr, ISC_STATUS* isc_status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone)
 {
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
 	Firebird::IStatus* status = master->getStatus();
 	Firebird::CheckStatusWrapper st(status);
 	util->encodeTimeTz(&st, timeTz, hours, minutes, seconds, fractions, timeZone);
-	status->dispose();
+	return fbu_encode_result(status, isc_status);
 }
 
-extern "C" void fbu_encode_timestamp_tz(void *master_ptr, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone)
+extern "C" ISC_STATUS fbu_encode_timestamp_tz(void *master_ptr, ISC_STATUS* isc_status, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone)
 {
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
 	Firebird::IStatus* status = master->getStatus();
 	Firebird::CheckStatusWrapper st(status);
 	util->encodeTimeStampTz(&st, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZone);
-	status->dispose();
+	return fbu_encode_result(status, isc_status);
 }
 
 /* Decodes a time with time zone into its time components. */
