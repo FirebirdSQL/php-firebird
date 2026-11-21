@@ -34,7 +34,7 @@ ibase_connect($test_base);
 })();
 
 ?>
---EXPECT--
+--EXPECTF--
 Array
 (
     [T] => 13:45:59 Europe/Riga
@@ -42,6 +42,6 @@ Array
 )
 Array
 (
-    [T] => 13.45.59 +02:00
+    [T] => 13.45.59 +0%r[23]%r:00
     [TS] => 06/11/2025 13.45.59 +02:00
 )
