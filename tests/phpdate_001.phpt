@@ -1,5 +1,5 @@
 --TEST--
-IBASE_PHPDATE returns DateTime objects; a date-less column gets the epoch date
+IBASE_PHPDATE returns DateTime objects; a date-less column gets today's date
 --SKIPIF--
 <?php include("skipif.inc"); ?>
 --FILE--
@@ -11,6 +11,8 @@ require("interbase.inc");
 ibase_connect($test_base);
 
 (function() {
+    date_default_timezone_set('UTC');
+
     ibase_query("CREATE TABLE TTEST (D DATE, T TIME, TS TIMESTAMP)");
     ibase_commit();
 
@@ -30,9 +32,9 @@ ibase_connect($test_base);
 })();
 
 ?>
---EXPECT--
+--EXPECTF--
 D   DateTime 2025-11-06 00:00:00 +00:00
-T   DateTime 1970-01-01 13:45:59 +00:00
+T   DateTime %r\d{4}-\d{2}-\d{2}%r 13:45:59 +00:00
 TS  DateTime 2025-11-06 13:45:59 +00:00
 bool(true)
 string(10) "2025-11-06"
