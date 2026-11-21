@@ -518,7 +518,7 @@ PHP_FUNCTION(ibase_blob_import)
 {
 	zval *link = NULL, *file;
 	int size;
-	unsigned short b;
+	ssize_t b;
 	ibase_blob ib_blob = { 0, 0 };
 	ibase_db_link *ib_link;
 	ibase_trans *trans = NULL;
@@ -542,8 +542,8 @@ PHP_FUNCTION(ibase_blob_import)
 			break;
 		}
 
-		for (size = 0; (b = php_stream_read(stream, bl_data, sizeof(bl_data))); size += b) {
-			if (isc_put_segment(IB_STATUS, &ib_blob.bl_handle, b, bl_data)) {
+		for (size = 0; (b = php_stream_read(stream, bl_data, sizeof(bl_data))) > 0; size += b) {
+			if (isc_put_segment(IB_STATUS, &ib_blob.bl_handle, (unsigned short)b, bl_data)) {
 				break;
 			}
 		}
