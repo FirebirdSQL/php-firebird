@@ -1205,6 +1205,9 @@ static void _php_ibase_trans_end(INTERNAL_FUNCTION_PARAMETERS, int commit) /* {{
 
 	if (arg == NULL) {
 		ib_link = (ibase_db_link *)zend_fetch_resource2(IBG(default_link), LE_LINK, le_link, le_plink);
+		if (ib_link == NULL) {
+			RETURN_FALSE;
+		}
 		if (ib_link->tr_list == NULL || ib_link->tr_list->trans == NULL) {
 			/* this link doesn't have a default transaction */
 			_php_ibase_module_error("Default link has no default transaction");
@@ -1218,6 +1221,9 @@ static void _php_ibase_trans_end(INTERNAL_FUNCTION_PARAMETERS, int commit) /* {{
 			res_id = Z_RES_P(arg)->handle;
 		} else {
 			ib_link = (ibase_db_link *)zend_fetch_resource2_ex(arg, LE_LINK, le_link, le_plink);
+			if (ib_link == NULL) {
+				RETURN_FALSE;
+			}
 
 			if (ib_link->tr_list == NULL || ib_link->tr_list->trans == NULL) {
 				/* this link doesn't have a default transaction */
