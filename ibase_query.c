@@ -81,6 +81,7 @@ static int _php_ibase_fetch_query_res(zval *from, ibase_query **ib_query);
 static int _php_ibase_alloc_ht_aliases(ibase_query *ib_query);
 static void _php_ibase_alloc_ht_ind(ibase_query *ib_query);
 static void _php_ibase_free_query_impl(INTERNAL_FUNCTION_PARAMETERS, int as_result);
+static zend_string *_php_ibase_date_format(php_date_obj *obj, const char *format, size_t format_len);
 
 static void _php_ibase_free_xsqlda(XSQLDA *sqlda) /* {{{ */
 {
@@ -713,23 +714,43 @@ parse_datetime: {
 				break;
 #if FB_API_VER >= 40
 			case SQL_TIME_TZ:
-				if (fbu_encode_time_tz(IBG(master_instance), IB_STATUS, &buf->val.tmval_tz, (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us), obj->time->tz_info->name)) {
+			case SQL_TIMESTAMP_TZ: {
+				/*
+				 * Only a region (Europe/Riga) has a name. An offset (+02:00) or an
+				 * abbreviation (EET) leaves tz_info at PHP's default zone, so send those
+				 * as the offset PHP computes for them, which Firebird accepts as a zone.
+				 */
+				zend_string *zone_str = NULL;
+				const char *zone;
+				ISC_STATUS err;
+
+				if (obj->time->zone_type == TIMELIB_ZONETYPE_ID) {
+					zone = obj->time->tz_info->name;
+				} else {
+					zone_str = _php_ibase_date_format(obj, ZEND_STRL("P"));
+					zone = ZSTR_VAL(zone_str);
+				}
+
+				if (sqltype == SQL_TIME_TZ) {
+					err = fbu_encode_time_tz(IBG(master_instance), IB_STATUS, &buf->val.tmval_tz,
+						(unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us),
+						zone);
+				} else {
+					err = fbu_encode_timestamp_tz(IBG(master_instance), IB_STATUS, &buf->val.tsval_tz,
+						(unsigned)obj->time->y, (unsigned)obj->time->m, (unsigned)obj->time->d,
+						(unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us),
+						zone);
+				}
+
+				if (zone_str) {
+					zend_string_release(zone_str);
+				}
+				if (err) {
 					zval_ptr_dtor(&dateo);
 					_php_ibase_error();
 					return FAILURE;
 				}
-				break;
-			case SQL_TIMESTAMP_TZ:
-				if (fbu_encode_timestamp_tz(IBG(master_instance), IB_STATUS, &buf->val.tsval_tz,
-					(unsigned)obj->time->y, (unsigned)obj->time->m, (unsigned)obj->time->d,
-					(unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us),
-					obj->time->tz_info->name
-				)) {
-					zval_ptr_dtor(&dateo);
-					_php_ibase_error();
-					return FAILURE;
-				}
-				break;
+			} break;
 #endif
 			default: fbp_fatal("BUG: unreachable - only date/time sqltypes goto parse_datetime");
 		}
@@ -1291,6 +1312,27 @@ static void _php_ibase_date_set_timestamp(php_date_obj *obj, zend_long ts, unsig
 	obj->time->us = us;
 }
 
+/* DateTime::format() on a date object; the caller owns the returned string. */
+static zend_string *_php_ibase_date_format(php_date_obj *obj, const char *format, size_t format_len)
+{
+#if PHP_VERSION_ID >= 80400
+	return php_format_date_obj(format, format_len, obj);
+#else
+	zval format_zval, retval;
+
+	ZVAL_STRINGL(&format_zval, format, format_len);
+	#if PHP_MAJOR_VERSION >= 8
+		zend_call_method_with_1_params(&obj->std, php_date_get_date_ce(), NULL, "format", &retval, &format_zval);
+	#else
+		zval obj_zv;
+		ZVAL_OBJ(&obj_zv, &obj->std);
+		zend_call_method_with_1_params(&obj_zv, php_date_get_date_ce(), NULL, "format", &retval, &format_zval);
+	#endif
+	zval_ptr_dtor(&format_zval);
+	return Z_STR(retval);
+#endif
+}
+
 static int _php_ibase_var_zval(ibase_query *ib_query, zval *val, void *data, int type, int len, /* {{{ */
 	int scale, size_t flag)
 {
@@ -1568,20 +1610,7 @@ _set_datetime:
 				/* no format configured for this type */
 				ZVAL_EMPTY_STRING(val);
 			} else {
-				#if PHP_VERSION_ID >= 80400
-					ZVAL_STR(val, php_format_date_obj(t_format, strlen(t_format), t_date_obj));
-				#else
-					zval format_zval, retval;
-
-					ZVAL_STRING(&format_zval, t_format);
-					#if PHP_MAJOR_VERSION >= 8
-						zend_call_method_with_1_params(Z_OBJ(t_date_zv), php_date_get_date_ce(), NULL, "format", &retval, &format_zval);
-					#else
-						zend_call_method_with_1_params(&t_date_zv, php_date_get_date_ce(), NULL, "format", &retval, &format_zval);
-					#endif
-					zval_ptr_dtor(&format_zval);
-					ZVAL_STR(val, Z_STR(retval));
-				#endif
+				ZVAL_STR(val, _php_ibase_date_format(t_date_obj, t_format, strlen(t_format)));
 			}
 			zval_ptr_dtor(&t_date_zv);
 			break;
