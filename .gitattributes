@@ -1,0 +1,5 @@
+# Store text files with LF in the repository and check them out with LF
+* text=auto eol=lf
+
+# cmd.exe mishandles labels (goto/call) in LF-only batch files
+*.bat text eol=crlf
