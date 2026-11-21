@@ -84,6 +84,16 @@ extern "C" unsigned fbu_get_client_version(void *master_ptr)
 	return util->getClientVersion();
 }
 
+extern "C" void *fbu_new_status(void *master_ptr)
+{
+	return ((Firebird::IMaster*)master_ptr)->getStatus();
+}
+
+extern "C" void fbu_dispose_status(void *status_ptr)
+{
+	((Firebird::IStatus*)status_ptr)->dispose();
+}
+
 extern "C" ISC_TIME fbu_encode_time(void *master_ptr, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions)
 {
 	if (!master_ptr) return fbu_encode_time_legacy(hours, minutes, seconds);
@@ -153,10 +163,18 @@ static void fbu_copy_status(const ISC_STATUS* from, ISC_STATUS* to, size_t maxLe
 	}
 }
 
+/* The shared status object, cleared for the next call */
+static Firebird::IStatus* fbu_status()
+{
+	Firebird::IStatus* status = (Firebird::IStatus*)IBG(status_instance);
+	status->init();
+	return status;
+}
+
 /*
  * The encoders return non-zero on error, with the error copied into isc_status.
- * The copied message strings point into the status object, so on error it is
- * deliberately not disposed: the caller still has to read them.
+ * The copied message strings point into the shared status object and stay valid
+ * until the next call that uses it.
  */
 static ISC_STATUS fbu_encode_result(Firebird::IStatus* status, ISC_STATUS* isc_status)
 {
@@ -164,7 +182,6 @@ static ISC_STATUS fbu_encode_result(Firebird::IStatus* status, ISC_STATUS* isc_s
 		fbu_copy_status((const ISC_STATUS*)status->getErrors(), isc_status, 20);
 		return isc_status[1];
 	}
-	status->dispose();
 	return 0;
 }
 
@@ -172,7 +189,7 @@ extern "C" ISC_STATUS fbu_encode_time_tz(void *master_ptr, ISC_STATUS* isc_statu
 {
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
-	Firebird::IStatus* status = master->getStatus();
+	Firebird::IStatus* status = fbu_status();
 	Firebird::CheckStatusWrapper st(status);
 	util->encodeTimeTz(&st, timeTz, hours, minutes, seconds, fractions, timeZone);
 	return fbu_encode_result(status, isc_status);
@@ -182,7 +199,7 @@ extern "C" ISC_STATUS fbu_encode_timestamp_tz(void *master_ptr, ISC_STATUS* isc_
 {
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
-	Firebird::IStatus* status = master->getStatus();
+	Firebird::IStatus* status = fbu_status();
 	Firebird::CheckStatusWrapper st(status);
 	util->encodeTimeStampTz(&st, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZone);
 	return fbu_encode_result(status, isc_status);
@@ -194,11 +211,10 @@ extern "C" void fbu_decode_time_tz(void *master_ptr, const ISC_TIME_TZ* timeTz, 
 {
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
-	Firebird::IStatus* status = master->getStatus();
+	Firebird::IStatus* status = fbu_status();
 	Firebird::CheckStatusWrapper st(status);
 	util->decodeTimeTz(&st, timeTz, hours, minutes, seconds, fractions,
 						timeZoneBufferLength, timeZoneBuffer);
-	status->dispose();
 }
 
 /* Decodes a timestamp with time zone into its date and time components */
@@ -209,12 +225,11 @@ extern "C" void fbu_decode_timestamp_tz(void *master_ptr, const ISC_TIMESTAMP_TZ
 {
 	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
 	Firebird::IUtil* util = master->getUtilInterface();
-	Firebird::IStatus* status = master->getStatus();
+	Firebird::IStatus* status = fbu_status();
 	Firebird::CheckStatusWrapper st(status);
 	util->decodeTimeStampTz(&st, timestampTz, year, month, day,
 							hours, minutes, seconds, fractions,
 							timeZoneBufferLength, timeZoneBuffer);
-	status->dispose();
 }
 
 extern "C" void fbu_release_statement(void *statement_ptr)
@@ -225,8 +240,7 @@ extern "C" void fbu_release_statement(void *statement_ptr)
 
 extern "C" ISC_STATUS fbu_insert_aliases(void *master_ptr, ISC_STATUS* st, ibase_query *ib_query, void *statement_ptr)
 {
-	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
-	Firebird::ThrowStatusWrapper status(master->getStatus());
+	Firebird::ThrowStatusWrapper status(fbu_status());
 	Firebird::IStatement* statement = (Firebird::IStatement *)statement_ptr;
 	Firebird::IMessageMetadata* meta = NULL;
 
@@ -251,16 +265,13 @@ extern "C" ISC_STATUS fbu_insert_aliases(void *master_ptr, ISC_STATUS* st, ibase
 		}
 	}
 
-	status.dispose();
-
 	return 0;
 }
 
 extern "C" ISC_STATUS fbu_insert_field_info(void *master_ptr, ISC_STATUS* st, int is_outvar, unsigned int num,
 	zval *into_array, void *statement_ptr)
 {
-	Firebird::IMaster* master = (Firebird::IMaster*)master_ptr;
-	Firebird::ThrowStatusWrapper status(master->getStatus());
+	Firebird::ThrowStatusWrapper status(fbu_status());
 	Firebird::IStatement* statement = (Firebird::IStatement *)statement_ptr;
 	Firebird::IMessageMetadata* meta = NULL;
 
@@ -289,8 +300,6 @@ extern "C" ISC_STATUS fbu_insert_field_info(void *master_ptr, ISC_STATUS* st, in
 			return st[1];
 		}
 	}
-
-	status.dispose();
 
 	return 0;
 }

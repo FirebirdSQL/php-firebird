@@ -88,6 +88,10 @@ ZEND_BEGIN_MODULE_GLOBALS(ibase)
 	char *timestampformat_tz;
 	void *get_master_interface;
 	void *master_instance;
+	/* One IStatus for every OO API call, reset before each. Its error strings stay
+	 * valid until the next call, the same as the isc_* calls' strings in fbclient's
+	 * own buffer, so IB_STATUS can point into it. */
+	void *status_instance;
 	void *get_statement_interface;
 	int client_version;
 	int client_major_version;

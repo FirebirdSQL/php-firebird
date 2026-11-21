@@ -50,6 +50,7 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(ibase)
 static PHP_GINIT_FUNCTION(ibase);
+static PHP_GSHUTDOWN_FUNCTION(ibase);
 
 /* {{{ arginfo */
 ZEND_BEGIN_ARG_INFO(arginfo_ibase_errmsg, 0)
@@ -464,7 +465,7 @@ zend_module_entry ibase_module_entry = {
 	PHP_INTERBASE_VER_STR,
 	PHP_MODULE_GLOBALS(ibase),
 	PHP_GINIT(ibase),
-	NULL,
+	PHP_GSHUTDOWN(ibase),
 	NULL,
 	STANDARD_MODULE_PROPERTIES_EX
 };
@@ -868,13 +869,25 @@ static PHP_GINIT_FUNCTION(ibase)
 		ibase_globals->client_version = fbu_get_client_version(ibase_globals->master_instance);
 		ibase_globals->client_major_version = (ibase_globals->client_version >> 8) & 0xFF;
 		ibase_globals->client_minor_version = ibase_globals->client_version & 0xFF;
+		ibase_globals->status_instance = fbu_new_status(ibase_globals->master_instance);
 	} else {
 #endif
 		ibase_globals->master_instance = NULL;
+		ibase_globals->status_instance = NULL;
 		ibase_globals->client_version = -1;
 		ibase_globals->client_major_version = -1;
 		ibase_globals->client_minor_version = -1;
 #if FB_API_VER >= 30
+	}
+#endif
+}
+
+static PHP_GSHUTDOWN_FUNCTION(ibase)
+{
+#if FB_API_VER >= 30
+	if (ibase_globals->status_instance) {
+		fbu_dispose_status(ibase_globals->status_instance);
+		ibase_globals->status_instance = NULL;
 	}
 #endif
 }

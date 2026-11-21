@@ -46,6 +46,8 @@ void fbu_decode_date(void *master_ptr, ISC_DATE date, unsigned* year, unsigned* 
 
 #if FB_API_VER >= 30
 unsigned fbu_get_client_version(void *master_ptr);
+void *fbu_new_status(void *master_ptr);
+void fbu_dispose_status(void *status_ptr);
 #endif // FB_API_VER >= 30
 
 
