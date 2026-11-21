@@ -699,7 +699,7 @@ parse_datetime:
 		 * as it was before the rewrite -- it accepts spellings of its own ('2025-11-06' for a
 		 * TIMESTAMP, a trailing time on a DATE) and reports what it cannot read itself.
 		 */
-		if (!php_date_initialize(obj, Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), tformat, NULL, FBP_DATE_INIT_FORMAT)) {
+		if (!php_date_initialize(obj, Z_STRVAL_P(b_var), Z_STRLEN_P(b_var), (char *)tformat, NULL, FBP_DATE_INIT_FORMAT)) {
 			zval_ptr_dtor(&dateo);
 			goto cast_to_string;
 		}
