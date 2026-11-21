@@ -161,6 +161,10 @@ static void _php_ibase_user(INTERNAL_FUNCTION_PARAMETERS, char operation) /* {{{
 	svm = (ibase_service *)zend_fetch_resource_ex(res, "Interbase service manager handle",
 		le_service);
 
+	if (!svm) {
+		RETURN_FALSE;
+	}
+
 	buf[0] = operation;
 
 	for (i = 0; i < sizeof(user_flags); ++i) {
@@ -473,6 +477,10 @@ static void _php_ibase_backup_restore(INTERNAL_FUNCTION_PARAMETERS, char operati
 	svm = (ibase_service *)zend_fetch_resource_ex(res,
 		"Interbase service manager handle", le_service);
 
+	if (!svm) {
+		RETURN_FALSE;
+	}
+
 	/* fill the param buffer */
 	spb_len = slprintf(buf, sizeof(buf), "%c%c%c%c%s%c%c%c%s%c%c%c%c%c",
 		operation, isc_spb_dbname, (char)dblen, (char)(dblen >> 8), db,
@@ -536,6 +544,10 @@ static void _php_ibase_service_action(INTERNAL_FUNCTION_PARAMETERS, char svc_act
 
 	svm = (ibase_service *)zend_fetch_resource_ex(res,
 		"Interbase service manager handle", le_service);
+
+	if (!svm) {
+		RETURN_FALSE;
+	}
 
 	if (svc_action == isc_action_svc_db_stats) {
 		switch (action) {
@@ -642,6 +654,10 @@ PHP_FUNCTION(ibase_server_info)
 
 	svm = (ibase_service *)zend_fetch_resource_ex(res,
 		"Interbase service manager handle", le_service);
+
+	if (!svm) {
+		RETURN_FALSE;
+	}
 
 	_php_ibase_service_query(INTERNAL_FUNCTION_PARAM_PASSTHRU, svm, (char)action);
 }
