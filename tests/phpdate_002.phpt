@@ -36,7 +36,12 @@ ibase_connect($test_base);
         foreach ([$row[1], $row[3]] as $v) {
             // the first format() must agree with one after anything that recomputes
             $first = $v->format($f);
-            $v->getTimestamp();
+            try {
+                $v->getTimestamp();
+            } catch (\Error $e) {
+                // throws on 32-bit for 1900/2500
+            }
+
             echo $first, $first === $v->format($f) ? '' : ' STALE', "\n";
         }
         echo $same_as_php($row[2]->format($f), $times[$row[0]]), "\n";

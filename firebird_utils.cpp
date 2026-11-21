@@ -493,25 +493,31 @@ extern "C" const char* fbu_get_sql_type_name(XSQLVAR *var, char *buf, size_t buf
 	}
 }
 
+/* new DateTimeZone(tzbuff) into o; the caller releases it */
+extern "C" void fbu_init_timezone_object(const char *tzbuff, zval *o)
+{
+	zval tzo_arg;
+
+	ZVAL_STRING(&tzo_arg, tzbuff);
+	object_init_ex(o, php_date_get_timezone_ce());
+	#if PHP_MAJOR_VERSION >= 8
+		zend_call_known_instance_method_with_1_params(
+			Z_OBJCE_P(o)->constructor, Z_OBJ_P(o), NULL, &tzo_arg);
+	#else
+		zend_call_method_with_1_params(o, php_date_get_timezone_ce(), NULL, "__construct", NULL, &tzo_arg);
+	#endif
+	zval_ptr_dtor(&tzo_arg);
+}
+
 extern "C" void fbu_init_date_object(const char *tzbuff, zval *o)
 {
-	zval tzo, tzo_arg;
+	zval tzo;
 
 	php_date_instantiate(php_date_get_date_ce(), o);
 
 	if (tzbuff) {
-		ZVAL_STRING(&tzo_arg, tzbuff);
-
-		object_init_ex(&tzo, php_date_get_timezone_ce());
-		#if PHP_MAJOR_VERSION >= 8
-			zend_call_known_instance_method_with_1_params(
-				Z_OBJCE(tzo)->constructor, Z_OBJ(tzo), NULL, &tzo_arg);
-		#else
-			zend_call_method_with_1_params(&tzo, php_date_get_timezone_ce(), NULL, "__construct", NULL, &tzo_arg);
-		#endif
-
+		fbu_init_timezone_object(tzbuff, &tzo);
 		php_date_initialize(Z_PHPDATE_P(o), "", 0, NULL, &tzo, 0);
-		zval_ptr_dtor(&tzo_arg);
 		zval_ptr_dtor(&tzo);
 	} else {
 		php_date_initialize(Z_PHPDATE_P(o), "", 0, NULL, NULL, 0);

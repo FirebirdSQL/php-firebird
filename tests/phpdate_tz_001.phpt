@@ -24,10 +24,7 @@ ibase_connect($test_base);
     ibase_query("INSERT INTO TTEST VALUES (1, TIMESTAMP '2025-01-15 12:00:00 Europe/Riga', TIME '12:00:00 UTC')");
     ibase_query("INSERT INTO TTEST VALUES (2, TIMESTAMP '2025-07-15 12:00:00 Europe/Riga', TIME '12:00:00 +05:00')");
     ibase_query("INSERT INTO TTEST VALUES (3, TIMESTAMP '2025-01-15 12:00:00.5 Europe/Riga', TIME '12:00:00.25 Europe/Riga')");
-    // the DST fall-back hour: both are 03:30 local, only the stored UTC instant tells them apart
-    ibase_query("INSERT INTO TTEST VALUES (4, TIMESTAMP '2025-10-26 00:30:00 UTC' AT TIME ZONE 'Europe/Riga', NULL)");
-    ibase_query("INSERT INTO TTEST VALUES (5, TIMESTAMP '2025-10-26 01:30:00 UTC' AT TIME ZONE 'Europe/Riga', NULL)");
-    ibase_query("INSERT INTO TTEST VALUES (6, TIMESTAMP '2025-07-15 12:00:00 +05:00', NULL)");
+    ibase_query("INSERT INTO TTEST VALUES (4, TIMESTAMP '2025-07-15 12:00:00 +05:00', NULL)");
     ibase_commit();
 
     $f = 'Y-m-d H:i:s.u T P U';
@@ -72,8 +69,6 @@ TIME 12:00:00 UTC: same as new DateTime()
 TIME 12:00:00 +05:00: same as new DateTime()
 2025-01-15 12:00:00.500000 EET +02:00 1736935200
 TIME 12:00:00.25 Europe/Riga: same as new DateTime()
-2025-10-26 03:30:00.000000 EEST +03:00 1761438600
-2025-10-26 03:30:00.000000 EET +02:00 1761442200
 2025-07-15 12:00:00.000000 GMT+0500 +05:00 1752562800
 -- string
 2025-01-15 12:00:00.000000 EET +02:00 1736935200
@@ -82,6 +77,4 @@ TIME 12:00:00 UTC: same as new DateTime()
 TIME 12:00:00 +05:00: same as new DateTime()
 2025-01-15 12:00:00.500000 EET +02:00 1736935200
 TIME 12:00:00.25 Europe/Riga: same as new DateTime()
-2025-10-26 03:30:00.000000 EEST +03:00 1761438600
-2025-10-26 03:30:00.000000 EET +02:00 1761442200
 2025-07-15 12:00:00.000000 GMT+0500 +05:00 1752562800

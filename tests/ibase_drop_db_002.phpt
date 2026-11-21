@@ -29,5 +29,5 @@ bool(true)
 Warning: ibase_drop_db() expects parameter 1 to be resource, int given in %s on line %d
 NULL
 
-Warning: ibase_drop_db() expects parameter 1 to be resource, null given in %s on line %d
-NULL
+Warning: ibase_drop_db(): invalid database handle (no active connection) %s
+bool(false)

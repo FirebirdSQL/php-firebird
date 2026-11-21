@@ -91,3 +91,32 @@ function test_field_data40(): void {
 	ibase_query("INSERT INTO FIELDS40 (ID) VALUES (1)");
 	dump_table_rows("FIELDS40");
 }
+
+function test_query_affected_rows_single_returning($c): void {
+	ibase_query($c, 'CREATE TABLE PROBE (ID INT, NAME VARCHAR(10))');
+	ibase_commit($c);
+
+	$t = ibase_trans(IBASE_DEFAULT, $c);
+	ibase_query($t, "INSERT INTO PROBE (ID, NAME) VALUES (1, 'a')");
+
+	$statements = [
+		"INSERT INTO PROBE (ID, NAME) VALUES (2, 'b') RETURNING ID",
+		"UPDATE PROBE SET NAME = 'c' WHERE ID = 2 RETURNING NAME",
+		"UPDATE PROBE SET NAME = 'x' WHERE ID = 99 RETURNING NAME",
+		"DELETE FROM PROBE WHERE ID = 2 RETURNING ID",
+	];
+	foreach ($statements as $sql) {
+		echo $sql, "\n";
+		$r = ibase_query($t, $sql);
+		echo "ibase_query_affected_rows(): ", ibase_query_affected_rows($r), "\n";
+		dump_rows($r);
+	}
+
+	$r = ibase_query($t, "SELECT ID, NAME FROM PROBE ORDER BY ID");
+	echo "SELECT\nibase_query_affected_rows(): ", ibase_query_affected_rows($r), "\n";
+
+	$r = ibase_query($t, "SELECT ID, NAME FROM PROBE ORDER BY ID");
+	echo "left:\n";
+	dump_rows($r);
+	ibase_rollback($t);
+}

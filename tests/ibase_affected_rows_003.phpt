@@ -35,32 +35,46 @@ $c = ibase_connect($test_base);
 	foreach ($statements as $sql) {
 		echo $sql, "\n";
 		$r = ibase_query($t, $sql);
-		echo "    affected: ", ibase_affected_rows($t), "\n";
+		echo "ibase_affected_rows(): ", ibase_affected_rows($t), "\n";
 		if (is_resource($r)) {
-			echo "    returned: ", json_encode(ibase_fetch_assoc($r)), "\n";
+			dump_rows($r);
 		}
 	}
 
 	$r = ibase_query($t, "SELECT ID, NAME FROM PROBE ORDER BY ID");
-	while ($row = ibase_fetch_assoc($r)) {
-		echo "left: ", json_encode($row), "\n";
-	}
+	echo "left:\n";
+	dump_rows($r);
 	ibase_rollback($t);
 })($c);
 
 ?>
 --EXPECT--
 INSERT INTO PROBE (ID, NAME) VALUES (1, 'a')
-    affected: 1
+ibase_affected_rows(): 1
 INSERT INTO PROBE (ID, NAME) VALUES (2, 'b') RETURNING ID
-    affected: 1
-    returned: {"ID":2}
+ibase_affected_rows(): 1
+array(1) {
+  ["ID"]=>
+  int(2)
+}
 UPDATE PROBE SET NAME = 'c' WHERE ID = 2 RETURNING NAME
-    affected: 1
-    returned: {"NAME":"c"}
+ibase_affected_rows(): 1
+array(1) {
+  ["NAME"]=>
+  string(1) "c"
+}
 UPDATE PROBE SET NAME = 'd' WHERE ID = 1
-    affected: 1
+ibase_affected_rows(): 1
 DELETE FROM PROBE WHERE ID = 2 RETURNING ID
-    affected: 1
-    returned: {"ID":2}
-left: {"ID":1,"NAME":"d"}
+ibase_affected_rows(): 1
+array(1) {
+  ["ID"]=>
+  int(2)
+}
+left:
+array(2) {
+  ["ID"]=>
+  int(1)
+  ["NAME"]=>
+  string(1) "d"
+}

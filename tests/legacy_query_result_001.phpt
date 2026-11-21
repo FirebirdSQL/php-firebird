@@ -38,24 +38,22 @@ $c = ibase_connect($test_base);
 	foreach ($statements as $sql) {
 		echo $sql, "\n";
 		$r = ibase_query($t, $sql);
-		echo "    returned: ", get_resource_type($r), "\n";
-		echo "    query affected: ", ibase_query_affected_rows($r), "\n";
-		echo "    trans affected: ", var_export(ibase_affected_rows($t), true), "\n";
-		echo "    fetch: ", var_export(ibase_fetch_assoc($r), true), "\n";
-		echo "    free: ", var_export(ibase_free_result($r), true), "\n";
+		echo "ibase_query(): ", get_resource_type($r), "\n";
+		echo "ibase_query_affected_rows(): ", ibase_query_affected_rows($r), "\n";
+		echo "ibase_affected_rows(): ", var_export(ibase_affected_rows($t), true), "\n";
+		echo "ibase_fetch_assoc(): ", var_export(ibase_fetch_assoc($r), true), "\n";
+		echo "ibase_free_result(): ", var_export(ibase_free_result($r), true), "\n";
 	}
 
 	echo "prepared UPDATE\n";
 	$q = ibase_prepare($t, "UPDATE PROBE SET NAME = ? WHERE ID = 1");
 	$r = ibase_execute($q, 'z');
-	echo "    returned the query: ", var_export($r === $q, true), "\n";
-	echo "    query affected: ", ibase_query_affected_rows($q), "\n";
+	echo "ibase_execute() returned the query: ", var_export($r === $q, true), "\n";
+	echo "ibase_query_affected_rows(): ", ibase_query_affected_rows($q), "\n";
 
 	$r = ibase_query($t, "SELECT ID, NAME FROM PROBE ORDER BY ID");
-	echo "SELECT\n    query affected: ", ibase_query_affected_rows($r), "\n";
-	while ($row = ibase_fetch_assoc($r)) {
-		echo "    row: ", json_encode($row), "\n";
-	}
+	echo "SELECT\nibase_query_affected_rows(): ", ibase_query_affected_rows($r), "\n";
+	dump_rows($r);
 
 	echo "COMMIT as SQL: ", var_export(ibase_query($t, "COMMIT"), true), "\n";
 })($c);
@@ -64,57 +62,72 @@ $c = ibase_connect($test_base);
 --EXPECT--
 CREATE TABLE: Firebird/InterBase query
 INSERT INTO PROBE (ID, NAME) VALUES (1, 'a')
-    returned: Firebird/InterBase query
-    query affected: 1
-    trans affected: false
-    fetch: false
-    free: true
+ibase_query(): Firebird/InterBase query
+ibase_query_affected_rows(): 1
+ibase_affected_rows(): false
+ibase_fetch_assoc(): false
+ibase_free_result(): true
 INSERT INTO PROBE (ID, NAME) VALUES (2, 'b')
-    returned: Firebird/InterBase query
-    query affected: 1
-    trans affected: false
-    fetch: false
-    free: true
+ibase_query(): Firebird/InterBase query
+ibase_query_affected_rows(): 1
+ibase_affected_rows(): false
+ibase_fetch_assoc(): false
+ibase_free_result(): true
 UPDATE PROBE SET NAME = NAME || 'x'
-    returned: Firebird/InterBase query
-    query affected: 2
-    trans affected: false
-    fetch: false
-    free: true
+ibase_query(): Firebird/InterBase query
+ibase_query_affected_rows(): 2
+ibase_affected_rows(): false
+ibase_fetch_assoc(): false
+ibase_free_result(): true
 UPDATE PROBE SET NAME = 'y' WHERE ID = 99
-    returned: Firebird/InterBase query
-    query affected: 0
-    trans affected: false
-    fetch: false
-    free: true
+ibase_query(): Firebird/InterBase query
+ibase_query_affected_rows(): 0
+ibase_affected_rows(): false
+ibase_fetch_assoc(): false
+ibase_free_result(): true
 DELETE FROM PROBE WHERE ID = 2
-    returned: Firebird/InterBase query
-    query affected: 1
-    trans affected: false
-    fetch: false
-    free: true
+ibase_query(): Firebird/InterBase query
+ibase_query_affected_rows(): 1
+ibase_affected_rows(): false
+ibase_fetch_assoc(): false
+ibase_free_result(): true
 MERGE INTO PROBE
 USING (SELECT 1 ID FROM RDB$DATABASE UNION ALL SELECT 3 FROM RDB$DATABASE) S
 ON PROBE.ID = S.ID
 WHEN MATCHED THEN UPDATE SET NAME = 'm'
 WHEN NOT MATCHED THEN INSERT (ID, NAME) VALUES (S.ID, 'n')
-    returned: Firebird/InterBase query
-    query affected: 2
-    trans affected: false
-    fetch: false
-    free: true
+ibase_query(): Firebird/InterBase query
+ibase_query_affected_rows(): 2
+ibase_affected_rows(): false
+ibase_fetch_assoc(): false
+ibase_free_result(): true
 UPDATE OR INSERT INTO PROBE (ID, NAME) VALUES (5, 'u') MATCHING (ID)
-    returned: Firebird/InterBase query
-    query affected: 1
-    trans affected: false
-    fetch: false
-    free: true
+ibase_query(): Firebird/InterBase query
+ibase_query_affected_rows(): 1
+ibase_affected_rows(): false
+ibase_fetch_assoc(): false
+ibase_free_result(): true
 prepared UPDATE
-    returned the query: true
-    query affected: 1
+ibase_execute() returned the query: true
+ibase_query_affected_rows(): 1
 SELECT
-    query affected: 0
-    row: {"ID":1,"NAME":"z"}
-    row: {"ID":3,"NAME":"n"}
-    row: {"ID":5,"NAME":"u"}
+ibase_query_affected_rows(): 0
+array(2) {
+  ["ID"]=>
+  int(1)
+  ["NAME"]=>
+  string(1) "z"
+}
+array(2) {
+  ["ID"]=>
+  int(3)
+  ["NAME"]=>
+  string(1) "n"
+}
+array(2) {
+  ["ID"]=>
+  int(5)
+  ["NAME"]=>
+  string(1) "u"
+}
 COMMIT as SQL: true

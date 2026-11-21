@@ -1348,6 +1348,15 @@ static void _php_ibase_date_set_timestamp(php_date_obj *obj, zend_long ts, unsig
 	obj->time->us = us;
 }
 
+static void _php_ibase_date_set_timezone(php_date_obj *obj, const char *zone)
+{
+	zval arg;
+
+	fbu_init_timezone_object(zone, &arg);
+	_php_ibase_date_call(obj, ZEND_STRL("settimezone"), 1, &arg);
+	zval_ptr_dtor(&arg);
+}
+
 /* DateTime::format() on a date object; the caller owns the returned string. */
 static zend_string *_php_ibase_date_format(php_date_obj *obj, const char *format, size_t format_len)
 {
@@ -1397,7 +1406,7 @@ static int _php_ibase_var_zval(ibase_query *ib_query, zval *val, void *data, int
 	zval t_date_zv;
 	const char *t_zone;
 	int64_t t_epoch = 0;
-	int date_bearing, legacy_unixtime;
+	int date_bearing, legacy_unixtime, by_moment;
 	ISC_SHORT sqltype = type & ~1;
 
 	switch (sqltype) {
@@ -1575,44 +1584,53 @@ _set_datetime:
 				t_epoch = ((int64_t) utc->timestamp_date - 40587) * 86400
 					+ (int64_t) (utc->timestamp_time / 10000);
 
-#if SIZEOF_ZEND_LONG >= 8
-				/* That is the Unix timestamp already, no object needed. 32-bit builds go
-				 * through getTimestamp() below, which reports an epoch outside
-				 * 1901..2038 rather than wrapping it. */
-				if (flag & PHP_IBASE_UNIXTIME) {
+				/* That is the Unix timestamp already, no object needed. On 32-bit builds
+				 * an epoch outside 1901..2038 goes through getTimestamp() below, which
+				 * reports it rather than wrapping it. */
+				if ((flag & PHP_IBASE_UNIXTIME)
+#if SIZEOF_ZEND_LONG < 8
+					&& t_epoch >= ZEND_LONG_MIN && t_epoch <= ZEND_LONG_MAX
+#endif
+				) {
 					ZVAL_LONG(val, (zend_long) t_epoch);
 					break;
 				}
-#endif
 			}
 #endif
 
-			/*
-			 * A new DateTime per cell, set only through its own methods (setDate(),
-			 * setTime(), setTimestamp()), so PHP keeps its timestamp and UTC offset in
-			 * step with the fields.
-			 */
-			fbu_init_date_object(t_zone, &t_date_zv);
-			t_date_obj = Z_PHPDATE_P(&t_date_zv);
-
-#if FB_API_VER >= 40
 			/*
 			 * TIMESTAMP WITH TIME ZONE from its moment rather than its local fields: on
 			 * the night clocks go back the same local time happens twice, and only the
 			 * moment says which.
 			 */
-			if (sqltype == SQL_TIMESTAMP_TZ
+			by_moment = 0;
+#if FB_API_VER >= 40
+			by_moment = sqltype == SQL_TIMESTAMP_TZ
 #if SIZEOF_ZEND_LONG < 8
 				/* outside 1901..2038 a 32-bit PHP integer cannot carry it; go by the
 				 * local fields */
 				&& t_epoch >= ZEND_LONG_MIN && t_epoch <= ZEND_LONG_MAX
 #endif
-			) {
+				;
+#endif
+
+			/*
+			 * A new DateTime per cell, set only through its own methods (setDate(),
+			 * setTime(), setTimestamp(), setTimezone()), so PHP keeps its timestamp and
+			 * UTC offset in step with the fields.
+			 *
+			 * A moment is set in UTC, then moved to the stored zone: PHP 7.4's
+			 * setTimestamp() shifts a moment in the repeated hour by an hour when the
+			 * object is in a zone with DST.
+			 */
+			fbu_init_date_object(by_moment ? "UTC" : t_zone, &t_date_zv);
+			t_date_obj = Z_PHPDATE_P(&t_date_zv);
+
+			if (by_moment) {
 				_php_ibase_date_set_timestamp(t_date_obj, (zend_long) t_epoch,
 					FB_FRACTIONS_TO_USEC(t_fractions));
-			} else
-#endif
-			{
+				_php_ibase_date_set_timezone(t_date_obj, t_zone);
+			} else {
 				if (date_bearing) {
 					_php_ibase_date_set_date(t_date_obj, t_year, t_month, t_day);
 				}

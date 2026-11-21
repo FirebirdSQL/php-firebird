@@ -30,34 +30,28 @@ $c = ibase_connect($test_base);
 	foreach ($statements as $sql) {
 		echo $sql, "\n";
 		$r = ibase_query($t, $sql);
-		echo "    trans: ", ibase_affected_rows($t), "\n";
-		echo "    query: ", ibase_query_affected_rows($r), "\n";
-		while ($row = ibase_fetch_assoc($r)) {
-			echo "    returned: ", json_encode($row), "\n";
-		}
-		echo "    query after fetch: ", ibase_query_affected_rows($r), "\n";
+		echo "ibase_affected_rows(): ", ibase_affected_rows($t), "\n";
+		echo "ibase_query_affected_rows(): ", ibase_query_affected_rows($r), "\n";
+		dump_rows($r);
+		echo "ibase_query_affected_rows() after fetch: ", ibase_query_affected_rows($r), "\n";
 	}
 
 	echo "prepared UPDATE ... RETURNING\n";
 	$q = ibase_prepare($t, "UPDATE PROBE SET NAME = NAME || 'y' WHERE ID <= ? RETURNING ID");
-	echo "    query before execute: ", ibase_query_affected_rows($q), "\n";
+	echo "ibase_query_affected_rows() before execute: ", ibase_query_affected_rows($q), "\n";
 	$r = ibase_execute($q, 2);
-	echo "    query: ", ibase_query_affected_rows($q), "\n";
-	while ($row = ibase_fetch_assoc($r)) {
-		echo "    returned: ", json_encode($row), "\n";
-	}
+	echo "ibase_query_affected_rows(): ", ibase_query_affected_rows($q), "\n";
+	dump_rows($r);
 	ibase_free_result($r);
-	echo "    query after free_result: ", ibase_query_affected_rows($q), "\n";
+	echo "ibase_query_affected_rows() after free_result: ", ibase_query_affected_rows($q), "\n";
 	$r = ibase_execute($q, 1);
-	echo "    query after 2nd execute: ", ibase_query_affected_rows($q), "\n";
+	echo "ibase_query_affected_rows() after 2nd execute: ", ibase_query_affected_rows($q), "\n";
 	ibase_free_result($r);
 
 	echo "DELETE ... RETURNING\n";
 	$r = ibase_query($t, "DELETE FROM PROBE WHERE ID > 1 RETURNING ID");
-	echo "    query: ", ibase_query_affected_rows($r), "\n";
-	while ($row = ibase_fetch_assoc($r)) {
-		echo "    returned: ", json_encode($row), "\n";
-	}
+	echo "ibase_query_affected_rows(): ", ibase_query_affected_rows($r), "\n";
+	dump_rows($r);
 
 	echo "MERGE ... RETURNING\n";
 	$r = ibase_query($t, <<<'SQL'
@@ -68,65 +62,143 @@ $c = ibase_connect($test_base);
 		WHEN NOT MATCHED THEN INSERT (ID, NAME) VALUES (S.ID, 'd')
 		RETURNING PROBE.ID, PROBE.NAME
 		SQL);
-	echo "    trans: ", ibase_affected_rows($t), "\n";
-	echo "    query: ", ibase_query_affected_rows($r), "\n";
-	while ($row = ibase_fetch_assoc($r)) {
-		echo "    returned: ", json_encode($row), "\n";
-	}
+	echo "ibase_affected_rows(): ", ibase_affected_rows($t), "\n";
+	echo "ibase_query_affected_rows(): ", ibase_query_affected_rows($r), "\n";
+	dump_rows($r);
 
 	echo "INSERT ... SELECT ... RETURNING\n";
 	$r = ibase_query($t, "INSERT INTO PROBE SELECT ID + 10, NAME FROM PROBE ORDER BY ID RETURNING ID, NAME");
-	echo "    trans: ", ibase_affected_rows($t), "\n";
-	echo "    query: ", ibase_query_affected_rows($r), "\n";
-	while ($row = ibase_fetch_assoc($r)) {
-		echo "    returned: ", json_encode($row), "\n";
-	}
+	echo "ibase_affected_rows(): ", ibase_affected_rows($t), "\n";
+	echo "ibase_query_affected_rows(): ", ibase_query_affected_rows($r), "\n";
+	dump_rows($r);
 
 	$r = ibase_query($t, "SELECT ID, NAME FROM PROBE ORDER BY ID");
-	while ($row = ibase_fetch_assoc($r)) {
-		echo "left: ", json_encode($row), "\n";
-	}
+	echo "left:\n";
+	dump_rows($r);
 	ibase_rollback($t);
 })($c);
 
 ?>
 --EXPECT--
 UPDATE PROBE SET NAME = NAME || 'x' RETURNING ID, NAME
-    trans: 0
-    query: 3
-    returned: {"ID":1,"NAME":"ax"}
-    returned: {"ID":2,"NAME":"bx"}
-    returned: {"ID":3,"NAME":"cx"}
-    query after fetch: 3
+ibase_affected_rows(): 0
+ibase_query_affected_rows(): 3
+array(2) {
+  ["ID"]=>
+  int(1)
+  ["NAME"]=>
+  string(2) "ax"
+}
+array(2) {
+  ["ID"]=>
+  int(2)
+  ["NAME"]=>
+  string(2) "bx"
+}
+array(2) {
+  ["ID"]=>
+  int(3)
+  ["NAME"]=>
+  string(2) "cx"
+}
+ibase_query_affected_rows() after fetch: 3
 SELECT ID, NAME FROM PROBE ORDER BY ID
-    trans: 0
-    query: 0
-    returned: {"ID":1,"NAME":"ax"}
-    returned: {"ID":2,"NAME":"bx"}
-    returned: {"ID":3,"NAME":"cx"}
-    query after fetch: 0
+ibase_affected_rows(): 0
+ibase_query_affected_rows(): 0
+array(2) {
+  ["ID"]=>
+  int(1)
+  ["NAME"]=>
+  string(2) "ax"
+}
+array(2) {
+  ["ID"]=>
+  int(2)
+  ["NAME"]=>
+  string(2) "bx"
+}
+array(2) {
+  ["ID"]=>
+  int(3)
+  ["NAME"]=>
+  string(2) "cx"
+}
+ibase_query_affected_rows() after fetch: 0
 prepared UPDATE ... RETURNING
-    query before execute: 0
-    query: 2
-    returned: {"ID":1}
-    returned: {"ID":2}
-    query after free_result: 2
-    query after 2nd execute: 1
+ibase_query_affected_rows() before execute: 0
+ibase_query_affected_rows(): 2
+array(1) {
+  ["ID"]=>
+  int(1)
+}
+array(1) {
+  ["ID"]=>
+  int(2)
+}
+ibase_query_affected_rows() after free_result: 2
+ibase_query_affected_rows() after 2nd execute: 1
 DELETE ... RETURNING
-    query: 2
-    returned: {"ID":2}
-    returned: {"ID":3}
+ibase_query_affected_rows(): 2
+array(1) {
+  ["ID"]=>
+  int(2)
+}
+array(1) {
+  ["ID"]=>
+  int(3)
+}
 MERGE ... RETURNING
-    trans: 0
-    query: 2
-    returned: {"ID":1,"NAME":"axyym"}
-    returned: {"ID":4,"NAME":"d"}
+ibase_affected_rows(): 0
+ibase_query_affected_rows(): 2
+array(2) {
+  ["ID"]=>
+  int(1)
+  ["NAME"]=>
+  string(5) "axyym"
+}
+array(2) {
+  ["ID"]=>
+  int(4)
+  ["NAME"]=>
+  string(1) "d"
+}
 INSERT ... SELECT ... RETURNING
-    trans: 0
-    query: 2
-    returned: {"ID":11,"NAME":"axyym"}
-    returned: {"ID":14,"NAME":"d"}
-left: {"ID":1,"NAME":"axyym"}
-left: {"ID":4,"NAME":"d"}
-left: {"ID":11,"NAME":"axyym"}
-left: {"ID":14,"NAME":"d"}
+ibase_affected_rows(): 0
+ibase_query_affected_rows(): 2
+array(2) {
+  ["ID"]=>
+  int(11)
+  ["NAME"]=>
+  string(5) "axyym"
+}
+array(2) {
+  ["ID"]=>
+  int(14)
+  ["NAME"]=>
+  string(1) "d"
+}
+left:
+array(2) {
+  ["ID"]=>
+  int(1)
+  ["NAME"]=>
+  string(5) "axyym"
+}
+array(2) {
+  ["ID"]=>
+  int(4)
+  ["NAME"]=>
+  string(1) "d"
+}
+array(2) {
+  ["ID"]=>
+  int(11)
+  ["NAME"]=>
+  string(5) "axyym"
+}
+array(2) {
+  ["ID"]=>
+  int(14)
+  ["NAME"]=>
+  string(1) "d"
+}

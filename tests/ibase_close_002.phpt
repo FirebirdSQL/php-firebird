@@ -22,11 +22,11 @@ var_dump(ibase_close('foo'));
 --EXPECTF--
 bool(true)
 
-Warning: ibase_close(): supplied resource is not a valid Firebird/InterBase link resource in D:\php-firebird\php-firebird\tests\ibase_close_002.php on line 9
+Warning: ibase_close(): supplied resource is not a valid Firebird/InterBase link resource %s
 bool(false)
 
-Warning: ibase_close(): supplied resource is not a valid Firebird/InterBase link resource in D:\php-firebird\php-firebird\tests\ibase_close_002.php on line 10
+Warning: ibase_close(): supplied resource is not a valid Firebird/InterBase link resource %s
 bool(false)
 
-Warning: ibase_close() expects parameter 1 to be resource, string given in D:\php-firebird\php-firebird\tests\ibase_close_002.php on line 11
+Warning: ibase_close() expects parameter 1 to be resource, string given %s
 NULL

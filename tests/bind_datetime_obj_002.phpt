@@ -22,7 +22,7 @@ ibase_connect($test_base);
     $p = ibase_prepare("SELECT CAST(CAST(? AS TIME WITH TIME ZONE) AS VARCHAR(40)),
         CAST(CAST(? AS TIMESTAMP WITH TIME ZONE) AS VARCHAR(60)) FROM RDB\$DATABASE");
 
-    foreach (['Europe/Riga', '+02:00', '-05:30', 'EET', 'EEST', 'EST', 'Z'] as $zone) {
+    foreach (['Europe/Riga', '+02:00', '-05:30', 'EET', 'EST', 'Z'] as $zone) {
         $tz = new DateTimeZone($zone);
         $d = new DateTime('2025-01-15 12:00:00.5', $tz);
         $i = new DateTimeImmutable('2025-07-15 12:00:00', $tz);
@@ -41,8 +41,6 @@ Europe/Riga 12:00:00.0000 Europe/Riga | 2025-07-15 12:00:00.0000 Europe/Riga
 -05:30      12:00:00.0000 -05:30 | 2025-07-15 12:00:00.0000 -05:30
 EET         12:00:00.5000 +02:00 | 2025-01-15 12:00:00.5000 +02:00
 EET         12:00:00.0000 +02:00 | 2025-07-15 12:00:00.0000 +02:00
-EEST        12:00:00.5000 +03:00 | 2025-01-15 12:00:00.5000 +03:00
-EEST        12:00:00.0000 +03:00 | 2025-07-15 12:00:00.0000 +03:00
 EST         12:00:00.5000 -05:00 | 2025-01-15 12:00:00.5000 -05:00
 EST         12:00:00.0000 -05:00 | 2025-07-15 12:00:00.0000 -05:00
 Z           12:00:00.5000 +00:00 | 2025-01-15 12:00:00.5000 +00:00

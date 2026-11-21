@@ -44,44 +44,103 @@ $c = ibase_connect($test_base);
 	foreach ($statements as $sql) {
 		echo $sql, "\n";
 		$r = ibase_query($t, $sql);
-		echo "    affected: ", ibase_affected_rows($t), "\n";
-		while ($row = ibase_fetch_assoc($r)) {
-			echo "    returned: ", json_encode($row), "\n";
-		}
+		echo "ibase_affected_rows(): ", ibase_affected_rows($t), "\n";
+		dump_rows($r);
 	}
 
 	$r = ibase_query($t, "SELECT ID, NAME FROM PROBE ORDER BY ID");
-	while ($row = ibase_fetch_assoc($r)) {
-		echo "left: ", json_encode($row), "\n";
-	}
+	echo "left:\n";
+	dump_rows($r);
 	ibase_rollback($t);
 })($c);
 
 ?>
 --EXPECT--
 UPDATE PROBE SET NAME = NAME || 'x' RETURNING ID, NAME
-    affected: 3
-    returned: {"ID":1,"NAME":"ax"}
-    returned: {"ID":2,"NAME":"bx"}
-    returned: {"ID":3,"NAME":"cx"}
+ibase_affected_rows(): 3
+array(2) {
+  ["ID"]=>
+  int(1)
+  ["NAME"]=>
+  string(2) "ax"
+}
+array(2) {
+  ["ID"]=>
+  int(2)
+  ["NAME"]=>
+  string(2) "bx"
+}
+array(2) {
+  ["ID"]=>
+  int(3)
+  ["NAME"]=>
+  string(2) "cx"
+}
 DELETE FROM PROBE WHERE ID > 1 RETURNING ID
-    affected: 2
-    returned: {"ID":2}
-    returned: {"ID":3}
+ibase_affected_rows(): 2
+array(1) {
+  ["ID"]=>
+  int(2)
+}
+array(1) {
+  ["ID"]=>
+  int(3)
+}
 MERGE INTO PROBE
 USING (SELECT 1 ID FROM RDB$DATABASE UNION ALL SELECT 4 FROM RDB$DATABASE) S
 ON PROBE.ID = S.ID
 WHEN MATCHED THEN UPDATE SET NAME = NAME || 'm'
 WHEN NOT MATCHED THEN INSERT (ID, NAME) VALUES (S.ID, 'd')
 RETURNING PROBE.ID, PROBE.NAME
-    affected: 2
-    returned: {"ID":1,"NAME":"axm"}
-    returned: {"ID":4,"NAME":"d"}
+ibase_affected_rows(): 2
+array(2) {
+  ["ID"]=>
+  int(1)
+  ["NAME"]=>
+  string(3) "axm"
+}
+array(2) {
+  ["ID"]=>
+  int(4)
+  ["NAME"]=>
+  string(1) "d"
+}
 INSERT INTO PROBE SELECT ID + 10, NAME FROM PROBE ORDER BY ID RETURNING ID, NAME
-    affected: 2
-    returned: {"ID":11,"NAME":"axm"}
-    returned: {"ID":14,"NAME":"d"}
-left: {"ID":1,"NAME":"axm"}
-left: {"ID":4,"NAME":"d"}
-left: {"ID":11,"NAME":"axm"}
-left: {"ID":14,"NAME":"d"}
+ibase_affected_rows(): 2
+array(2) {
+  ["ID"]=>
+  int(11)
+  ["NAME"]=>
+  string(3) "axm"
+}
+array(2) {
+  ["ID"]=>
+  int(14)
+  ["NAME"]=>
+  string(1) "d"
+}
+left:
+array(2) {
+  ["ID"]=>
+  int(1)
+  ["NAME"]=>
+  string(3) "axm"
+}
+array(2) {
+  ["ID"]=>
+  int(4)
+  ["NAME"]=>
+  string(1) "d"
+}
+array(2) {
+  ["ID"]=>
+  int(11)
+  ["NAME"]=>
+  string(3) "axm"
+}
+array(2) {
+  ["ID"]=>
+  int(14)
+  ["NAME"]=>
+  string(1) "d"
+}

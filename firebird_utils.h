@@ -70,6 +70,7 @@ void fbu_release_statement(void *statement_ptr);
 int fbu_string_to_numeric(const char *s, size_t slen, int scale, uint64_t max,
 	int *sign, int *exp, uint64_t *res); */
 const char* fbu_get_sql_type_name(XSQLVAR *var, char *buf, size_t buf_size);
+void fbu_init_timezone_object(const char *tzbuff, zval *o);
 void fbu_init_date_object(const char *tzbuff, zval *o);
 
 #ifdef __cplusplus

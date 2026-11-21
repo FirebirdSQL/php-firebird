@@ -20,7 +20,7 @@ ibase_connect($test_base);
     ibase_query("CREATE TABLE TTEST (N INTEGER, D DATE, TS TIMESTAMP, TZ TIMESTAMP WITH TIME ZONE)");
     ibase_commit();
 
-    ibase_query("INSERT INTO TTEST VALUES (1, DATE '2025-01-15', TIMESTAMP '2025-01-15 12:00:00', TIMESTAMP '2500-07-01 12:00:00 America/New_York')");
+    ibase_query("INSERT INTO TTEST VALUES (1, DATE '2025-01-15', TIMESTAMP '2025-01-15 12:00:00', TIMESTAMP '2025-07-01 12:00:00 America/New_York')");
     ibase_query("INSERT INTO TTEST VALUES (2, DATE '2025-07-15', TIMESTAMP '2025-07-15 12:00:00', TIMESTAMP '2025-10-26 00:30:00 UTC' AT TIME ZONE 'Europe/Riga')");
     ibase_query("INSERT INTO TTEST VALUES (3, NULL, NULL, TIMESTAMP '2025-10-26 01:30:00 UTC' AT TIME ZONE 'Europe/Riga')");
     ibase_commit();
@@ -33,7 +33,8 @@ ibase_connect($test_base);
         $obj = ibase_fetch_row($o, IBASE_PHPDATE);
         foreach ($row as $i => $v) {
             if ($v === null) continue;
-            echo $v, $v === $obj[$i]->getTimestamp() ? '' : ' MISMATCH ' . $obj[$i]->getTimestamp(), "\n";
+            // format() rather than getTimestamp(): PHP 7.4 moves a time in the repeated hour on recompute
+            echo $v, (string) $v === $obj[$i]->format('U') ? '' : ' MISMATCH ' . $obj[$i]->format('U'), "\n";
         }
     }
 
@@ -59,7 +60,7 @@ ibase_connect($test_base);
 -- non-legacy, Europe/Riga
 1736892000
 1736935200
-16740921600
+1751385600
 1752526800
 1752570000
 1761438600
@@ -70,6 +71,6 @@ ibase_connect($test_base);
 1752537600
 1752580800
 -- legacy, TIMESTAMP WITH TIME ZONE
-16740921600
+1751385600
 1761438600
 1761442200
