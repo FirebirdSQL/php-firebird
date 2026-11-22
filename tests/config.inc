@@ -1,7 +1,5 @@
 <?php
 
-srand(((int)(float)microtime()*1000000));
-
 $user = 'SYSDBA';
 $password = 'masterkey';
 $host = getenv('IBASE_TEST_HOST') ?: "127.0.0.1/3050";

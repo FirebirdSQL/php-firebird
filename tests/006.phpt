@@ -35,17 +35,17 @@ InterBase: binding (may take a while)
 
 	echo "insert\n";
 
-	for($iter = 0; $iter < 3; $iter++) {
-		/* prepare data  */
-		$v_char = rand_str(1000);
-		$v_date = rand_datetime();
-		$v_decimal = rand_number(12,3);
-		$v_double  = rand_number(20);
-		$v_float   = rand_number(7);
-		$v_integer = rand_number(9,0);
-		$v_numeric = rand_number(4,2);
-		$v_smallint = ((int)rand_number(5)) % 32767;
-		$v_varchar = rand_str(10000);
+	/* Values the old rand_*() helpers produced; char/varchar hold that many letters A-Z */
+	$rows = [
+		/* char, date,                 decimal,      double,                  float,     integer,     numeric, smallint, varchar */
+		[22,  '08/17/1930 18:44:34', '-7.434',     '178803749720.30140099', '2.1719',  '-16761736', '1.11',  -1629, 5663],
+		[614, '07/27/1957 14:05:43', '3738.172',   '121506.852163806',      '-4994.29', '3826855',  '21.12', 1961,  6270],
+		[333, '08/11/2006 00:00:35', '375216.213', '-2101083951.70103',     '-25.924', '-1',        '9.37',  14671, 9025],
+	];
+
+	foreach($rows as $iter => [$char_len, $v_date, $v_decimal, $v_double, $v_float, $v_integer, $v_numeric, $v_smallint, $varchar_len]) {
+		$v_char = str_pad('', $char_len, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+		$v_varchar = str_pad('', $varchar_len, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
 		ibase_query("insert into test6
 			(iter,v_char,v_date,v_decimal,v_double,v_float,
@@ -102,20 +102,20 @@ InterBase: binding (may take a while)
 			echo " out: $row->V_VARCHAR\n";
 		}
 		ibase_free_result($sel);
-	}/* for($iter)*/
+	}/* foreach($rows)*/
 
 	echo "select\n";
-	for($iter = 0; $iter < 3; $iter++) {
-		/* prepare data  */
-		$v_char = rand_str(1000);
-		$v_date = (int)rand_number(10,0,0);
-		$v_decimal = rand_number(12,3);
-		$v_double  = rand_number(20);
-		$v_float   = rand_number(7);
-		$v_integer = rand_number(9,0);
-		$v_numeric = rand_number(4,2);
-		$v_smallint = ((int)rand_number(5)) % 32767;
-		$v_varchar = rand_str(10000);
+	/* date is a unix timestamp here */
+	$rows = [
+		/* char, date, decimal,        double,                   float,      integer,      numeric,  smallint, varchar */
+		[695, 447,  '47396003.866', '-14598522671304337333',  '178195.8', '-17493',     '9.19',   -13, 9806],
+		[106, 1679, '-1.181',       '75263134914311.37688',   '556410.1', '136',        '13.14',  7,   7417],
+		[263, 1188, '198.134',      '156158352086816335.80',  '11932.18', '-128908801', '-21.33', -45, 3016],
+	];
+
+	foreach($rows as [$char_len, $v_date, $v_decimal, $v_double, $v_float, $v_integer, $v_numeric, $v_smallint, $varchar_len]) {
+		$v_char = str_pad('', $char_len, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+		$v_varchar = str_pad('', $varchar_len, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
 		/* clear table*/
 		ibase_query("delete from test6");
@@ -171,7 +171,7 @@ InterBase: binding (may take a while)
 		}
 		ibase_free_result($sel);
 
-	} /*for iter*/
+	} /*foreach rows*/
 
 	echo "prepare and exec insert\n";
 

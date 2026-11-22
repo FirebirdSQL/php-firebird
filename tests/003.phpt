@@ -44,22 +44,25 @@ InterBase: misc sql types (may take a while)
 
     ini_set("ibase.timestampformat", "m/d/Y H:i:s");
 
-    for($iter = 0; $iter < 10; $iter++){
-    	/* prepare data  */
-    	$v_char = rand_str(1000);
-    	$v_date = rand_datetime();
-    	$v_decimal4_2 = rand_number(4,2);
-    	$v_decimal4_0 = rand_number(4,0);
-    	$v_decimal7_2 = rand_number(7,2);
-    	$v_decimal7_0 = rand_number(7,0);
-    	$v_numeric15_15 = rand_number(15,15);
-        $v_decimal18_3 = $iter ? rand_number(18,3) : 0;
-    	$v_numeric15_0 = $iter ? rand_number(15,0) : 0;
-    	$v_double  = rand_number(18);
-    	$v_float   = rand_number(7);
-    	$v_integer = rand_number(9,0);
-        $v_smallint = ((int)rand_number(5)) % 32767;
-    	$v_varchar = rand_str(10000);
+    /* Values the old rand_*() helpers produced; char/varchar hold that many letters A-Z */
+    $rows = [
+        /* char, date,                 dec4_2,   dec4_0,  dec7_2,     dec7_0,    num15_15,        dec18_3,              num15_0,          double,                  float,       integer,     smallint, varchar */
+        [22,  '08/17/1930 18:44:34', '-7.43',  '1788',  '18683.10', '-171994', '1.1547546835',  '0',                 '0',              '1249877.2028661055',    '22743.56',  '15825197',  -29,    1540],
+        [316, '01/22/1916 22:35:50', '-6.15',  '37',    '-108.16',  '100313',  '1.1697504841',  '-110593885119.172', '-1554652312152', '198062.775100',         '-1790.8',   '2',         4,      8408],
+        [638, '02/16/1935 13:33:04', '1.18',   '1',     '89328.10', '135747',  '1.1449718840',  '1323540189.854',    '72940138',       '1447236.170025516',     '-1079596',  '-5',        -10596, 4421],
+        [959, '04/04/1950 16:48:05', '4.92',   '1009',  '-7808.46', '6',       '5.1533125736',  '-15821.161',        '-776241126635',  '4879842891931.99960',   '980063.1',  '69399',     -17,    1811],
+        [810, '03/12/2001 02:20:41', '24.10',  '4',     '57472.17', '15653',   '2.1386706106',  '10665112054.184',   '266127218476',   '794369742927870057',    '306.1',     '62',        -11751, 3666],
+        [433, '12/02/1990 20:36:58', '-22.77', '-5271', '-1.85',    '1958',    '1.1991760874',  '2082916.382',       '-129942328761',  '33730.76328221',        '1489874',   '11142',     -199,   4101],
+        [172, '09/16/1964 22:52:41', '13.12',  '12',    '129.12',   '5764',    '-1.1967970807', '-1649955.116',      '89889287710',    '8678.2046912515',       '129071.1',  '437560',    -1495,  6674],
+        [561, '11/16/1954 14:53:29', '59.13',  '36',    '17647.88', '1087400', '8.1172477069',  '1082799.197',       '1712241146164',  '-1756321384178.21099',  '-1833.12',  '6838',      -5885,  7097],
+        [245, '12/08/1952 13:51:00', '-14.30', '5',     '87.66',    '1024',    '1.1777482894',  '595.206',           '1268',           '-45396268928507598.2',  '1035.738',  '135649088', 1,      6091],
+        [175, '06/15/1918 11:46:01', '17.13',  '1310',  '17.10',    '50058',   '1.2010576286',  '-164617811512.800', '16',             '3594168803732.910',     '-96640.69', '889914549', 11,     3420],
+    ];
+
+    foreach($rows as $iter => [$char_len, $v_date, $v_decimal4_2, $v_decimal4_0, $v_decimal7_2, $v_decimal7_0,
+        $v_numeric15_15, $v_decimal18_3, $v_numeric15_0, $v_double, $v_float, $v_integer, $v_smallint, $varchar_len]){
+    	$v_char = str_pad('', $char_len, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+    	$v_varchar = str_pad('', $varchar_len, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
     	ibase_query(
     	"insert into test3 (iter, v_char,v_date,v_decimal4_2, v_decimal4_0, v_decimal7_2, v_decimal7_0,v_numeric15_15, v_decimal18_3, v_numeric15_0,v_double,v_float,v_integer,v_smallint,v_varchar)
@@ -140,7 +143,7 @@ InterBase: misc sql types (may take a while)
         }
 
         ibase_free_result($sel);
-    } /* for($iter) */
+    } /* foreach($rows) */
 
 	/* check for correct handling of duplicate field names */
 	$q = ibase_query('SELECT 1 AS id, 2 AS id, 3 AS id, 4 AS id, 5 AS id, 6 AS id, 7 AS id, 8 AS id, 9 AS id,
