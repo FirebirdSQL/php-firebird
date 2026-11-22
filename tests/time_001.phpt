@@ -7,6 +7,8 @@ include("skipif.inc");
 // See also: tests/time_003.phpt
 
 ?>
+--ENV--
+TZ=Europe/Riga
 --FILE--
 <?php
 
