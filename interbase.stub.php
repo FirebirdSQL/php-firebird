@@ -108,6 +108,29 @@ const IBASE_LEGACY_UNIXTIME = UNKNOWN;
  */
 const IBASE_LEGACY_QUERY_RESULT = UNKNOWN;
 
+/*
+ * Optional notices, combined via the ibase.warnings ini setting; all off by default.
+ * e.g. ini_set('ibase.warnings', IBASE_WARN_ALL)
+ */
+
+/**
+ * @var int
+ * @cvalue PHP_IBASE_WARN_NONE
+ */
+const IBASE_WARN_NONE = UNKNOWN;
+
+/**
+ * @var int
+ * @cvalue PHP_IBASE_WARN_ALL
+ */
+const IBASE_WARN_ALL = UNKNOWN;
+
+/**
+ * @var int
+ * @cvalue PHP_IBASE_WARN_IMPLICIT_CLOSE
+ */
+const IBASE_WARN_IMPLICIT_CLOSE = UNKNOWN;
+
 /* Transactions */
 
 /**

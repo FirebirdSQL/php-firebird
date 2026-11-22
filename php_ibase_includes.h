@@ -79,6 +79,7 @@ ZEND_BEGIN_MODULE_GLOBALS(ibase)
 	zend_long default_trans_params;
 	zend_long default_lock_timeout; // only used togetger with trans_param IBASE_LOCK_TIMEOUT
 	zend_long legacy_flags; // bitmask of php_interbase_legacy_option
+	zend_long warnings; // bitmask of php_interbase_warning_option
 	/* The five ibase.*format strings, held here so the per-cell and per-parameter
 	 * paths read a pointer instead of doing an ini hash lookup for every value. */
 	char *dateformat;
@@ -240,6 +241,19 @@ enum php_interbase_legacy_option {
 	 * Off: they return the query handle for every statement, the count is not read, and
 	 * ibase_query_affected_rows() asks for it on demand. */
 	PHP_IBASE_LEGACY_QUERY_RESULT = 2,
+};
+
+/*
+ * ibase.warnings: optional notices about things the extension does silently. All off by
+ * default (0); -1 turns on every one, including any added later. Like legacy_flags,
+ * php.ini needs a number, not these names.
+ */
+#define PHP_IBASE_WARN_ALL (-1)
+
+enum php_interbase_warning_option {
+	PHP_IBASE_WARN_NONE           = 0,
+	/* warn if ibase_execute() closes an open cursor */
+	PHP_IBASE_WARN_IMPLICIT_CLOSE = 1,
 };
 
 enum php_interbase_query_option {

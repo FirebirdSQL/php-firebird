@@ -437,6 +437,8 @@ PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY_EX("ibase.default_lock_timeout", "0", PHP_INI_ALL, OnUpdateLongGEZero, default_lock_timeout, zend_ibase_globals, ibase_globals, display_link_numbers)
 	/* -1 = every legacy behaviour, including any added later; 0 = none. See php_ibase_includes.h */
 	STD_PHP_INI_ENTRY("ibase.legacy_flags", "-1", PHP_INI_ALL, OnUpdateLong, legacy_flags, zend_ibase_globals, ibase_globals)
+	/* 0 = no optional notices, -1 = all of them. See php_ibase_includes.h */
+	STD_PHP_INI_ENTRY("ibase.warnings", "0", PHP_INI_ALL, OnUpdateLong, warnings, zend_ibase_globals, ibase_globals)
 PHP_INI_END()
 
 #ifdef __GNUC__

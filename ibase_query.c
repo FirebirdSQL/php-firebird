@@ -952,7 +952,10 @@ static int _php_ibase_exec(INTERNAL_FUNCTION_PARAMETERS, ibase_query *ib_query, 
 	}
 
 	/* Have we used this cursor before and it's still open? */
-	// TODO: ini configurable warning when a cursor is closed implicitly
+	if ((IBG(warnings) & PHP_IBASE_WARN_IMPLICIT_CLOSE) && ib_query->is_open
+		&& ib_query->statement_type != isc_info_sql_stmt_exec_procedure) {
+		php_error_docref(NULL, E_NOTICE, "Implicitly closing an open cursor");
+	}
 	if (FAILURE == _php_ibase_close_cursor(ib_query)) {
 		return FAILURE;
 	}
