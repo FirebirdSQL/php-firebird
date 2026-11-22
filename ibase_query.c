@@ -2421,8 +2421,6 @@ static int _php_ibase_fetch_query_res(zval *from, ibase_query **ib_query)
 	*ib_query = zend_fetch_resource_ex(from, LE_QUERY, le_query);
 
 	if(*ib_query == NULL) {
-		// TODO: throw something or not? notice? warning?
-		// fbp_notice("query already freed");
 		return FAILURE;
 	}
 
