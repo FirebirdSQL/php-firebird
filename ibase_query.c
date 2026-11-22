@@ -168,7 +168,7 @@ static int _php_ibase_prepare(ibase_query **new_query, ibase_db_link *link, /* {
 		goto _php_ibase_alloc_query_error;
 	}
 
-	// TODO: provide query_len
+	// Do not pass string len yourself, let fbclient measure it depending on version
 	if (isc_dsql_prepare(IB_STATUS, &ib_query->trans->handle, &ib_query->stmt,
 			0, query, link->dialect, NULL)) {
 		IBDEBUG("isc_dsql_prepare() failed\n");
