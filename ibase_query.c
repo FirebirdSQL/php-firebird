@@ -743,11 +743,11 @@ encode_datetime:
 			case SQL_TYPE_DATE:
 				buf->val.dtval = fbu_encode_date(IBG(master_instance), (unsigned)obj->time->y, (unsigned)obj->time->m, (unsigned)obj->time->d);
 				break;
-			case SQL_TIMESTAMP:
+			case SQL_TIMESTAMP: {
 				ISC_TIMESTAMP *ts = &buf->val.tsval;
 				ts->timestamp_date = fbu_encode_date(IBG(master_instance), (unsigned)obj->time->y, (unsigned)obj->time->m, (unsigned)obj->time->d);
 				ts->timestamp_time = fbu_encode_time(IBG(master_instance), (unsigned)obj->time->h, (unsigned)obj->time->i, (unsigned)obj->time->s, FB_USEC_TO_FRACTIONS(obj->time->us));
-				break;
+			} break;
 #if FB_API_VER >= 40
 			case SQL_TIME_TZ:
 			case SQL_TIMESTAMP_TZ: {
