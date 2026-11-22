@@ -9,10 +9,10 @@ if(!empty($host))$test_base = "$host:$test_base";
 
 function init_db()
 {
-	global $test_base, $user, $password;
+	global $test_base;
 
-	$sql = sprintf("CREATE SCHEMA '%s' USER '%s' PASSWORD '%s' DEFAULT CHARACTER SET %s",
-		$test_base, $user, $password,
+	$sql = sprintf("CREATE SCHEMA '%s' DEFAULT CHARACTER SET %s",
+		$test_base,
 		($charset = ini_get('ibase.default_charset')) ? $charset : 'NONE'
 	);
 
