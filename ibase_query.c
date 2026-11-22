@@ -459,6 +459,22 @@ static int _php_ibase_bind(ibase_query *ib_query, zval *b_vars) /* {{{ */
 					case IS_FALSE:
 						long_val = 0;
 						break;
+					case IS_DOUBLE:
+						/*
+						 * A float goes to Firebird as text with up to 17 significant digits:
+						 * 0.1 + 0.2 becomes "0.30000000000000004". Firebird parses every
+						 * digit into the column's own integer width before rounding to the
+						 * column scale, so that text overflows SMALLINT/INTEGER and
+						 * NUMERIC(<=9) columns. Round to the column scale first, so only
+						 * digits the column can hold are sent.
+						 *
+						 * TODO: once FB 2.5/3.0 clients are dropped, parse with
+						 * IUtil::getInt128()->fromString() instead
+						 */
+						if (!zend_isinf(Z_DVAL_P(b_var)) && !zend_isnan(Z_DVAL_P(b_var))) {
+							ZVAL_DOUBLE(b_var, _php_math_round(Z_DVAL_P(b_var), -var->sqlscale, PHP_ROUND_HALF_UP));
+						}
+						goto cast_to_string;
 					default:
 						goto cast_to_string;
 				}
