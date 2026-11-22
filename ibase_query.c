@@ -2227,8 +2227,6 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 			case SQL_ARRAY:
 				s = "ARRAY";
 				break;
-				/* FIXME: provide more detailed information about the field type, field size
-				 * and array dimensions */
 			case SQL_QUAD:
 				s = "QUAD";
 				break;

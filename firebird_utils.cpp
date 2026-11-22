@@ -321,7 +321,6 @@ static int u64_mul10_gt(uint64_t r, uint64_t digit, uint64_t max, uint64_t *out)
 	*out = lo + digit;
 	return 0;
 #else
-	// TODO: needs testing
 	/* x86: no _umul128; equivalent overflow check without 128-bit arithmetic */
 	if (r > (max - digit) / 10) return 1;
 	*out = r * 10 + digit;
