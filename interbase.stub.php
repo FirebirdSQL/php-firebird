@@ -89,10 +89,19 @@ function ibase_num_fields($query_result): int { die; }
 /** @param resource $query */
 function ibase_num_params($query): int { die; }
 
-/** @param resource $link_identifier */
+/**
+ * Rows changed by the last statement in the transaction.
+ * 0 for ... RETURNING on Firebird 5 (except INSERT ... VALUES); use ibase_query_affected_rows().
+ *
+ * @param resource $link_identifier connection or transaction
+ */
 function ibase_affected_rows($link_identifier = null): int|false { die; }
 
-/** @param resource $query */
+/**
+ * Rows changed by the last execution of the query. Each call costs one round trip to the server.
+ *
+ * @param resource $query
+ */
 function ibase_query_affected_rows($query): int|false { die; }
 
 /** @param resource $query_result */
