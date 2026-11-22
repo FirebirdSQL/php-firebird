@@ -186,8 +186,16 @@ typedef struct _ib_query {
 	ISC_SHORT *sql_lens;
 	ISC_USHORT in_fields_count, out_fields_count;
 	HashTable *ht_aliases, *ht_ind; // Precomputed for ibase_fetch_*()
+	/* DateTime that fetched date values are cloned from, and the zone it was made in:
+	 * a Firebird zone id, or IBASE_DATE_ZONE_DEFAULT / IBASE_DATE_ZONE_UTC */
+	zend_object *date_template;
+	int date_template_zone;
 	int was_result_once;
 } ibase_query;
+
+/* ibase_query.date_template_zone values besides Firebird's zone ids, which are 0..65535 */
+#define IBASE_DATE_ZONE_DEFAULT -1
+#define IBASE_DATE_ZONE_UTC     -2
 
 /* transaction access mode */
 enum php_interbase_trans_option {

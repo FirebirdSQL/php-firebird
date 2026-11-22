@@ -117,6 +117,7 @@ static void _php_ibase_free_query(ibase_query *ib_query) /* {{{ */
 	if(ib_query->query)efree(ib_query->query);
 	if(ib_query->ht_aliases)zend_array_destroy(ib_query->ht_aliases);
 	if(ib_query->ht_ind)zend_array_destroy(ib_query->ht_ind);
+	if(ib_query->date_template)OBJ_RELEASE(ib_query->date_template);
 	if(ib_query->sql_types)efree(ib_query->sql_types);
 	if(ib_query->sql_lens)efree(ib_query->sql_lens);
 
@@ -1357,6 +1358,36 @@ static void _php_ibase_date_set_timezone(php_date_obj *obj, const char *zone)
 	zval_ptr_dtor(&arg);
 }
 
+/*
+ * A new DateTime in the given zone (NULL for PHP's default zone), cloned from one kept
+ * per query. zone_key identifies the zone: a Firebird zone id, or IBASE_DATE_ZONE_*. Building one from scratch parses "now" every time, which made fetching
+ * dates several times slower. The clone still has to be set through the setters above.
+ */
+static void _php_ibase_date_new(ibase_query *ib_query, int zone_key, const char *zone, zval *out)
+{
+	if (!ib_query->date_template || ib_query->date_template_zone != zone_key) {
+		zval tpl;
+
+		if (ib_query->date_template) {
+			OBJ_RELEASE(ib_query->date_template);
+		}
+		fbu_init_date_object(zone, &tpl);
+		ib_query->date_template = Z_OBJ(tpl);
+		ib_query->date_template_zone = zone_key;
+	}
+
+#if PHP_MAJOR_VERSION >= 8
+	ZVAL_OBJ(out, ib_query->date_template->handlers->clone_obj(ib_query->date_template));
+#else
+	{
+		zval tpl_zv;
+
+		ZVAL_OBJ(&tpl_zv, ib_query->date_template);
+		ZVAL_OBJ(out, ib_query->date_template->handlers->clone_obj(&tpl_zv));
+	}
+#endif
+}
+
 /* DateTime::format() on a date object; the caller owns the returned string. */
 static zend_string *_php_ibase_date_format(php_date_obj *obj, const char *format, size_t format_len)
 {
@@ -1405,6 +1436,7 @@ static int _php_ibase_var_zval(ibase_query *ib_query, zval *val, void *data, int
 	php_date_obj *t_date_obj;
 	zval t_date_zv;
 	const char *t_zone;
+	int t_zone_key;
 	int64_t t_epoch = 0;
 	int date_bearing, legacy_unixtime, by_moment;
 	ISC_SHORT sqltype = type & ~1;
@@ -1568,9 +1600,14 @@ _set_datetime:
 			 * stored with the value.
 			 */
 			t_zone = NULL;
+			t_zone_key = IBASE_DATE_ZONE_DEFAULT;
 #if FB_API_VER >= 40
-			if (sqltype == SQL_TIME_TZ || sqltype == SQL_TIMESTAMP_TZ) {
+			if (sqltype == SQL_TIME_TZ) {
 				t_zone = t_zone_buff;
+				t_zone_key = ((ISC_TIME_TZ *) data)->time_zone;
+			} else if (sqltype == SQL_TIMESTAMP_TZ) {
+				t_zone = t_zone_buff;
+				t_zone_key = ((ISC_TIMESTAMP_TZ *) data)->time_zone;
 			}
 
 			if (sqltype == SQL_TIMESTAMP_TZ) {
@@ -1615,15 +1652,19 @@ _set_datetime:
 #endif
 
 			/*
-			 * A new DateTime per cell, set only through its own methods (setDate(),
-			 * setTime(), setTimestamp(), setTimezone()), so PHP keeps its timestamp and
-			 * UTC offset in step with the fields.
+			 * A DateTime per cell, cloned from the query's template and set only through
+			 * its own methods (setDate(), setTime(), setTimestamp(), setTimezone()), so PHP
+			 * keeps its timestamp and UTC offset in step with the fields.
 			 *
 			 * A moment is set in UTC, then moved to the stored zone: PHP 7.4's
 			 * setTimestamp() shifts a moment in the repeated hour by an hour when the
 			 * object is in a zone with DST.
 			 */
-			fbu_init_date_object(by_moment ? "UTC" : t_zone, &t_date_zv);
+			if (by_moment) {
+				_php_ibase_date_new(ib_query, IBASE_DATE_ZONE_UTC, "UTC", &t_date_zv);
+			} else {
+				_php_ibase_date_new(ib_query, t_zone_key, t_zone, &t_date_zv);
+			}
 			t_date_obj = Z_PHPDATE_P(&t_date_zv);
 
 			if (by_moment) {
