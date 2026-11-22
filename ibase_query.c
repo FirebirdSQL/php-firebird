@@ -2100,23 +2100,13 @@ static void _php_ibase_field_info(zval *return_value, ibase_query *ib_query, int
 	XSQLVAR *var;
 	ISC_SHORT sqltype;
 
-	if(is_outvar){
-		sqlda = ib_query->out_sqlda;
-		if (sqlda == NULL) {
-			_php_ibase_module_error("Trying to get field info from a non-select query");
-			RETURN_FALSE;
-		}
-	} else {
-		sqlda = ib_query->in_sqlda;
-		if (sqlda == NULL) {
-			// TODO: Add warning? Remove above warning?
-			RETURN_FALSE;
-		}
+	sqlda = is_outvar ? ib_query->out_sqlda : ib_query->in_sqlda;
+
+	if (sqlda == NULL || num < 0 || num >= sqlda->sqld) {
+		RETURN_FALSE;
 	}
 
 	var = sqlda->sqlvar;
-
-	if (!var || num < 0 || num >= sqlda->sqld)RETURN_FALSE;
 
 	var += num;
 
