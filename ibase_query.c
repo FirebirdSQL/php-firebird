@@ -1465,7 +1465,6 @@ static int _php_ibase_var_zval(ibase_query *ib_query, zval *val, void *data, int
 			n = *(short *) data;
 			goto _sql_long;
 		case SQL_INT64:
-// TODO: do tests cover these cases?
 #if (SIZEOF_ZEND_LONG >= 8)
 			n = *(zend_long *) data;
 			goto _sql_long;
@@ -1479,9 +1478,9 @@ static int _php_ibase_var_zval(ibase_query *ib_query, zval *val, void *data, int
 				if (n >= 0) {
 					l = slprintf(string_data, sizeof(string_data), "%" LL_MASK "d.%0*" LL_MASK "d", n / f, -scale, n % f);
 				} else if (n <= -f) {
-					l = slprintf(string_data, sizeof(string_data), "%" LL_MASK "d.%0*" LL_MASK "d", n / f, -scale, -n % f);
+					l = slprintf(string_data, sizeof(string_data), "%" LL_MASK "d.%0*" LL_MASK "d", n / f, -scale, -(n % f));
 				 } else {
-					l = slprintf(string_data, sizeof(string_data), "-0.%0*" LL_MASK "d", -scale, -n % f);
+					l = slprintf(string_data, sizeof(string_data), "-0.%0*" LL_MASK "d", -scale, -(n % f));
 				}
 				ZVAL_STRINGL(val,string_data,l);
 			}
@@ -1498,9 +1497,9 @@ static int _php_ibase_var_zval(ibase_query *ib_query, zval *val, void *data, int
 				if (n >= 0) {
 					l = slprintf(string_data, sizeof(string_data), ZEND_LONG_FMT ".%0*" ZEND_LONG_FMT_SPEC, n / f, -scale,  n % f);
 				} else if (n <= -f) {
-					l = slprintf(string_data, sizeof(string_data), ZEND_LONG_FMT ".%0*" ZEND_LONG_FMT_SPEC, n / f, -scale,  -n % f);
+					l = slprintf(string_data, sizeof(string_data), ZEND_LONG_FMT ".%0*" ZEND_LONG_FMT_SPEC, n / f, -scale,  -(n % f));
 				} else {
-					l = slprintf(string_data, sizeof(string_data), "-0.%0*" ZEND_LONG_FMT_SPEC, -scale, -n % f);
+					l = slprintf(string_data, sizeof(string_data), "-0.%0*" ZEND_LONG_FMT_SPEC, -scale, -(n % f));
 				}
 				ZVAL_STRINGL(val, string_data, l);
 			}
